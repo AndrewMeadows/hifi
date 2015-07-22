@@ -398,7 +398,7 @@ public:
 
     quint64 getLastEditedFromRemote() { return _lastEditedFromRemote; }
 
-    void getAllTerseUpdateProperties(EntityItemProperties& properties) const;
+    void getAllSimulationProperties(EntityItemProperties& properties) const;
 
     void flagForOwnership() { _dirtyFlags |= DIRTY_SIMULATOR_OWNERSHIP; }
 

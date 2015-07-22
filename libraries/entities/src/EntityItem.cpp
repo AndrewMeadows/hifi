@@ -1057,8 +1057,7 @@ EntityItemProperties EntityItem::getProperties() const {
     return properties;
 }
 
-void EntityItem::getAllTerseUpdateProperties(EntityItemProperties& properties) const {
-    // a TerseUpdate includes the transform and its derivatives
+void EntityItem::getAllSimulationProperties(EntityItemProperties& properties) const {
     properties._position = getPosition();
     properties._velocity = _velocity;
     properties._rotation = getRotation();
@@ -1075,7 +1074,7 @@ void EntityItem::getAllTerseUpdateProperties(EntityItemProperties& properties) c
 bool EntityItem::setProperties(const EntityItemProperties& properties) {
     bool somethingChanged = false;
 
-    // these affect TerseUpdate properties
+    // these affect simulation properties
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(simulationOwner, setSimulationOwner);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(position, updatePosition);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(rotation, updateRotation);

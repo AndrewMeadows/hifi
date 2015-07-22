@@ -145,11 +145,12 @@ bool EntityTree::updateEntityWithElement(EntityItemPointer entity, const EntityI
             }
         }
     } else {
-        if (getIsServer()) {
-            bool simulationBlocked = !entity->getSimulatorID().isNull();
+        if (getIsServer() && properties.hasSimulationChanges()) {
+            bool simulationOwned = !entity->getSimulatorID().isNull();
+            bool simulationBlocked = simulationOwned;
             if (properties.simulationOwnerChanged()) {
                 QUuid submittedID = properties.getSimulationOwner().getID();
-                // a legit interface will only submit their own ID or NULL:
+                // a legit interface/agent will only submit their own ID or NULL:
                 if (submittedID.isNull()) {
                     if (entity->getSimulatorID() == senderID) {
                         // We only allow the simulation owner to clear their own simulationID's.
@@ -183,7 +184,7 @@ bool EntityTree::updateEntityWithElement(EntityItemPointer entity, const EntityI
                     return false;
                 }
             } else {
-                simulationBlocked = senderID != entity->getSimulatorID();
+                simulationBlocked = simulationOwned && senderID != entity->getSimulatorID();
             }
             if (simulationBlocked) {
                 // squash ownership and physics-related changes.
@@ -193,6 +194,14 @@ bool EntityTree::updateEntityWithElement(EntityItemPointer entity, const EntityI
                 properties.setVelocityChanged(false);
                 properties.setAngularVelocityChanged(false);
                 properties.setAccelerationChanged(false);
+            } else if (!simulationOwned) {
+                // The interface/agent is changing simulation but is neglecting to claim simulation ownership.
+                // This is ok as long as the simulation is not moving, since otherwise the object will continue 
+                // to move on the server and might never be stopped.  That is, we only check for orphaned
+                // object that were _owned_.
+                if (properties.hasNonZeroVelocityChanges()) {
+                    properties.setSimulationOwner(senderID, VOLUNTEER_SIMULATION_PRIORITY);
+                }
             }
         }
         // else client accepts what the server says

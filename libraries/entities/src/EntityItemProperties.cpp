@@ -1230,8 +1230,16 @@ AABox EntityItemProperties::getAABox() const {
     return AABox(rotatedExtentsRelativeToRegistrationPoint);
 }
 
-bool EntityItemProperties::hasTerseUpdateChanges() const {
-    // a TerseUpdate includes the transform and its derivatives
+bool EntityItemProperties::hasNonZeroVelocityChanges() const {
+    if (_velocityChanged || _angularVelocityChanged || _accelerationChanged) {
+        return (glm::length2(_velocity) > 0.0f 
+                || glm::length2(_angularVelocity) > 0.0f 
+                || glm::length2(_acceleration) > 0.0f);
+    }
+    return false;
+}
+
+bool EntityItemProperties::hasSimulationChanges() const {
     return _positionChanged || _velocityChanged || _rotationChanged || _angularVelocityChanged || _accelerationChanged;
 }
 

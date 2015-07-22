@@ -204,7 +204,8 @@ public:
 
     void setCreated(QDateTime& v);
 
-    bool hasTerseUpdateChanges() const;
+    bool hasNonZeroVelocityChanges() const;
+    bool hasSimulationChanges() const;
     bool hasMiscPhysicsChanges() const;
 
     void clearSimulationOwner();

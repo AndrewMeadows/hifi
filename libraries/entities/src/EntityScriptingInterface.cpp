@@ -142,18 +142,18 @@ QUuid EntityScriptingInterface::editEntity(QUuid id, EntityItemProperties proper
             if (entity) {
                 // make sure the properties has a type, so that the encode can know which properties to include
                 properties.setType(entity->getType());
-                bool hasTerseUpdateChanges = properties.hasTerseUpdateChanges();
-                bool hasPhysicsChanges = properties.hasMiscPhysicsChanges() || hasTerseUpdateChanges;
+                bool hasSimulationChanges = properties.hasSimulationChanges();
+                bool hasPhysicsChanges = properties.hasMiscPhysicsChanges() || hasSimulationChanges;
                 if (hasPhysicsChanges) {
                     auto nodeList = DependencyManager::get<NodeList>();
                     const QUuid myNodeID = nodeList->getSessionUUID();
 
                     if (entity->getSimulatorID() == myNodeID) {
-                        // we think we already own the simulation, so make sure to send ALL TerseUpdate properties
-                        if (hasTerseUpdateChanges) {
-                            entity->getAllTerseUpdateProperties(properties);
+                        // we think we already own the simulation, so make sure to send ALL Simulation properties
+                        if (hasSimulationChanges) {
+                            entity->getAllSimulationProperties(properties);
                         }
-                        // TODO: if we knew that ONLY TerseUpdate properties have changed in properties AND the object 
+                        // TODO: if we knew that ONLY Simulation properties have changed in properties AND the object 
                         // is dynamic AND it is active in the physics simulation then we could chose to NOT queue an update 
                         // and instead let the physics simulation decide when to send a terse update.  This would remove
                         // the "slide-no-rotate" glitch (and typical a double-update) that we see during the "poke rolling
