@@ -87,6 +87,7 @@ void PhysicsEngine::addObject(ObjectMotionState* motionState) {
                 body->setMassProps(mass, inertia);
             }
             body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+            body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_STATIC_OBJECT);
             body->updateInertiaTensor();
             motionState->updateBodyVelocities();
             const float KINEMATIC_LINEAR_VELOCITY_THRESHOLD = 0.01f;  // 1 cm/sec
@@ -130,7 +131,7 @@ void PhysicsEngine::addObject(ObjectMotionState* motionState) {
             } else {
                 body->setMassProps(mass, inertia);
             }
-            body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+            body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
             body->updateInertiaTensor();
             break;
         }
