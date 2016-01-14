@@ -275,7 +275,7 @@ public:
     void setCollisionless(bool value) { _collisionless = value; }
 
     uint8_t getCollisionMask() const { return _collisionMask; }
-    uint8_t getFinalCollisionMask() const { return _ignoreForCollisions ? 0 : _collisionMask; }
+    uint8_t getFinalCollisionMask() const { return _collisionless ? 0 : _collisionMask; }
     void setCollisionMask(uint8_t value) { _collisionMask = value; }
 
     bool getDynamic() const { return _dynamic; }

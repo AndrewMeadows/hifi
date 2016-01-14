@@ -37,7 +37,7 @@ void initCollisionMaskTable() {
 }
 
 // static
-int16_t PhysicsEngine::getCollisionMask(int16_t group) {
+int16_t PhysicsEngine::getDefaultCollisionMask(int16_t group) {
     const int16_t* mask = _collisionMasks.find(btHashInt((int)group));
     return mask ? *mask : BULLET_COLLISION_MASK_DEFAULT;
 }

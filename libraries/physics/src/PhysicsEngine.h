@@ -45,7 +45,7 @@ typedef QVector<Collision> CollisionEvents;
 
 class PhysicsEngine {
 public:
-    static int16_t getCollisionMask(int16_t group);
+    static int16_t getDefaultCollisionMask(int16_t group);
 
     uint32_t getNumSubsteps();
 

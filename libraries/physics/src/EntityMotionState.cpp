@@ -527,7 +527,7 @@ uint32_t EntityMotionState::getIncomingDirtyFlags() {
         if (dirtyFlags | Simulation::DIRTY_SIMULATOR_ID) {
             // when SIMULATOR_ID changes we must check for reinterpretation of asymmetric collision mask
             // bits for the avatar groups (e.g. MY_AVATAR vs OTHER_AVATAR)
-            uint8_t entityCollisionMask = _entity->getCollisionMask();
+            uint8_t entityCollisionMask = _entity->getFinalCollisionMask();
             if ((bool)(entityCollisionMask & USER_COLLISION_GROUP_MY_AVATAR) !=
                     (bool)(entityCollisionMask & USER_COLLISION_GROUP_OTHER_AVATAR)) {
                 // bits are asymmetric --> flag for reinsertion in physics simulation
@@ -642,7 +642,7 @@ void EntityMotionState::computeCollisionGroupAndMask(int16_t& group, int16_t& ma
         }
     }
 
-    mask = PhysicsEngine::getCollisionMask(group);
+    mask = PhysicsEngine::getDefaultCollisionMask(group);
     if (_entity) {
         uint8_t entityCollisionMask = _entity->getFinalCollisionMask();
         if ((bool)(entityCollisionMask & USER_COLLISION_GROUP_MY_AVATAR) !=
