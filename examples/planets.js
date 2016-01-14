@@ -56,7 +56,7 @@ for (var i = 0; i < planetTypes.length; i++) {
               gravity: {  x: 0, y: 0, z: 0 },
               angularVelocity: {  x: 0, y: rotationalVelocity, z: 0 },
               angularDamping: 0.0,
-            ignoreCollisions: false,
+            collisionless: false,
             lifetime: LIFETIME,
             dynamic: false })); 
 }
@@ -79,7 +79,7 @@ function createParticles() {
                   gravity: {  x: 0, y: 0, z: 0 },
                   angularVelocity: {  x: 0, y: 0, z: 0 },
                   velocity: Vec3.multiply(INITIAL_VELOCITY * Math.sqrt(separation), Vec3.normalize(Vec3.cross(position, { x: 0, y: 1, z: 0 }))),
-                ignoreCollisions: false,
+                collisionless: false,
                 damping: DAMPING,
                 lifetime: LIFETIME,
                 dynamic: true })); 

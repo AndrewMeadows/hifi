@@ -30,7 +30,7 @@ var floor = Entities.addEntity(
             dimensions: { x: SCALE, y: WALL_THICKNESS, z: SCALE }, 
               color: { red: 0, green: 255, blue: 0 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             lifetime: LIFETIME });
 
 var ceiling = Entities.addEntity(
@@ -39,7 +39,7 @@ var ceiling = Entities.addEntity(
             dimensions: { x: SCALE, y: WALL_THICKNESS, z: SCALE }, 
               color: { red: 128, green: 128, blue: 128 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             lifetime: LIFETIME });
 
@@ -49,7 +49,7 @@ var wall1 = Entities.addEntity(
             dimensions: { x: WALL_THICKNESS, y: SCALE, z: SCALE }, 
               color: { red: 0, green: 255, blue: 0 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: false,
             lifetime: LIFETIME });
 
@@ -59,7 +59,7 @@ var wall2 = Entities.addEntity(
             dimensions: { x: WALL_THICKNESS, y: SCALE, z: SCALE }, 
               color: { red: 0, green: 255, blue: 0 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: false,
             lifetime: LIFETIME });
 
@@ -69,7 +69,7 @@ var wall3 = Entities.addEntity(
             dimensions: { x: SCALE, y: SCALE, z: WALL_THICKNESS }, 
               color: { red: 0, green: 255, blue: 0 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: false,
             lifetime: LIFETIME }); 
 
@@ -79,7 +79,7 @@ var wall4 = Entities.addEntity(
             dimensions: { x: SCALE, y: SCALE, z: WALL_THICKNESS }, 
               color: { red: 0, green: 255, blue: 0 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: false,
             lifetime: LIFETIME });
 
@@ -88,7 +88,7 @@ var corner1 = Entities.addEntity(
             position: Vec3.sum(center, { x: -SCALE / 2.0, y: 0, z: SCALE / 2.0 }), 
             dimensions: { x: WALL_THICKNESS, y: SCALE, z: WALL_THICKNESS }, 
               color: { red: 128, green: 128, blue: 128 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             lifetime: LIFETIME });
 
@@ -97,7 +97,7 @@ var corner2 = Entities.addEntity(
             position: Vec3.sum(center, { x: -SCALE / 2.0, y: 0, z: -SCALE / 2.0 }), 
             dimensions: { x: WALL_THICKNESS, y: SCALE, z: WALL_THICKNESS }, 
               color: { red: 128, green: 128, blue: 128 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             lifetime: LIFETIME });
 
@@ -106,7 +106,7 @@ var corner3 = Entities.addEntity(
             position: Vec3.sum(center, { x: SCALE / 2.0, y: 0, z: SCALE / 2.0 }), 
             dimensions: { x: WALL_THICKNESS, y: SCALE, z: WALL_THICKNESS }, 
               color: { red: 128, green: 128, blue: 128 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             lifetime: LIFETIME });
 
@@ -115,7 +115,7 @@ var corner4 = Entities.addEntity(
             position: Vec3.sum(center, { x: SCALE / 2.0, y: 0, z: -SCALE / 2.0 }), 
             dimensions: { x: WALL_THICKNESS, y: SCALE, z: WALL_THICKNESS }, 
               color: { red: 128, green: 128, blue: 128 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             lifetime: LIFETIME });
 
@@ -128,7 +128,7 @@ var spinner = Entities.addEntity(
               angularVelocity: { x: 0, y: TWO_PI, z: 0 },
               angularDamping: 0.0,
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             lifetime: LIFETIME });
 
@@ -145,7 +145,7 @@ for (var i = 0; i < NUM_BALLS; i++) {
             dimensions: { x: BALL_SIZE, y: BALL_SIZE, z: BALL_SIZE }, 
               color: { red: Math.random() * 255, green: Math.random() * 255, blue: Math.random() * 255 },
               gravity: {  x: 0, y: GRAVITY, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             damping: DAMPING,
             lifetime: LIFETIME,
             dynamic: true })); 

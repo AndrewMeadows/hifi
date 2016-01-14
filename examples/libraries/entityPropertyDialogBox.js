@@ -199,7 +199,7 @@ EntityPropertyDialogBox = (function () {
         index++;
         array.push({ label: "Density:", value: properties.density.toFixed(decimals) });
         index++;
-        array.push({ label: "Ignore for Collisions:", type: "checkbox", value: properties.collisionless });
+        array.push({ label: "Collisionless:", type: "checkbox", value: properties.collisionless });
         index++;
         array.push({ label: "Dynamic:", type: "checkbox", value: properties.dynamic });
         index++;

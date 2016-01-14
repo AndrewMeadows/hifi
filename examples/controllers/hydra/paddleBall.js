@@ -57,7 +57,7 @@ function createEntities() {
                 dimensions: { x: BALL_SIZE, y: BALL_SIZE, z: BALL_SIZE }, 
                   color: BALL_COLOR,
                   gravity: {  x: 0, y: GRAVITY, z: 0 },
-                ignoreCollisions: false,
+                collisionless: false,
                 damping: 0.50,
                 dynamic: true });
 
@@ -67,7 +67,7 @@ function createEntities() {
                 dimensions: { x: PADDLE_SIZE, y: PADDLE_THICKNESS, z: PADDLE_SIZE * 0.80 }, 
                   color: PADDLE_COLOR,
                   gravity: {  x: 0, y: 0, z: 0 },
-                ignoreCollisions: false,
+                collisionless: false,
                 damping: 0.10,
                 visible: false,
 				rotation : leftHanded ? MyAvatar.leftHandPose.rotation : MyAvatar.rightHandPose.rotation,
@@ -80,7 +80,7 @@ function createEntities() {
                 dimensions: { x: PADDLE_SIZE * 1.5, y: PADDLE_THICKNESS, z: PADDLE_SIZE * 1.25 }, 
                   color: PADDLE_COLOR,
                   gravity: {  x: 0, y: 0, z: 0 },
-                ignoreCollisions: true,
+                collisionless: true,
                 modelURL: modelURL,
                 damping: 0.10,
                 rotation : leftHanded ? MyAvatar.leftHandPose.rotation : MyAvatar.rightHandPose.rotation,

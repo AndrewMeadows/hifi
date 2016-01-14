@@ -29,7 +29,7 @@ ColorCube.prototype.create = function() {
         position: avatarRelativePosition(that.POSITION),
         name: that.NAME,
         color: that.COLOR,
-        ignoreCollisions: true,
+        collisionless: true,
         dynamic: false,
         dimensions: { x: size, y: size, z: size },
         lifetime: 3600,

@@ -233,7 +233,7 @@ function shootBullet(position, velocity, grenade) {
         },
         damping: 0.01,
         density: 8000,
-        ignoreCollisions: false,
+        collisionless: false,
         dynamic: true
     });
 

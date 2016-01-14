@@ -124,7 +124,7 @@ function makeBalls(pos) {
                 color: { red: 255, green: 255, blue: 255 },
                 gravity: {  x: 0, y: GRAVITY, z: 0 },
               velocity: {x: 0, y: -0.2, z: 0 },
-              ignoreCollisions: false,
+              collisionless: false,
               damping: 0.50,
                   shapeType: "sphere",
           collisionSoundURL: hitSound,
@@ -146,7 +146,7 @@ function makeBalls(pos) {
       gravity: {  x: 0, y: GRAVITY, z: 0 },
       angularVelocity: { x: 0, y: 0, z: 0 },
       velocity: {x: 0, y: -0.2, z: 0 },
-      ignoreCollisions: false,
+      collisionless: false,
       damping: 0.50,
           shapeType: "sphere",
       dynamic: true });
@@ -183,7 +183,7 @@ function shootCue(velocity) {
           gravity: {  x: 0, y: BULLET_GRAVITY, z: 0 },
           damping: 0.10,
           density: 8000,
-          ignoreCollisions: false,
+          collisionless: false,
           dynamic: true
         });
     print("Shot, velocity = " + velocity);

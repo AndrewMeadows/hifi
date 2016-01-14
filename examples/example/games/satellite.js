@@ -65,7 +65,7 @@ SatelliteCreator = function() {
             },
             angularDamping: 0.0,
             damping: 0.0,
-            ignoreCollisions: false,
+            collisionless: false,
             lifetime: 6000,
             dynamic: false,
             visible: true
@@ -88,7 +88,7 @@ SatelliteCreator = function() {
             },
             angularDamping: 0.0,
             damping: 0.0,
-            ignoreCollisions: false,
+            collisionless: false,
             lifetime: LIFETIME,
             dynamic: false,
             visible: true
@@ -172,7 +172,7 @@ SatelliteCreator = function() {
             },
             angularDamping: 0.0,
             damping: 0.0,
-            ignoreCollisions: false,
+            collisionless: false,
             lifetime: LIFETIME,
             dynamic: false,
         });

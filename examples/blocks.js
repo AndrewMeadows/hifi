@@ -36,7 +36,7 @@ var floor = Entities.addEntity(
             dimensions: { x: FLOOR_SIZE, y: FLOOR_THICKNESS, z: FLOOR_SIZE }, 
               color: { red: 128, green: 128, blue: 128 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             locked: true,
             lifetime: LIFETIME });
 
@@ -46,7 +46,7 @@ var edge1 = Entities.addEntity(
             dimensions: { x: EDGE_THICKESS, y: EDGE_THICKESS, z: FLOOR_SIZE + EDGE_THICKESS }, 
               color: { red: 100, green: 100, blue: 100 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             locked: true,
             lifetime: LIFETIME });
@@ -57,7 +57,7 @@ var edge2 = Entities.addEntity(
             dimensions: { x: EDGE_THICKESS, y: EDGE_THICKESS, z: FLOOR_SIZE + EDGE_THICKESS }, 
               color: { red: 100, green: 100, blue: 100 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             locked: true,
             lifetime: LIFETIME });
@@ -68,7 +68,7 @@ var edge3 = Entities.addEntity(
             dimensions: { x: FLOOR_SIZE + EDGE_THICKESS, y: EDGE_THICKESS, z: EDGE_THICKESS }, 
               color: { red: 100, green: 100, blue: 100 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             locked: true,
             lifetime: LIFETIME });
@@ -79,7 +79,7 @@ var edge4 = Entities.addEntity(
             dimensions: { x: FLOOR_SIZE + EDGE_THICKESS, y: EDGE_THICKESS, z: EDGE_THICKESS }, 
               color: { red: 100, green: 100, blue: 100 },
               gravity: {  x: 0, y: 0, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             visible: true,
             locked: true,
             lifetime: LIFETIME });
@@ -98,7 +98,7 @@ for (var i = 0; i < NUM_BLOCKS; i++) {
               color: { red: type.red, green: type.green, blue: type.blue },
               gravity: {  x: 0, y: GRAVITY, z: 0 },
               velocity: { x: 0, y: 0.05, z: 0 },
-            ignoreCollisions: false,
+            collisionless: false,
             damping: DAMPING,
             lifetime: LIFETIME,
             dynamic: true })); 

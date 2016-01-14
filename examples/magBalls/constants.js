@@ -38,7 +38,7 @@ BALL_PROTOTYPE = {
     name: BALL_NAME,
     dimensions: BALL_DIMENSIONS,
     color: BALL_COLOR,
-    ignoreCollisions: true,
+    collisionless: true,
     dynamic: false
 };
 
@@ -61,7 +61,7 @@ LINE_PROTOTYPE = {
     dimensions: LINE_DIMENSIONS,
     lineWidth: 5,
     visible: true,
-    ignoreCollisions: true,
+    collisionless: true,
     dynamic: false,
 }
 
@@ -75,7 +75,7 @@ EDGE_PROTOTYPE = LINE_PROTOTYPE;
 // dimensions: { x: 0.02, y: 0.02, z: 0.02 },
 // rotation: rotation,
 // visible: true,
-// ignoreCollisions: true,
+// collisionless: true,
 // dynamic: false
 // }
 

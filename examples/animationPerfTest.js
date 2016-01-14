@@ -52,7 +52,7 @@ for (var i = 0; i < NUM_MOONS; i++) {
         position: Vec3.sum(center, position),  
         dimensions: { x: radius, y: radius, z: radius }, 
         color: color,
-        ignoreCollisions: true,
+        collisionless: true,
         dynamic: false
 
     })); 

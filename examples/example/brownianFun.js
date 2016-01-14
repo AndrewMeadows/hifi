@@ -164,7 +164,7 @@ function spawnBalls() {
       green: randFloat(20, 80),
       blue: randFloat(10, 180)
     },
-    ignoreCollisions: false,
+    collisionless: false,
     dynamic: true,
     gravity: {
       x: 0,

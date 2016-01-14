@@ -92,7 +92,7 @@ function getSphere(position) {
         color: getColor(),
         gravity: Vec3.ZERO,
         lifetime: LIFETIME,
-        ignoreCollisions: true,
+        collisionless: true,
     });
 }
 

@@ -41,7 +41,7 @@ for (var x = 0; x < SIDE_SIZE; x++) {
                 position: position,  
                 dimensions: { x: radius, y: radius, z: radius }, 
                 color: color,
-                ignoreCollisions: true,
+                collisionless: true,
                 dynamic: false, 
                 lifetime: LIFETIME
             }));

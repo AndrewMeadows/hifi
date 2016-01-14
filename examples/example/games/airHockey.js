@@ -173,7 +173,7 @@ function makeNewProp(which, position) {
         y: 0.05,
         z: 0
       },
-      ignoreCollisions: false,
+      collisionless: false,
       damping: PUCK_DAMPING,
       angularDamping: ANGULAR_DAMPING,
       lifetime: LIFETIME,
@@ -207,7 +207,7 @@ function makeNewProp(which, position) {
         y: 0.07,
         z: 0
       },
-      ignoreCollisions: false,
+      collisionless: false,
       damping: PADDLE_DAMPING,
       angularDamping: PADDLE_ANGULAR_DAMPING,
       lifetime: LIFETIME,
@@ -241,7 +241,7 @@ function makeNewProp(which, position) {
         y: 0.07,
         z: 0
       },
-      ignoreCollisions: false,
+      collisionless: false,
       damping: PADDLE_DAMPING,
       angularDamping: PADDLE_ANGULAR_DAMPING,
       lifetime: LIFETIME,
@@ -342,7 +342,7 @@ function spawnAllTheThings() {
       y: 0,
       z: 0
     },
-    ignoreCollisions: false,
+    collisionless: false,
     locked: true,
     friction: floorFriction,
     visible: debugVisible,
@@ -361,7 +361,7 @@ function spawnAllTheThings() {
     }, MODEL_SCALE),
     position: Vec3.sum(center, MODEL_OFFSET),
     restitution: edgeRestitution,
-    ignoreCollisions: false,
+    collisionless: false,
     visible: true,
     locked: true,
     lifetime: LIFETIME

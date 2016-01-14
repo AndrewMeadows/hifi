@@ -53,7 +53,7 @@ CreateSimulation = function() {
         },
         angularDamping: DAMPING,
         damping: DAMPING,
-        ignoreCollisions: false,
+        collisionless: false,
         lifetime: LIFETIME,
         dynamic: false
     });
@@ -185,7 +185,7 @@ CreateSimulation = function() {
             velocity: this.velocity,
             angularDamping: DAMPING,
             damping: DAMPING,
-            ignoreCollisions: false,
+            collisionless: false,
             lifetime: LIFETIME,
             dynamic: false,
         });
