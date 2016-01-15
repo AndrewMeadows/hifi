@@ -93,6 +93,7 @@
 #include <PathUtils.h>
 #include <PerfStat.h>
 #include <PhysicsEngine.h>
+#include <PhysicsHelpers.h>
 #include <plugins/PluginContainer.h>
 #include <plugins/PluginManager.h>
 #include <RenderableWebEntityItem.h>
@@ -3145,7 +3146,7 @@ void Application::update(float deltaTime) {
             PerformanceTimer perfTimer("havestChanges");
             if (_physicsEngine->hasOutgoingChanges()) {
                 getEntities()->getTree()->withWriteLock([&] {
-                    _entitySimulation.handleOutgoingChanges(_physicsEngine->getOutgoingChanges(), _physicsEngine->getSessionID());
+                    _entitySimulation.handleOutgoingChanges(_physicsEngine->getOutgoingChanges(), Physics::getSessionUUID());
                     avatarManager->handleOutgoingChanges(_physicsEngine->getOutgoingChanges());
                 });
 
@@ -4310,6 +4311,9 @@ bool Application::acceptURL(const QString& urlString, bool defaultUpload) {
 }
 
 void Application::setSessionUUID(const QUuid& sessionUUID) {
+    // HACK: until we swap the library dependency order between physics and entities
+    // we cache the sessionID in two distinct places for physics.
+    Physics::setSessionUUID(sessionUUID); // TODO: remove this one
     _physicsEngine->setSessionUUID(sessionUUID);
 }
 
