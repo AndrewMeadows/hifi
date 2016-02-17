@@ -52,7 +52,7 @@ void PhysicalEntitySimulation::addEntityInternal(EntityItemPointer entity) {
             _entitiesToAddToPhysics.insert(entity);
         }
     } else if (entity->isMovingRelativeToParent()) {
-        _simpleKinematicEntities.insert(entity);
+        _entitiesToExtrapolate.insert(entity);
     }
 }
 
@@ -99,7 +99,7 @@ void PhysicalEntitySimulation::changeEntityInternal(EntityItemPointer entity) {
             _outgoingChanges.remove(motionState);
             _entitiesToRemoveFromPhysics.insert(entity);
             if (entity->isMovingRelativeToParent()) {
-                _simpleKinematicEntities.insert(entity);
+                _entitiesToExtrapolate.insert(entity);
             }
         } else {
             _pendingChanges.insert(motionState);
@@ -108,11 +108,11 @@ void PhysicalEntitySimulation::changeEntityInternal(EntityItemPointer entity) {
         // The intent is for this object to be in the PhysicsEngine, but it has no MotionState yet.
         // Perhaps it's shape has changed and it can now be added?
         _entitiesToAddToPhysics.insert(entity);
-        _simpleKinematicEntities.remove(entity); // just in case it's non-physical-kinematic
+        _entitiesToExtrapolate.remove(entity); // just in case it's non-physical-kinematic
     } else if (entity->isMovingRelativeToParent()) {
-        _simpleKinematicEntities.insert(entity);
+        _entitiesToExtrapolate.insert(entity);
     } else {
-        _simpleKinematicEntities.remove(entity); // just in case it's non-physical-kinematic
+        _entitiesToExtrapolate.remove(entity); // just in case it's non-physical-kinematic
     }
 }
 
@@ -210,7 +210,7 @@ void PhysicalEntitySimulation::getObjectsToAddToPhysics(VectorOfMotionStates& re
             // this entity should no longer be on the internal _entitiesToAddToPhysics
             entityItr = _entitiesToAddToPhysics.erase(entityItr);
             if (entity->isMovingRelativeToParent()) {
-                _simpleKinematicEntities.insert(entity);
+                _entitiesToExtrapolate.insert(entity);
             }
         } else if (entity->isReadyToComputeShape()) {
             ShapeInfo shapeInfo;

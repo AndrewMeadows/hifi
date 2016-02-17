@@ -69,7 +69,7 @@ public:
 
     void clearEntities();
 
-    void moveSimpleKinematics(const quint64& now);
+    void extrapolateForward(const quint64& now);
 
     EntityTreePointer getEntityTree() { return _entityTree; }
 
@@ -97,7 +97,7 @@ protected:
     QMutex _mutex{ QMutex::Recursive };
 
     SetOfEntities _entitiesToSort; // entities moved by simulation (and might need resort in EntityTree)
-    SetOfEntities _simpleKinematicEntities; // entities undergoing non-colliding kinematic motion
+    SetOfEntities _entitiesToExtrapolate; // entities undergoing non-colliding kinematic extrapolation
     QList<EntityActionPointer> _actionsToAdd;
     QSet<QUuid> _actionsToRemove;
 
@@ -105,7 +105,7 @@ protected:
     SetOfEntities _entitiesToDelete; // entities simulation decided needed to be deleted (EntityTree will actually delete)
 
 private:
-    void moveSimpleKinematics();
+    void extrapolateForward();
 
     // back pointer to EntityTree structure
     EntityTreePointer _entityTree;

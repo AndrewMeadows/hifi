@@ -21,7 +21,7 @@ void EntitySimulation::setEntityTree(EntityTreePointer tree) {
         _nextExpiry = quint64(-1);
         _entitiesToUpdate.clear();
         _entitiesToSort.clear();
-        _simpleKinematicEntities.clear();
+        _entitiesToExtrapolate.clear();
     }
     _entityTree = tree;
 }
@@ -33,7 +33,7 @@ void EntitySimulation::updateEntities() {
     // these methods may accumulate entries in _entitiesToBeDeleted
     expireMortalEntities(now);
     callUpdateOnEntitiesThatNeedIt(now);
-    moveSimpleKinematics(now);
+    extrapolateForward(now);
     updateEntitiesInternal(now);
     sortEntitiesThatMoved();
 }
@@ -53,7 +53,7 @@ void EntitySimulation::removeEntityInternal(EntityItemPointer entity) {
     _mortalEntities.remove(entity);
     _entitiesToUpdate.remove(entity);
     _entitiesToSort.remove(entity);
-    _simpleKinematicEntities.remove(entity);
+    _entitiesToExtrapolate.remove(entity);
     _allEntities.remove(entity);
     entity->setSimulated(false);
 }
@@ -72,16 +72,16 @@ void EntitySimulation::prepareEntityForDelete(EntityItemPointer entity) {
 void EntitySimulation::addEntityInternal(EntityItemPointer entity) {
     if (entity->isMovingRelativeToParent() && !entity->getPhysicsInfo()) {
         QMutexLocker lock(&_mutex);
-        _simpleKinematicEntities.insert(entity);
+        _entitiesToExtrapolate.insert(entity);
     }
 }
 
 void EntitySimulation::changeEntityInternal(EntityItemPointer entity) {
     QMutexLocker lock(&_mutex);
     if (entity->isMovingRelativeToParent() && !entity->getPhysicsInfo()) {
-        _simpleKinematicEntities.insert(entity);
+        _entitiesToExtrapolate.insert(entity);
     } else {
-        _simpleKinematicEntities.remove(entity);
+        _entitiesToExtrapolate.remove(entity);
     }
 }
 
@@ -238,7 +238,7 @@ void EntitySimulation::clearEntities() {
     _nextExpiry = quint64(-1);
     _entitiesToUpdate.clear();
     _entitiesToSort.clear();
-    _simpleKinematicEntities.clear();
+    _entitiesToExtrapolate.clear();
 
     clearEntitiesInternal();
 
@@ -250,9 +250,9 @@ void EntitySimulation::clearEntities() {
     _entitiesToDelete.clear();
 }
 
-void EntitySimulation::moveSimpleKinematics(const quint64& now) {
-    SetOfEntities::iterator itemItr = _simpleKinematicEntities.begin();
-    while (itemItr != _simpleKinematicEntities.end()) {
+void EntitySimulation::extrapolateForward(const quint64& now) {
+    SetOfEntities::iterator itemItr = _entitiesToExtrapolate.begin();
+    while (itemItr != _entitiesToExtrapolate.end()) {
         EntityItemPointer entity = *itemItr;
         if (entity->isMovingRelativeToParent() && !entity->getPhysicsInfo()) {
             entity->simulate(now);
@@ -260,7 +260,7 @@ void EntitySimulation::moveSimpleKinematics(const quint64& now) {
             ++itemItr;
         } else {
             // the entity is no longer non-physical-kinematic
-            itemItr = _simpleKinematicEntities.erase(itemItr);
+            itemItr = _entitiesToExtrapolate.erase(itemItr);
         }
     }
 }
