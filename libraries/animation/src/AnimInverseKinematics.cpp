@@ -675,7 +675,7 @@ void AnimInverseKinematics::initConstraints() {
 
             // simple cone
             std::vector<float> minDots;
-            const float MAX_HAND_SWING = PI / 2.0f;
+            const float MAX_HAND_SWING = 1.2f * PI / 2.0f;
             minDots.push_back(cosf(MAX_HAND_SWING));
             stConstraint->setSwingLimits(minDots);
 
