@@ -922,13 +922,11 @@ void EntityItem::simulate(const quint64& now) {
         qCDebug(entities) << "     ********** EntityItem::simulate() .... SETTING _lastSimulated=" << _lastSimulated;
     #endif
 
-    if (!hasActions()) {
-        if (!stepKinematicMotion(timeElapsed)) {
-            // this entity is no longer moving
-            // flag it to transition from KINEMATIC to STATIC
-            _dirtyFlags |= Simulation::DIRTY_MOTION_TYPE;
-            setAcceleration(Vectors::ZERO);
-        }
+    if (!stepKinematicMotion(timeElapsed)) {
+        // this entity is no longer moving
+        // flag it to transition from KINEMATIC to STATIC
+        _dirtyFlags |= Simulation::DIRTY_MOTION_TYPE;
+        setAcceleration(Vectors::ZERO);
     }
     _lastSimulated = now;
 }
