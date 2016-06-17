@@ -148,6 +148,7 @@ target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries
 target_bullet()
 target_glew()
 target_opengl()
+target_vhacd()
 
 if (WIN32 OR APPLE)
   target_faceshift()
