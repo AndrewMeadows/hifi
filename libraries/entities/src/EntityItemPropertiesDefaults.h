@@ -47,8 +47,8 @@ const float ENTITY_ITEM_DEFAULT_WIDTH = 0.1f;
 const glm::vec3 ENTITY_ITEM_DEFAULT_DIMENSIONS = glm::vec3(ENTITY_ITEM_DEFAULT_WIDTH);
 const float ENTITY_ITEM_DEFAULT_VOLUME = ENTITY_ITEM_DEFAULT_WIDTH * ENTITY_ITEM_DEFAULT_WIDTH * ENTITY_ITEM_DEFAULT_WIDTH;
 
-const float ENTITY_ITEM_MAX_DENSITY = 10000.0f; // kg/m^3 density of silver
-const float ENTITY_ITEM_MIN_DENSITY = 100.0f; // kg/m^3 density of balsa wood
+const float ENTITY_ITEM_MAX_DENSITY = 100000.0f; // kg/m^3 5X density of platinum
+const float ENTITY_ITEM_MIN_DENSITY = 10.0f; // kg/m^3 density of aerogel
 const float ENTITY_ITEM_DEFAULT_DENSITY = 1000.0f;   // density of water
 const float ENTITY_ITEM_DEFAULT_MASS = ENTITY_ITEM_DEFAULT_DENSITY * ENTITY_ITEM_DEFAULT_VOLUME;
 
