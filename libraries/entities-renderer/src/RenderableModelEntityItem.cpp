@@ -729,7 +729,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& info) {
             return;
         }
 
-        auto& meshes = _model->getGeometry()->getGeometry()->getMeshes();
+        auto& meshes = _model->getGeometry()->getMeshes();
         int32_t numMeshes = (int32_t)(meshes.size());
 
         ShapeInfo::PointCollection& pointCollection = info.getPointCollection();
