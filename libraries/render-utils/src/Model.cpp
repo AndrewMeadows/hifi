@@ -820,7 +820,7 @@ void Model::setURL(const QUrl& url) {
     invalidCalculatedMeshBoxes();
     deleteGeometry();
 
-    _renderWatcher.setResource(DependencyManager::get<ModelCache>()->fetchResource(url));
+    _renderWatcher.setResource(DependencyManager::get<ModelCache>()->getGeometryResource(url));
     onInvalidate();
 }
 
@@ -829,7 +829,7 @@ void Model::setCollisionModelURL(const QUrl& url) {
         return;
     }
     _collisionUrl = url;
-    _collisionWatcher.setResource(DependencyManager::get<ModelCache>()->fetchResource(url));
+    _collisionWatcher.setResource(DependencyManager::get<ModelCache>()->getGeometryResource(url));
 }
 
 bool Model::getJointPositionInWorldFrame(int jointIndex, glm::vec3& position) const {
