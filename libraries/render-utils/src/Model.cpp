@@ -204,7 +204,7 @@ void Model::updateRenderItems() {
         uint32_t deleteGeometryCounter = self->_deleteGeometryCounter;
 
         render::PendingChanges pendingChanges;
-        foreach (auto itemID, self->_modelMeshRenderItems.keys()) {
+        foreach (auto itemID, self->_visibleRenderItems.keys()) {
             pendingChanges.updateItem<ModelMeshPartPayload>(itemID, [modelTransform, modelMeshOffset, deleteGeometryCounter](ModelMeshPartPayload& data) {
                 // Ensure the model geometry was not reset between frames
                 if (data._model && data._model->hasVisibleGeometry() && deleteGeometryCounter == data._model->_deleteGeometryCounter) {
@@ -575,8 +575,8 @@ void Model::setVisibleInScene(bool newValue, std::shared_ptr<render::Scene> scen
         _isVisible = newValue;
 
         render::PendingChanges pendingChanges;
-        foreach (auto item, _modelMeshRenderItems.keys()) {
-            pendingChanges.resetItem(item, _modelMeshRenderItems[item]);
+        foreach (auto item, _visibleRenderItems.keys()) {
+            pendingChanges.resetItem(item, _visibleRenderItems[item]);
         }
         foreach (auto item, _collisionRenderItems.keys()) {
             pendingChanges.resetItem(item, _collisionRenderItems[item]);
@@ -596,15 +596,15 @@ bool Model::addToScene(std::shared_ptr<render::Scene> scene,
 
     bool somethingAdded = false;
 
-    if (_modelMeshRenderItems.empty()) {
-        foreach (auto renderItem, _modelMeshRenderItemsSet) {
+    if (_visibleRenderItems.empty()) {
+        foreach (auto renderItem, _visibleRenderItemsSet) {
             auto item = scene->allocateID();
             auto renderPayload = std::make_shared<ModelMeshPartPayload::Payload>(renderItem);
             if (statusGetters.size()) {
                 renderPayload->addStatusGetters(statusGetters);
             }
             pendingChanges.resetItem(item, renderPayload);
-            _modelMeshRenderItems.insert(item, renderPayload);
+            _visibleRenderItems.insert(item, renderPayload);
             somethingAdded = true;
         }
     }
@@ -629,11 +629,11 @@ bool Model::addToScene(std::shared_ptr<render::Scene> scene,
 }
 
 void Model::removeFromScene(std::shared_ptr<render::Scene> scene, render::PendingChanges& pendingChanges) {
-    foreach (auto item, _modelMeshRenderItems.keys()) {
+    foreach (auto item, _visibleRenderItems.keys()) {
         pendingChanges.removeItem(item);
     }
-    _modelMeshRenderItems.clear();
-    _modelMeshRenderItemsSet.clear();
+    _visibleRenderItems.clear();
+    _visibleRenderItemsSet.clear();
     foreach (auto item, _collisionRenderItems.keys()) {
         pendingChanges.removeItem(item);
     }
@@ -1199,7 +1199,7 @@ AABox Model::getRenderableMeshBound() const {
     } else {
         // Build a bound using the last known bound from all the renderItems.
         AABox totalBound;
-        for (auto& renderItem : _modelMeshRenderItemsSet) {
+        for (auto& renderItem : _visibleRenderItemsSet) {
             totalBound += renderItem->getBound();
         }
         return totalBound;
@@ -1229,12 +1229,12 @@ void Model::segregateMeshGroups() {
     }
 
     // We should not have any existing renderItems if we enter this section of code
-    Q_ASSERT(_modelMeshRenderItems.isEmpty());
-    Q_ASSERT(_modelMeshRenderItemsSet.isEmpty());
+    Q_ASSERT(_visibleRenderItems.isEmpty());
+    Q_ASSERT(_visibleRenderItemsSet.isEmpty());
     Q_ASSERT(_collisionRenderItems.isEmpty());
     Q_ASSERT(_collisionRenderItemsSet.isEmpty());
 
-    _modelMeshRenderItemsSet.clear();
+    _visibleRenderItemsSet.clear();
     _collisionRenderItemsSet.clear();
 
     Transform transform;
@@ -1261,7 +1261,7 @@ void Model::segregateMeshGroups() {
                     }
                     _collisionRenderItemsSet << std::make_shared<MeshPartPayload>(mesh, partIndex, _collisionGeometryMaterials[partIndex % NUM_COLLISION_HULL_COLORS], transform, offset);
                 } else {
-                    _modelMeshRenderItemsSet << std::make_shared<ModelMeshPartPayload>(this, i, partIndex, shapeID, transform, offset);
+                    _visibleRenderItemsSet << std::make_shared<ModelMeshPartPayload>(this, i, partIndex, shapeID, transform, offset);
                 }
 
                 shapeID++;
@@ -1285,10 +1285,10 @@ bool Model::initWhenReady(render::ScenePointer scene) {
         offset.setScale(_scale);
         offset.postTranslate(_offset);
 
-        foreach (auto renderItem, _modelMeshRenderItemsSet) {
+        foreach (auto renderItem, _visibleRenderItemsSet) {
             auto item = scene->allocateID();
             auto renderPayload = std::make_shared<ModelMeshPartPayload::Payload>(renderItem);
-            _modelMeshRenderItems.insert(item, renderPayload);
+            _visibleRenderItems.insert(item, renderPayload);
             pendingChanges.resetItem(item, renderPayload);
         }
         foreach (auto renderItem, _collisionRenderItemsSet) {

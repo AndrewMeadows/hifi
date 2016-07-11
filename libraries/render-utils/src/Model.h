@@ -377,8 +377,8 @@ protected:
     QSet<std::shared_ptr<MeshPartPayload>> _collisionRenderItemsSet;
     QMap<render::ItemID, render::PayloadPointer> _collisionRenderItems;
 
-    QSet<std::shared_ptr<ModelMeshPartPayload>> _modelMeshRenderItemsSet;
-    QMap<render::ItemID, render::PayloadPointer> _modelMeshRenderItems;
+    QSet<std::shared_ptr<ModelMeshPartPayload>> _visibleRenderItemsSet;
+    QMap<render::ItemID, render::PayloadPointer> _visibleRenderItems;
 
     bool _readyWhenAdded { false };
     bool _needsReload { true };
