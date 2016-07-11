@@ -110,8 +110,8 @@ public:
     void setBlendedVertices(int blendNumber, const Geometry::WeakPointer& geometry,
         const QVector<glm::vec3>& vertices, const QVector<glm::vec3>& normals);
 
-    bool isLoaded() const { return (bool)_renderGeometry; }
-    bool isCollisionLoaded() const { return (bool)_collisionGeometry; }
+    bool hasVisibleGeometry() const { return (bool)_renderGeometry; }
+    bool hasCollisionGeometry() const { return (bool)_collisionGeometry; }
 
     void setIsWireframe(bool isWireframe) { _isWireframe = isWireframe; }
     bool isWireframe() const { return _isWireframe; }
@@ -132,14 +132,14 @@ public:
     /// Returns a reference to the shared collision geometry.
     const Geometry::Pointer& getCollisionGeometry() const { return _collisionGeometry; }
 
-    const QVariantMap getTextures() const { assert(isLoaded()); return _renderGeometry->getTextures(); }
+    const QVariantMap getTextures() const { assert(hasVisibleGeometry()); return _renderGeometry->getTextures(); }
     void setTextures(const QVariantMap& textures);
 
-    /// Provided as a convenience, will crash if !isLoaded()
+    /// Provided as a convenience, will crash if !hasVisibleGeometry()
     // And so that getGeometry() isn't chained everywhere
-    const FBXGeometry& getFBXGeometry() const { assert(isLoaded()); return _renderGeometry->getFBXGeometry(); }
-    /// Provided as a convenience, will crash if !isCollisionLoaded()
-    const FBXGeometry& getCollisionFBXGeometry() const { assert(isCollisionLoaded()); return _collisionGeometry->getFBXGeometry(); }
+    const FBXGeometry& getFBXGeometry() const { assert(hasVisibleGeometry()); return _renderGeometry->getFBXGeometry(); }
+    /// Provided as a convenience, will crash if !hasCollisionGeometry()
+    const FBXGeometry& getCollisionFBXGeometry() const { assert(hasCollisionGeometry()); return _collisionGeometry->getFBXGeometry(); }
 
     // Set the model to use for collisions.
     // Should only be called from the model's rendering thread to avoid access violations of changed geometry.
@@ -147,7 +147,7 @@ public:
     const QUrl& getCollisionURL() const { return _collisionUrl; }
 
 
-    bool isActive() const { return isLoaded(); }
+    bool isActive() const { return hasVisibleGeometry(); }
 
     bool convexHullContains(glm::vec3 point);
 
@@ -263,11 +263,11 @@ protected:
     /// \return true if joint exists
     bool getJointPosition(int jointIndex, glm::vec3& position) const;
 
-    Geometry::Pointer _renderGeometry; // only ever set by its watcher
-    Geometry::Pointer _collisionGeometry; // only ever set by its watcher
+    Geometry::Pointer _renderGeometry;
+    Geometry::Pointer _collisionGeometry;
 
-    GeometryResourceWatcher _renderWatcher;
-    GeometryResourceWatcher _collisionWatcher;
+    GeometryResourceWatcher _renderWatcher; // updates _renderGeometry when resource loads
+    GeometryResourceWatcher _collisionWatcher; // updates _collisionGeometry when resource loads
 
     glm::vec3 _translation;
     glm::quat _rotation;

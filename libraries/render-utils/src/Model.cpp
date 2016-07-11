@@ -1210,7 +1210,7 @@ void Model::segregateMeshGroups() {
     Geometry::Pointer geometry;
     bool showingCollisionHull = false;
     if (_showCollisionHull && _collisionGeometry) {
-        if (isCollisionLoaded()) {
+        if (hasCollisionGeometry()) {
             geometry = _collisionGeometry;
             showingCollisionHull = true;
         } else {

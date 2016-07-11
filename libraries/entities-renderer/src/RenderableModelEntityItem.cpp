@@ -588,7 +588,7 @@ bool RenderableModelEntityItem::isReadyToComputeShape() {
             return false;
         }
 
-        if (_model->isLoaded() && _model->isCollisionLoaded()) {
+        if (_model->isLoaded() && _model->hasCollisionGeometry()) {
             // we have both URLs AND both geometries AND they are both fully loaded.
             if (_needsInitialSimulation) {
                 // the _model's offset will be wrong until _needsInitialSimulation is false
@@ -615,7 +615,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& info) {
 
         // should never fall in here when collision model not fully loaded
         // hence we assert that all geometries exist and are loaded
-        assert(_model && _model->isLoaded() && _model->isCollisionLoaded());
+        assert(_model && _model->isLoaded() && _model->hasCollisionGeometry());
         const FBXGeometry& collisionGeometry = _model->getCollisionFBXGeometry();
 
         ShapeInfo::PointCollection& pointCollection = info.getPointCollection();
@@ -850,7 +850,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& info) {
 }
 
 bool RenderableModelEntityItem::contains(const glm::vec3& point) const {
-    if (EntityItem::contains(point) && _model && _model->isCollisionLoaded()) {
+    if (EntityItem::contains(point) && _model && _model->hasCollisionGeometry()) {
         return _model->getCollisionFBXGeometry().convexHullContains(worldToEntity(point));
     }
 

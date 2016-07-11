@@ -517,7 +517,7 @@ const FBXGeometry* EntityTreeRenderer::getCollisionGeometryForEntity(EntityItemP
                                                         std::dynamic_pointer_cast<RenderableModelEntityItem>(entityItem);
         if (modelEntityItem->hasCompoundShapeURL()) {
             ModelPointer model = modelEntityItem->getModel(this);
-            if (model && model->isCollisionLoaded()) {
+            if (model && model->hasCollisionGeometry()) {
                 result = &model->getCollisionFBXGeometry();
             }
         }
