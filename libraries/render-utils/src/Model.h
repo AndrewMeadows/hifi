@@ -87,14 +87,14 @@ public:
     bool initWhenReady(render::ScenePointer scene);
     bool addToScene(std::shared_ptr<render::Scene> scene,
                     render::PendingChanges& pendingChanges,
-                    bool showCollisionHull = false) {
+                    bool showCollisionGeometry = false) {
         auto getters = render::Item::Status::Getters(0);
-        return addToScene(scene, pendingChanges, getters, showCollisionHull);
+        return addToScene(scene, pendingChanges, getters, showCollisionGeometry);
     }
     bool addToScene(std::shared_ptr<render::Scene> scene,
                     render::PendingChanges& pendingChanges,
                     render::Item::Status::Getters& statusGetters,
-                    bool showCollisionHull = false);
+                    bool showCollisionGeometry = false);
     void removeFromScene(std::shared_ptr<render::Scene> scene, render::PendingChanges& pendingChanges);
     void renderSetup(RenderArgs* args);
     bool isRenderable() const { return !_meshStates.isEmpty() || (isActive() && _visibleGeometry->getMeshes().empty()); }
@@ -362,7 +362,6 @@ protected:
     void recalculateMeshBoxes(bool pickAgainstTriangles = false);
 
     void segregateMeshGroups(); // used to calculate our list of translucent vs opaque meshes
-    static model::MaterialPointer _collisionHullMaterial;
 
     bool _meshGroupsKnown;
     bool _isWireframe;
@@ -384,7 +383,7 @@ protected:
     bool _readyWhenAdded { false };
     bool _needsReload { true };
     bool _needsUpdateClusterMatrices { true };
-    bool _showCollisionHull { false };
+    bool _showCollisionGeometry { false };
     mutable bool _needsUpdateTextures { true };
 
     friend class ModelMeshPartPayload;

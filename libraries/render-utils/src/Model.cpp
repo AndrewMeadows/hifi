@@ -36,7 +36,7 @@ float Model::FAKE_DIMENSION_PLACEHOLDER = -1.0f;
 #define HTTP_INVALID_COM "http://invalid.com"
 
 const int NUM_COLLISION_HULL_COLORS = 24;
-std::vector<model::MaterialPointer> _collisionHullMaterials;
+std::vector<model::MaterialPointer> _collisionGeometryMaterials;
 
 void initCollisionHullMaterials() {
     // generates bright colors in red, green, blue, yellow, magenta, and cyan spectrums
@@ -49,7 +49,7 @@ void initCollisionHullMaterials() {
         1.0f, 1.0f, 1.0f, 1.0f,
         0.8f, 0.6f, 0.4f, 0.2f
     };
-    _collisionHullMaterials.reserve(NUM_COLLISION_HULL_COLORS);
+    _collisionGeometryMaterials.reserve(NUM_COLLISION_HULL_COLORS);
 
     // each component gets the same cuve
     // but offset by a multiple of one third the full width
@@ -71,7 +71,7 @@ void initCollisionHullMaterials() {
             material->setAlbedo(glm::vec3(red, green, blue));
             material->setMetallic(0.02f);
             material->setRoughness(0.5f);
-            _collisionHullMaterials.push_back(material);
+            _collisionGeometryMaterials.push_back(material);
         }
     }
 }
@@ -588,9 +588,9 @@ void Model::setVisibleInScene(bool newValue, std::shared_ptr<render::Scene> scen
 bool Model::addToScene(std::shared_ptr<render::Scene> scene,
                        render::PendingChanges& pendingChanges,
                        render::Item::Status::Getters& statusGetters,
-                       bool showCollisionHull) {
-    if ((!_meshGroupsKnown || showCollisionHull != _showCollisionHull) && hasVisibleGeometry()) {
-        _showCollisionHull = showCollisionHull;
+                       bool showCollisionGeometry) {
+    if ((!_meshGroupsKnown || showCollisionGeometry != _showCollisionGeometry) && hasVisibleGeometry()) {
+        _showCollisionGeometry = showCollisionGeometry;
         segregateMeshGroups();
     }
 
@@ -1208,11 +1208,11 @@ AABox Model::getRenderableMeshBound() const {
 
 void Model::segregateMeshGroups() {
     Geometry::Pointer geometry;
-    bool showingCollisionHull = false;
-    if (_showCollisionHull && _collisionGeometry) {
+    bool showingCollisionGeometry = false;
+    if (_showCollisionGeometry && _collisionGeometry) {
         if (hasCollisionGeometry()) {
             geometry = _collisionGeometry;
-            showingCollisionHull = true;
+            showingCollisionGeometry = true;
         } else {
             return;
         }
@@ -1255,11 +1255,11 @@ void Model::segregateMeshGroups() {
             // Create the render payloads
             int numParts = (int)mesh->getNumParts();
             for (int partIndex = 0; partIndex < numParts; partIndex++) {
-                if (showingCollisionHull) {
-                    if (_collisionHullMaterials.empty()) {
+                if (showingCollisionGeometry) {
+                    if (_collisionGeometryMaterials.empty()) {
                         initCollisionHullMaterials();
                     }
-                    _collisionRenderItemsSet << std::make_shared<MeshPartPayload>(mesh, partIndex, _collisionHullMaterials[partIndex % NUM_COLLISION_HULL_COLORS], transform, offset);
+                    _collisionRenderItemsSet << std::make_shared<MeshPartPayload>(mesh, partIndex, _collisionGeometryMaterials[partIndex % NUM_COLLISION_HULL_COLORS], transform, offset);
                 } else {
                     _modelMeshRenderItemsSet << std::make_shared<ModelMeshPartPayload>(this, i, partIndex, shapeID, transform, offset);
                 }
