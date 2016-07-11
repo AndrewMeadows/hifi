@@ -309,7 +309,7 @@ ModelMeshPartPayload::ModelMeshPartPayload(Model* model, int _meshIndex, int par
     _meshIndex(_meshIndex),
     _shapeID(shapeIndex) {
 
-    assert(_model && _model->isLoaded());
+    assert(_model && _model->hasVisibleGeometry());
     auto& modelMesh = _model->getGeometry()->getMeshes().at(_meshIndex);
     updateMeshPart(modelMesh, partIndex);
 
@@ -318,7 +318,7 @@ ModelMeshPartPayload::ModelMeshPartPayload(Model* model, int _meshIndex, int par
 }
 
 void ModelMeshPartPayload::initCache() {
-    assert(_model->isLoaded());
+    assert(_model->hasVisibleGeometry());
 
     if (_drawMesh) {
         auto vertexFormat = _drawMesh->getVertexFormat();
@@ -382,7 +382,7 @@ ItemKey ModelMeshPartPayload::getKey() const {
 }
 
 ShapeKey ModelMeshPartPayload::getShapeKey() const {
-    assert(_model->isLoaded());
+    assert(_model->hasVisibleGeometry());
     const FBXGeometry& geometry = _model->getFBXGeometry();
     const auto& networkMeshes = _model->getGeometry()->getMeshes();
 

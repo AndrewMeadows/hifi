@@ -1355,7 +1355,7 @@ void MyAvatar::setVisibleInSceneIfReady(Model* model, render::ScenePointer scene
 
 void MyAvatar::initHeadBones() {
     int neckJointIndex = -1;
-    if (_skeletonModel->isLoaded()) {
+    if (_skeletonModel->hasVisibleGeometry()) {
         neckJointIndex = _skeletonModel->getFBXGeometry().neckJointIndex;
     }
     if (neckJointIndex == -1) {

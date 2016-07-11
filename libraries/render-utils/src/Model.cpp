@@ -78,9 +78,9 @@ void initCollisionHullMaterials() {
 
 Model::Model(RigPointer rig, QObject* parent) :
     QObject(parent),
-    _renderGeometry(),
+    _visibleGeometry(),
     _collisionGeometry(),
-    _renderWatcher(_renderGeometry),
+    _renderWatcher(_visibleGeometry),
     _collisionWatcher(_collisionGeometry),
     _translation(0.0f),
     _rotation(),
@@ -118,7 +118,7 @@ AbstractViewStateInterface* Model::_viewState = NULL;
 
 bool Model::needsFixupInScene() const {
     if (readyToAddToScene()) {
-        if (_needsUpdateTextures && _renderGeometry->areTexturesLoaded()) {
+        if (_needsUpdateTextures && _visibleGeometry->areTexturesLoaded()) {
             _needsUpdateTextures = false;
             return true;
         }
@@ -190,7 +190,7 @@ void Model::updateRenderItems() {
         modelTransform.setRotation(self->_rotation);
 
         Transform modelMeshOffset;
-        if (self->isLoaded()) {
+        if (self->hasVisibleGeometry()) {
             // includes model offset and unitScale.
             modelMeshOffset = Transform(self->_rig->getGeometryToRigTransform());
         } else {
@@ -207,7 +207,7 @@ void Model::updateRenderItems() {
         foreach (auto itemID, self->_modelMeshRenderItems.keys()) {
             pendingChanges.updateItem<ModelMeshPartPayload>(itemID, [modelTransform, modelMeshOffset, deleteGeometryCounter](ModelMeshPartPayload& data) {
                 // Ensure the model geometry was not reset between frames
-                if (data._model && data._model->isLoaded() && deleteGeometryCounter == data._model->_deleteGeometryCounter) {
+                if (data._model && data._model->hasVisibleGeometry() && deleteGeometryCounter == data._model->_deleteGeometryCounter) {
                     // lazy update of cluster matrices used for rendering.  We need to update them here, so we can correctly update the bounding box.
                     data._model->updateClusterMatrices(modelTransform.getTranslation(), modelTransform.getRotation());
 
@@ -230,7 +230,7 @@ void Model::updateRenderItems() {
 }
 
 void Model::initJointTransforms() {
-    if (isLoaded()) {
+    if (hasVisibleGeometry()) {
         glm::mat4 modelOffset = glm::scale(_scale) * glm::translate(_offset);
         _rig->setModelOffset(modelOffset);
     }
@@ -240,7 +240,7 @@ void Model::init() {
 }
 
 void Model::reset() {
-    if (isLoaded()) {
+    if (hasVisibleGeometry()) {
         const FBXGeometry& geometry = getFBXGeometry();
         _rig->reset(geometry);
     }
@@ -250,7 +250,7 @@ bool Model::updateGeometry() {
     PROFILE_RANGE(__FUNCTION__);
     bool needFullUpdate = false;
 
-    if (!isLoaded()) {
+    if (!hasVisibleGeometry()) {
         return false;
     }
 
@@ -565,7 +565,7 @@ void Model::renderSetup(RenderArgs* args) {
         }
     }
 
-    if (!_meshGroupsKnown && isLoaded()) {
+    if (!_meshGroupsKnown && hasVisibleGeometry()) {
         segregateMeshGroups();
     }
 }
@@ -589,7 +589,7 @@ bool Model::addToScene(std::shared_ptr<render::Scene> scene,
                        render::PendingChanges& pendingChanges,
                        render::Item::Status::Getters& statusGetters,
                        bool showCollisionHull) {
-    if ((!_meshGroupsKnown || showCollisionHull != _showCollisionHull) && isLoaded()) {
+    if ((!_meshGroupsKnown || showCollisionHull != _showCollisionHull) && hasVisibleGeometry()) {
         _showCollisionHull = showCollisionHull;
         segregateMeshGroups();
     }
@@ -793,9 +793,9 @@ int Model::getLastFreeJointIndex(int jointIndex) const {
 }
 
 void Model::setTextures(const QVariantMap& textures) {
-    if (isLoaded()) {
+    if (hasVisibleGeometry()) {
         _needsUpdateTextures = true;
-        _renderGeometry->setTextures(textures);
+        _visibleGeometry->setTextures(textures);
     }
 }
 
@@ -1070,7 +1070,7 @@ void Model::simulateInternal(float deltaTime) {
 void Model::updateClusterMatrices(glm::vec3 modelPosition, glm::quat modelOrientation) {
     PerformanceTimer perfTimer("Model::updateClusterMatrices");
 
-    if (!_needsUpdateClusterMatrices || !isLoaded()) {
+    if (!_needsUpdateClusterMatrices || !hasVisibleGeometry()) {
         return;
     }
     _needsUpdateClusterMatrices = false;
@@ -1150,10 +1150,10 @@ float Model::getLimbLength(int jointIndex) const {
 }
 
 bool Model::maybeStartBlender() {
-    if (isLoaded()) {
+    if (hasVisibleGeometry()) {
         const FBXGeometry& fbxGeometry = getFBXGeometry();
         if (fbxGeometry.hasBlendedMeshes()) {
-            QThreadPool::globalInstance()->start(new Blender(getThisPointer(), ++_blendNumber, _renderGeometry,
+            QThreadPool::globalInstance()->start(new Blender(getThisPointer(), ++_blendNumber, _visibleGeometry,
                 fbxGeometry.meshes, _blendshapeCoefficients));
             return true;
         }
@@ -1164,7 +1164,7 @@ bool Model::maybeStartBlender() {
 void Model::setBlendedVertices(int blendNumber, const Geometry::WeakPointer& geometry,
         const QVector<glm::vec3>& vertices, const QVector<glm::vec3>& normals) {
     auto geometryRef = geometry.lock();
-    if (!geometryRef || _renderGeometry != geometryRef || _blendedVertexBuffers.empty() || blendNumber < _appliedBlendNumber) {
+    if (!geometryRef || _visibleGeometry != geometryRef || _blendedVertexBuffers.empty() || blendNumber < _appliedBlendNumber) {
         return;
     }
     _appliedBlendNumber = blendNumber;
@@ -1194,7 +1194,7 @@ void Model::deleteGeometry() {
 }
 
 AABox Model::getRenderableMeshBound() const {
-    if (!isLoaded()) {
+    if (!hasVisibleGeometry()) {
         return AABox();
     } else {
         // Build a bound using the last known bound from all the renderItems.
@@ -1217,8 +1217,8 @@ void Model::segregateMeshGroups() {
             return;
         }
     } else {
-        assert(isLoaded());
-        geometry = _renderGeometry;
+        assert(hasVisibleGeometry());
+        geometry = _visibleGeometry;
     }
     const auto& meshes = geometry->getMeshes();
 
@@ -1272,7 +1272,7 @@ void Model::segregateMeshGroups() {
 }
 
 bool Model::initWhenReady(render::ScenePointer scene) {
-    if (isActive() && isRenderable() && !_meshGroupsKnown && isLoaded()) {
+    if (isActive() && isRenderable() && !_meshGroupsKnown && hasVisibleGeometry()) {
         segregateMeshGroups();
 
         render::PendingChanges pendingChanges;

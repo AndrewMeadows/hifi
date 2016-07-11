@@ -129,7 +129,7 @@ void RenderableModelEntityItem::remapTextures() {
         return; // nothing to do if we don't have a model
     }
     
-    if (!_model->isLoaded()) {
+    if (!_model->hasVisibleGeometry()) {
         return; // nothing to do if the model has not yet loaded
     }
 
@@ -185,7 +185,7 @@ bool RenderableModelEntityItem::readyToAddToScene(RenderArgs* renderArgs) {
         EntityTreeRenderer* renderer = static_cast<EntityTreeRenderer*>(renderArgs->_renderer);
         getModel(renderer);
     }
-    if (renderArgs && _model && _needsInitialSimulation && _model->isActive() && _model->isLoaded()) {
+    if (_needsInitialSimulation && renderArgs && _model && _model->isActive() && _model->hasVisibleGeometry()) {
         // make sure to simulate so everything gets set up correctly for rendering
         doInitialModelSimulation();
         _model->renderSetup(renderArgs);
@@ -261,7 +261,7 @@ void RenderableModelEntityItem::removeFromScene(EntityItemPointer self, std::sha
 
 void RenderableModelEntityItem::resizeJointArrays(int newSize) {
     if (newSize < 0) {
-        if (_model && _model->isActive() && _model->isLoaded() && !_needsInitialSimulation) {
+        if (!_needsInitialSimulation && _model && _model->isActive() && _model->hasVisibleGeometry()) {
             newSize = _model->getJointStateCount();
         }
     }
@@ -271,7 +271,7 @@ void RenderableModelEntityItem::resizeJointArrays(int newSize) {
 bool RenderableModelEntityItem::getAnimationFrame() {
     bool newFrame = false;
 
-    if (!_model || !_model->isActive() || !_model->isLoaded() || _needsInitialSimulation) {
+    if (!_model || !_model->isActive() || !_model->hasVisibleGeometry() || _needsInitialSimulation) {
         return false;
     }
 
@@ -518,7 +518,7 @@ bool RenderableModelEntityItem::needsToCallUpdate() const {
 
 void RenderableModelEntityItem::update(const quint64& now) {
     if (!_dimensionsInitialized && _model && _model->isActive()) {
-        if (_model->isLoaded()) {
+        if (_model->hasVisibleGeometry()) {
             EntityItemProperties properties;
             properties.setLastEdited(usecTimestampNow()); // we must set the edit time since we're editing it
             auto extents = _model->getMeshExtents();
@@ -588,7 +588,7 @@ bool RenderableModelEntityItem::isReadyToComputeShape() {
             return false;
         }
 
-        if (_model->isLoaded() && _model->hasCollisionGeometry()) {
+        if (_model->hasVisibleGeometry() && _model->hasCollisionGeometry()) {
             // we have both URLs AND both geometries AND they are both fully loaded.
             if (_needsInitialSimulation) {
                 // the _model's offset will be wrong until _needsInitialSimulation is false
@@ -602,7 +602,7 @@ bool RenderableModelEntityItem::isReadyToComputeShape() {
         // the model is still being downloaded.
         return false;
     } else if (type >= SHAPE_TYPE_SIMPLE_HULL && type <= SHAPE_TYPE_STATIC_MESH) {
-        return (_model && _model->isLoaded());
+        return (_model && _model->hasVisibleGeometry());
     }
     return true;
 }
@@ -615,7 +615,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& info) {
 
         // should never fall in here when collision model not fully loaded
         // hence we assert that all geometries exist and are loaded
-        assert(_model && _model->isLoaded() && _model->hasCollisionGeometry());
+        assert(_model && _model->hasVisibleGeometry() && _model->hasCollisionGeometry());
         const FBXGeometry& collisionGeometry = _model->getCollisionFBXGeometry();
 
         ShapeInfo::PointCollection& pointCollection = info.getPointCollection();
@@ -703,7 +703,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& info) {
         updateModelBounds();
 
         // should never fall in here when model not fully loaded
-        assert(_model && _model->isLoaded());
+        assert(_model && _model->hasVisibleGeometry());
 
         // compute meshPart local transforms
         QVector<glm::mat4> localTransforms;

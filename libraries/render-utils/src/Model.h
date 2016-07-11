@@ -97,7 +97,7 @@ public:
                     bool showCollisionHull = false);
     void removeFromScene(std::shared_ptr<render::Scene> scene, render::PendingChanges& pendingChanges);
     void renderSetup(RenderArgs* args);
-    bool isRenderable() const { return !_meshStates.isEmpty() || (isActive() && _renderGeometry->getMeshes().empty()); }
+    bool isRenderable() const { return !_meshStates.isEmpty() || (isActive() && _visibleGeometry->getMeshes().empty()); }
 
     bool isVisible() const { return _isVisible; }
 
@@ -110,7 +110,7 @@ public:
     void setBlendedVertices(int blendNumber, const Geometry::WeakPointer& geometry,
         const QVector<glm::vec3>& vertices, const QVector<glm::vec3>& normals);
 
-    bool hasVisibleGeometry() const { return (bool)_renderGeometry; }
+    bool hasVisibleGeometry() const { return (bool)_visibleGeometry; }
     bool hasCollisionGeometry() const { return (bool)_collisionGeometry; }
 
     void setIsWireframe(bool isWireframe) { _isWireframe = isWireframe; }
@@ -128,16 +128,16 @@ public:
     virtual void updateClusterMatrices(glm::vec3 modelPosition, glm::quat modelOrientation);
 
     /// Returns a reference to the shared geometry.
-    const Geometry::Pointer& getGeometry() const { return _renderGeometry; }
+    const Geometry::Pointer& getGeometry() const { return _visibleGeometry; }
     /// Returns a reference to the shared collision geometry.
     const Geometry::Pointer& getCollisionGeometry() const { return _collisionGeometry; }
 
-    const QVariantMap getTextures() const { assert(hasVisibleGeometry()); return _renderGeometry->getTextures(); }
+    const QVariantMap getTextures() const { assert(hasVisibleGeometry()); return _visibleGeometry->getTextures(); }
     void setTextures(const QVariantMap& textures);
 
     /// Provided as a convenience, will crash if !hasVisibleGeometry()
     // And so that getGeometry() isn't chained everywhere
-    const FBXGeometry& getFBXGeometry() const { assert(hasVisibleGeometry()); return _renderGeometry->getFBXGeometry(); }
+    const FBXGeometry& getFBXGeometry() const { assert(hasVisibleGeometry()); return _visibleGeometry->getFBXGeometry(); }
     /// Provided as a convenience, will crash if !hasCollisionGeometry()
     const FBXGeometry& getCollisionFBXGeometry() const { assert(hasCollisionGeometry()); return _collisionGeometry->getFBXGeometry(); }
 
@@ -263,10 +263,10 @@ protected:
     /// \return true if joint exists
     bool getJointPosition(int jointIndex, glm::vec3& position) const;
 
-    Geometry::Pointer _renderGeometry;
+    Geometry::Pointer _visibleGeometry;
     Geometry::Pointer _collisionGeometry;
 
-    GeometryResourceWatcher _renderWatcher; // updates _renderGeometry when resource loads
+    GeometryResourceWatcher _renderWatcher; // updates _visibleGeometry when resource loads
     GeometryResourceWatcher _collisionWatcher; // updates _collisionGeometry when resource loads
 
     glm::vec3 _translation;

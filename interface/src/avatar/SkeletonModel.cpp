@@ -394,7 +394,7 @@ float VERY_BIG_MASS = 1.0e6f;
 
 // virtual
 void SkeletonModel::computeBoundingShape() {
-    if (!isLoaded() || _rig->jointStatesEmpty()) {
+    if (!hasVisibleGeometry() || _rig->jointStatesEmpty()) {
         return;
     }
 

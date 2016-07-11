@@ -492,7 +492,7 @@ const FBXGeometry* EntityTreeRenderer::getGeometryForEntity(EntityItemPointer en
                                                         std::dynamic_pointer_cast<RenderableModelEntityItem>(entityItem);
         assert(modelEntityItem); // we need this!!!
         ModelPointer model = modelEntityItem->getModel(this);
-        if (model && model->isLoaded()) {
+        if (model && model->hasVisibleGeometry()) {
             result = &model->getFBXGeometry();
         }
     }
