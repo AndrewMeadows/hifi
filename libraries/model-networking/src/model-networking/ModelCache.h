@@ -54,7 +54,7 @@ public:
     virtual bool areTexturesLoaded() const;
 
 protected:
-    friend class GeometryMappingResource;
+    //friend class GeometryMappingResource;
 
     // Shared across all geometries, constant throughout lifetime
     std::shared_ptr<const FBXGeometry> _fbxGeometry;
