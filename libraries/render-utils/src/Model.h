@@ -146,7 +146,6 @@ public:
     Q_INVOKABLE void setCollisionModelURL(const QUrl& url);
     const QUrl& getCollisionURL() const { return _collisionUrl; }
 
-
     bool isActive() const { return isLoaded(); }
 
     bool convexHullContains(glm::vec3 point);
@@ -232,6 +231,8 @@ public:
 
     const glm::vec3& getRegistrationPoint() const { return _registrationPoint; }
 
+    void setCollisionMesh(model::MeshPointer mesh);
+
 protected:
 
     void setPupilDilation(float dilation) { _pupilDilation = dilation; }
@@ -264,7 +265,7 @@ protected:
     bool getJointPosition(int jointIndex, glm::vec3& position) const;
 
     Geometry::Pointer _renderGeometry; // only ever set by its watcher
-    Geometry::Pointer _collisionGeometry; // only ever set by its watcher
+    Geometry::Pointer _collisionGeometry;
 
     GeometryResourceWatcher _renderWatcher;
     GeometryResourceWatcher _collisionWatcher;

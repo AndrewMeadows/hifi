@@ -108,7 +108,6 @@ public:
 
     QUrl getURL() const { return (bool)_resource ? _resource->getURL() : QUrl(); }
 
-private:
     void startWatching();
     void stopWatching();
 
