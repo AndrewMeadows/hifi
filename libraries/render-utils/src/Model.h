@@ -362,7 +362,7 @@ protected:
 
     void recalculateMeshBoxes(bool pickAgainstTriangles = false);
 
-    void segregateMeshGroups(); // used to calculate our list of translucent vs opaque meshes
+    void createRenderItems(); // used to calculate our list of translucent vs opaque meshes
     static model::MaterialPointer _collisionHullMaterial;
 
     bool _meshGroupsKnown;
