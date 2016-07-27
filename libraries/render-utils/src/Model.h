@@ -368,7 +368,6 @@ protected:
     void createRenderItemSet();
     void createVisibleRenderItemSet();
     void createCollisionRenderItemSet();
-    static model::MaterialPointer _collisionHullMaterial;
 
     bool _isWireframe;
 
@@ -390,7 +389,7 @@ protected:
     bool _needsFixupInScene { true }; // needs to be removed/re-added to scene
     bool _needsReload { true };
     bool _needsUpdateClusterMatrices { true };
-    bool _showCollisionHull { false };
+    bool _showCollisionGeometry { false };
     mutable bool _needsUpdateTextures { true };
 
     friend class ModelMeshPartPayload;
