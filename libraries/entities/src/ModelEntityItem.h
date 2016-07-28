@@ -50,7 +50,7 @@ public:
     virtual bool needsToCallUpdate() const;
     virtual void debugDump() const;
 
-    void setShapeType(ShapeType type);
+    virtual void setShapeType(ShapeType type);
     virtual ShapeType getShapeType() const;
 
 

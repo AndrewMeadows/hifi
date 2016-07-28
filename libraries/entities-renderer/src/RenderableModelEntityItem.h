@@ -58,6 +58,7 @@ public:
     virtual bool needsToCallUpdate() const override;
     virtual void update(const quint64& now) override;
 
+    virtual void setShapeType(ShapeType type) override;
     virtual void setCompoundShapeURL(const QString& url) override;
 
     virtual bool isReadyToComputeShape() override;
@@ -97,6 +98,7 @@ private:
     QVariantMap parseTexturesToMap(QString textures);
     void remapTextures();
 
+    GeometryResource::Pointer _compoundShapeResource;
     ModelPointer _model = nullptr;
     bool _needsInitialSimulation = true;
     bool _needsModelReload = true;

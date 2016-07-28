@@ -57,7 +57,6 @@ public:
 
     virtual const FBXGeometry* getGeometryForEntity(EntityItemPointer entityItem);
     virtual ModelPointer getModelForEntityItem(EntityItemPointer entityItem);
-    virtual const FBXGeometry* getCollisionGeometryForEntity(EntityItemPointer entityItem);
     
     /// clears the tree
     virtual void clear();
