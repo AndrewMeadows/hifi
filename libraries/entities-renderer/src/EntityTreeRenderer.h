@@ -65,7 +65,7 @@ public:
     void reloadEntityScripts();
 
     /// if a renderable entity item needs a model, we will allocate it for them
-    Q_INVOKABLE ModelPointer allocateModel(const QString& url, const QString& collisionUrl);
+    Q_INVOKABLE ModelPointer allocateModel(const QString& url);
     
     /// if a renderable entity item needs to update the URL of a model, we will handle that for the entity
     Q_INVOKABLE ModelPointer updateModel(ModelPointer original, const QString& newUrl, const QString& collisionUrl);
