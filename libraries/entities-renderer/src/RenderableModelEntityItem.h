@@ -116,6 +116,7 @@ private:
     bool getAnimationFrame();
 
     bool _needsJointSimulation { false };
+    bool _showCollisionGeometry { false };
     const void* _collisionMeshKey { nullptr };
 };
 
