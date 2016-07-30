@@ -18,25 +18,26 @@
 #include "EntityItemProperties.h"
 #include "EntityItemPropertiesMacros.h"
 
-void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties, QScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_URL, Animation, animation, URL, url);
+void AnimationPropertyGroup::copyToVariant(const EntityPropertyFlags& desiredProperties, QVariantMap& properties,
+                                           bool skipDefaults, const EntityItemProperties& defaultEntityProperties) const {
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_URL, Animation, animation, URL, url);
 
     if (_animationLoop) {
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_FPS, Animation, animation, FPS, fps, _animationLoop->getFPS);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_FRAME_INDEX, Animation, animation, CurrentFrame, currentFrame, _animationLoop->getFPS);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_PLAYING, Animation, animation, Running, running, _animationLoop->getRunning);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_LOOP, Animation, animation, Loop, loop, _animationLoop->getLoop);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame, _animationLoop->getFirstFrame);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame, _animationLoop->getLastFrame);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold, _animationLoop->getHold);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_FPS, Animation, animation, FPS, fps, _animationLoop->getFPS);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_FRAME_INDEX, Animation, animation, CurrentFrame, currentFrame, _animationLoop->getFPS);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_PLAYING, Animation, animation, Running, running, _animationLoop->getRunning);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_LOOP, Animation, animation, Loop, loop, _animationLoop->getLoop);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame, _animationLoop->getFirstFrame);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame, _animationLoop->getLastFrame);
+        COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold, _animationLoop->getHold);
     } else {
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FPS, Animation, animation, FPS, fps);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FRAME_INDEX, Animation, animation, CurrentFrame, currentFrame);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_PLAYING, Animation, animation, Running, running);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_LOOP, Animation, animation, Loop, loop);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame);
-        COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_FPS, Animation, animation, FPS, fps);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_FRAME_INDEX, Animation, animation, CurrentFrame, currentFrame);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_PLAYING, Animation, animation, Running, running);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_LOOP, Animation, animation, Loop, loop);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame);
+        COPY_GROUP_PROPERTY_TO_VARIANT(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold);
     }
 }
 

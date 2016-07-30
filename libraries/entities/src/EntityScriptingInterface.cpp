@@ -253,12 +253,12 @@ QUuid EntityScriptingInterface::addModelEntity(const QString& name, const QStrin
     return addEntity(properties);
 }
 
-EntityItemProperties EntityScriptingInterface::getEntityProperties(QUuid identity) {
+QVariant EntityScriptingInterface::getEntityProperties(QUuid identity) {
     EntityPropertyFlags noSpecificProperties;
     return getEntityProperties(identity, noSpecificProperties);
 }
 
-EntityItemProperties EntityScriptingInterface::getEntityProperties(QUuid identity, EntityPropertyFlags desiredProperties) {
+QVariant EntityScriptingInterface::getEntityProperties(QUuid identity, EntityPropertyFlags desiredProperties) {
     EntityItemProperties results;
     if (_entityTree) {
         _entityTree->withReadLock([&] {
@@ -301,7 +301,7 @@ EntityItemProperties EntityScriptingInterface::getEntityProperties(QUuid identit
         });
     }
 
-    return convertLocationToScriptSemantics(results);
+    return results.copyToVariantMap(false);
 }
 
 QUuid EntityScriptingInterface::editEntity(QUuid id, const EntityItemProperties& scriptSideProperties) {

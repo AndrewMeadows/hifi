@@ -17,9 +17,10 @@
 
 const xColor SkyboxPropertyGroup::DEFAULT_COLOR = { 0, 0, 0 };
 
-void SkyboxPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties, QScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_SKYBOX_COLOR, Skybox, skybox, Color, color);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_SKYBOX_URL, Skybox, skybox, URL, url);
+void SkyboxPropertyGroup::copyToVariant(const EntityPropertyFlags& desiredProperties, QVariantMap& properties, bool skipDefaults,
+                                        const EntityItemProperties& defaultEntityProperties) const {
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_SKYBOX_COLOR, Skybox, skybox, Color, color);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_SKYBOX_URL, Skybox, skybox, URL, url);
 }
 
 void SkyboxPropertyGroup::copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) {

@@ -101,8 +101,8 @@ public slots:
 
     /// gets the current model properties for a specific model
     /// this function will not find return results in script engine contexts which don't have access to models
-    Q_INVOKABLE EntityItemProperties getEntityProperties(QUuid entityID);
-    Q_INVOKABLE EntityItemProperties getEntityProperties(QUuid identity, EntityPropertyFlags desiredProperties);
+    Q_INVOKABLE QVariant getEntityProperties(QUuid entityID);
+    Q_INVOKABLE QVariant getEntityProperties(QUuid identity, EntityPropertyFlags desiredProperties);
 
     /// edits a model updating only the included properties, will return the identified EntityItemID in case of
     /// successful edit, if the input entityID is for an unknown model this function will have no effect

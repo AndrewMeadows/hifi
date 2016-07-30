@@ -72,6 +72,7 @@ public:
     EntityTypes::EntityType getType() const { return _type; }
     void setType(EntityTypes::EntityType type) { _type = type; }
 
+    virtual QVariant copyToVariantMap(bool skipDefaults) const;
     virtual QScriptValue copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const;
     virtual void copyFromScriptValue(const QScriptValue& object, bool honorReadOnly);
 

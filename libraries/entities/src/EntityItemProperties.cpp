@@ -344,9 +344,9 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     return changedProperties;
 }
 
-QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const {
-    QScriptValue properties = engine->newObject();
-    EntityItemProperties defaultEntityProperties;
+QVariant EntityItemProperties::copyToVariantMap(bool skipDefaults) const {
+    QVariantMap properties; // magic name: the macros insert the properties on this name
+    const EntityItemProperties defaultEntityProperties; // magic name: the macros query this name for the default properties
 
     if (_created == UNKNOWN_CREATED_TIME) {
         // No entity properties can have been set so return without setting any default, zero property values.
@@ -354,237 +354,244 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
     }
 
     if (_idSet) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(id, _id.toString());
+        COPY_PROPERTY_TO_VARIANT_GETTER_ALWAYS(id, _id.toString());
     }
 
-    COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(type, EntityTypes::getEntityTypeName(_type));
+    COPY_PROPERTY_TO_VARIANT_GETTER_ALWAYS(type, EntityTypes::getEntityTypeName(_type));
     auto created = QDateTime::fromMSecsSinceEpoch(getCreated() / 1000.0f, Qt::UTC); // usec per msec
     created.setTimeSpec(Qt::OffsetFromUTC);
-    COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(created, created.toString(Qt::ISODate));
+    COPY_PROPERTY_TO_VARIANT_GETTER_ALWAYS(created, created.toString(Qt::ISODate));
 
     if (!skipDefaults || _lifetime != defaultEntityProperties._lifetime) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(age, getAge()); // gettable, but not settable
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(ageAsText, formatSecondsElapsed(getAge())); // gettable, but not settable
+        COPY_PROPERTY_TO_VARIANT_GETTER_NO_SKIP(age, getAge()); // gettable, but not settable
+        COPY_PROPERTY_TO_VARIANT_GETTER_NO_SKIP(ageAsText, formatSecondsElapsed(getAge())); // gettable, but not settable
     }
 
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_POSITION, position);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DIMENSIONS, dimensions);
+    COPY_PROPERTY_TO_VARIANT(PROP_POSITION, position);
+    COPY_PROPERTY_TO_VARIANT(PROP_DIMENSIONS, dimensions);
     if (!skipDefaults) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DIMENSIONS, naturalDimensions); // gettable, but not settable
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_POSITION, naturalPosition);
+        COPY_PROPERTY_TO_VARIANT(PROP_DIMENSIONS, naturalDimensions); // gettable, but not settable
+        COPY_PROPERTY_TO_VARIANT(PROP_POSITION, naturalPosition);
     }
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ROTATION, rotation);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VELOCITY, velocity);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAVITY, gravity);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ACCELERATION, acceleration);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DAMPING, damping);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RESTITUTION, restitution);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FRICTION, friction);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DENSITY, density);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LIFETIME, lifetime);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SCRIPT, script);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SCRIPT_TIMESTAMP, scriptTimestamp);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_REGISTRATION_POINT, registrationPoint);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ANGULAR_VELOCITY, angularVelocity);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ANGULAR_DAMPING, angularDamping);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VISIBLE, visible);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLLISIONLESS, collisionless);
-    COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_COLLISIONLESS, collisionless, ignoreForCollisions, getCollisionless()); // legacy support
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLLISION_MASK, collisionMask);
-    COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_COLLISION_MASK, collisionMask, collidesWith, getCollisionMaskAsString());
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DYNAMIC, dynamic);
-    COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_DYNAMIC, dynamic, collisionsWillMove, getDynamic()); // legacy support
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_HREF, href);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DESCRIPTION, description);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FACE_CAMERA, faceCamera);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ACTION_DATA, actionData);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LOCKED, locked);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_USER_DATA, userData);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MARKETPLACE_ID, marketplaceID);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_NAME, name);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLLISION_SOUND_URL, collisionSoundURL);
+    COPY_PROPERTY_TO_VARIANT(PROP_ROTATION, rotation);
+    COPY_PROPERTY_TO_VARIANT(PROP_VELOCITY, velocity);
+    COPY_PROPERTY_TO_VARIANT(PROP_GRAVITY, gravity);
+    COPY_PROPERTY_TO_VARIANT(PROP_ACCELERATION, acceleration);
+    COPY_PROPERTY_TO_VARIANT(PROP_DAMPING, damping);
+    COPY_PROPERTY_TO_VARIANT(PROP_RESTITUTION, restitution);
+    COPY_PROPERTY_TO_VARIANT(PROP_FRICTION, friction);
+    COPY_PROPERTY_TO_VARIANT(PROP_DENSITY, density);
+    COPY_PROPERTY_TO_VARIANT(PROP_LIFETIME, lifetime);
+    COPY_PROPERTY_TO_VARIANT(PROP_SCRIPT, script);
+    COPY_PROPERTY_TO_VARIANT(PROP_SCRIPT_TIMESTAMP, scriptTimestamp);
+    COPY_PROPERTY_TO_VARIANT(PROP_REGISTRATION_POINT, registrationPoint);
+    COPY_PROPERTY_TO_VARIANT(PROP_ANGULAR_VELOCITY, angularVelocity);
+    COPY_PROPERTY_TO_VARIANT(PROP_ANGULAR_DAMPING, angularDamping);
+    COPY_PROPERTY_TO_VARIANT(PROP_VISIBLE, visible);
+    COPY_PROPERTY_TO_VARIANT(PROP_COLLISIONLESS, collisionless);
+    COPY_PROXY_PROPERTY_TO_VARIANT_GETTER(PROP_COLLISIONLESS, collisionless, ignoreForCollisions, getCollisionless()); // legacy support
+    COPY_PROPERTY_TO_VARIANT(PROP_COLLISION_MASK, collisionMask);
+    COPY_PROXY_PROPERTY_TO_VARIANT_GETTER(PROP_COLLISION_MASK, collisionMask, collidesWith, getCollisionMaskAsString());
+    COPY_PROPERTY_TO_VARIANT(PROP_DYNAMIC, dynamic);
+    COPY_PROXY_PROPERTY_TO_VARIANT_GETTER(PROP_DYNAMIC, dynamic, collisionsWillMove, getDynamic()); // legacy support
+    COPY_PROPERTY_TO_VARIANT(PROP_HREF, href);
+    COPY_PROPERTY_TO_VARIANT(PROP_DESCRIPTION, description);
+    COPY_PROPERTY_TO_VARIANT(PROP_FACE_CAMERA, faceCamera);
+    COPY_PROPERTY_TO_VARIANT(PROP_ACTION_DATA, actionData);
+    COPY_PROPERTY_TO_VARIANT(PROP_LOCKED, locked);
+    COPY_PROPERTY_TO_VARIANT(PROP_USER_DATA, userData);
+    COPY_PROPERTY_TO_VARIANT(PROP_MARKETPLACE_ID, marketplaceID);
+    COPY_PROPERTY_TO_VARIANT(PROP_NAME, name);
+    COPY_PROPERTY_TO_VARIANT(PROP_COLLISION_SOUND_URL, collisionSoundURL);
 
     // Boxes, Spheres, Light, Line, Model(??), Particle, PolyLine
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLOR, color);
+    COPY_PROPERTY_TO_VARIANT(PROP_COLOR, color);
 
     // Particles only
     if (_type == EntityTypes::ParticleEffect) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMITTING_PARTICLES, isEmitting);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAX_PARTICLES, maxParticles);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LIFESPAN, lifespan);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMIT_RATE, emitRate);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMIT_SPEED, emitSpeed);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SPEED_SPREAD, speedSpread);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMIT_ORIENTATION, emitOrientation);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMIT_DIMENSIONS, emitDimensions);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMIT_RADIUS_START, emitRadiusStart);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_POLAR_START, polarStart);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_POLAR_FINISH, polarFinish);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_AZIMUTH_START, azimuthStart);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_AZIMUTH_FINISH, azimuthFinish);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMIT_ACCELERATION, emitAcceleration);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ACCELERATION_SPREAD, accelerationSpread);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARTICLE_RADIUS, particleRadius);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RADIUS_SPREAD, radiusSpread);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RADIUS_START, radiusStart);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RADIUS_FINISH, radiusFinish);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLOR_SPREAD, colorSpread);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLOR_START, colorStart);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLOR_FINISH, colorFinish);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA_SPREAD, alphaSpread);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA_START, alphaStart);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA_FINISH, alphaFinish);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMITTER_SHOULD_TRAIL, emitterShouldTrail);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMITTING_PARTICLES, isEmitting);
+        COPY_PROPERTY_TO_VARIANT(PROP_MAX_PARTICLES, maxParticles);
+        COPY_PROPERTY_TO_VARIANT(PROP_LIFESPAN, lifespan);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMIT_RATE, emitRate);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMIT_SPEED, emitSpeed);
+        COPY_PROPERTY_TO_VARIANT(PROP_SPEED_SPREAD, speedSpread);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMIT_ORIENTATION, emitOrientation);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMIT_DIMENSIONS, emitDimensions);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMIT_RADIUS_START, emitRadiusStart);
+        COPY_PROPERTY_TO_VARIANT(PROP_POLAR_START, polarStart);
+        COPY_PROPERTY_TO_VARIANT(PROP_POLAR_FINISH, polarFinish);
+        COPY_PROPERTY_TO_VARIANT(PROP_AZIMUTH_START, azimuthStart);
+        COPY_PROPERTY_TO_VARIANT(PROP_AZIMUTH_FINISH, azimuthFinish);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMIT_ACCELERATION, emitAcceleration);
+        COPY_PROPERTY_TO_VARIANT(PROP_ACCELERATION_SPREAD, accelerationSpread);
+        COPY_PROPERTY_TO_VARIANT(PROP_PARTICLE_RADIUS, particleRadius);
+        COPY_PROPERTY_TO_VARIANT(PROP_RADIUS_SPREAD, radiusSpread);
+        COPY_PROPERTY_TO_VARIANT(PROP_RADIUS_START, radiusStart);
+        COPY_PROPERTY_TO_VARIANT(PROP_RADIUS_FINISH, radiusFinish);
+        COPY_PROPERTY_TO_VARIANT(PROP_COLOR_SPREAD, colorSpread);
+        COPY_PROPERTY_TO_VARIANT(PROP_COLOR_START, colorStart);
+        COPY_PROPERTY_TO_VARIANT(PROP_COLOR_FINISH, colorFinish);
+        COPY_PROPERTY_TO_VARIANT(PROP_ALPHA, alpha);
+        COPY_PROPERTY_TO_VARIANT(PROP_ALPHA_SPREAD, alphaSpread);
+        COPY_PROPERTY_TO_VARIANT(PROP_ALPHA_START, alphaStart);
+        COPY_PROPERTY_TO_VARIANT(PROP_ALPHA_FINISH, alphaFinish);
+        COPY_PROPERTY_TO_VARIANT(PROP_EMITTER_SHOULD_TRAIL, emitterShouldTrail);
     }
 
     // Models only
     if (_type == EntityTypes::Model) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MODEL_URL, modelURL);
-        _animation.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_ROTATIONS_SET, jointRotationsSet);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_ROTATIONS, jointRotations);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_TRANSLATIONS_SET, jointTranslationsSet);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_TRANSLATIONS, jointTranslations);
+        COPY_PROPERTY_TO_VARIANT(PROP_MODEL_URL, modelURL);
+        _animation.copyToVariant(_desiredProperties, properties, skipDefaults, defaultEntityProperties);
+        COPY_PROPERTY_TO_VARIANT(PROP_JOINT_ROTATIONS_SET, jointRotationsSet);
+        COPY_PROPERTY_TO_VARIANT(PROP_JOINT_ROTATIONS, jointRotations);
+        COPY_PROPERTY_TO_VARIANT(PROP_JOINT_TRANSLATIONS_SET, jointTranslationsSet);
+        COPY_PROPERTY_TO_VARIANT(PROP_JOINT_TRANSLATIONS, jointTranslations);
     }
 
     if (_type == EntityTypes::Model || _type == EntityTypes::Zone || _type == EntityTypes::ParticleEffect) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
+        COPY_PROPERTY_TO_VARIANT_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
     }
     if (_type == EntityTypes::Box) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, QString("Box"));
+        COPY_PROPERTY_TO_VARIANT_GETTER(PROP_SHAPE_TYPE, shapeType, QString("Box"));
     }
     if (_type == EntityTypes::Sphere) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, QString("Sphere"));
+        COPY_PROPERTY_TO_VARIANT_GETTER(PROP_SHAPE_TYPE, shapeType, QString("Sphere"));
     }
     if (_type == EntityTypes::Box || _type == EntityTypes::Sphere || _type == EntityTypes::Shape) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHAPE, shape);
+        COPY_PROPERTY_TO_VARIANT(PROP_SHAPE, shape);
     }
 
     // FIXME - it seems like ParticleEffect should also support this
     if (_type == EntityTypes::Model || _type == EntityTypes::Zone) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_VARIANT(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
     }
 
     // Models & Particles
     if (_type == EntityTypes::Model || _type == EntityTypes::ParticleEffect) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXTURES, textures);
+        COPY_PROPERTY_TO_VARIANT(PROP_TEXTURES, textures);
     }
 
     // Lights only
     if (_type == EntityTypes::Light) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_IS_SPOTLIGHT, isSpotlight);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_INTENSITY, intensity);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FALLOFF_RADIUS, falloffRadius);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EXPONENT, exponent);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_CUTOFF, cutoff);
+        COPY_PROPERTY_TO_VARIANT(PROP_IS_SPOTLIGHT, isSpotlight);
+        COPY_PROPERTY_TO_VARIANT(PROP_INTENSITY, intensity);
+        COPY_PROPERTY_TO_VARIANT(PROP_FALLOFF_RADIUS, falloffRadius);
+        COPY_PROPERTY_TO_VARIANT(PROP_EXPONENT, exponent);
+        COPY_PROPERTY_TO_VARIANT(PROP_CUTOFF, cutoff);
     }
 
     // Text only
     if (_type == EntityTypes::Text) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXT, text);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LINE_HEIGHT, lineHeight);
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_TEXT_COLOR, textColor, getTextColor());
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BACKGROUND_COLOR, backgroundColor, getBackgroundColor());
+        COPY_PROPERTY_TO_VARIANT(PROP_TEXT, text);
+        COPY_PROPERTY_TO_VARIANT(PROP_LINE_HEIGHT, lineHeight);
+        COPY_PROPERTY_TO_VARIANT_GETTER(PROP_TEXT_COLOR, textColor, getTextColor());
+        COPY_PROPERTY_TO_VARIANT_GETTER(PROP_BACKGROUND_COLOR, backgroundColor, getBackgroundColor());
     }
 
     // Zones only
     if (_type == EntityTypes::Zone) {
-        _keyLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _keyLight.copyToVariant(_desiredProperties, properties, skipDefaults, defaultEntityProperties);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BACKGROUND_MODE, backgroundMode, getBackgroundModeAsString());
+        COPY_PROPERTY_TO_VARIANT_GETTER(PROP_BACKGROUND_MODE, backgroundMode, getBackgroundModeAsString());
 
-        _stage.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-        _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _stage.copyToVariant(_desiredProperties, properties, skipDefaults, defaultEntityProperties);
+        _skybox.copyToVariant(_desiredProperties, properties, skipDefaults, defaultEntityProperties);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FLYING_ALLOWED, flyingAllowed);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
+        COPY_PROPERTY_TO_VARIANT(PROP_FLYING_ALLOWED, flyingAllowed);
+        COPY_PROPERTY_TO_VARIANT(PROP_GHOSTING_ALLOWED, ghostingAllowed);
     }
 
     // Web only
     if (_type == EntityTypes::Web) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOURCE_URL, sourceUrl);
+        COPY_PROPERTY_TO_VARIANT(PROP_SOURCE_URL, sourceUrl);
     }
 
     // PolyVoxel only
     if (_type == EntityTypes::PolyVox) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_VOLUME_SIZE, voxelVolumeSize);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_DATA, voxelData);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_SURFACE_STYLE, voxelSurfaceStyle);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_TEXTURE_URL, xTextureURL);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_TEXTURE_URL, yTextureURL);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Z_TEXTURE_URL, zTextureURL);
+        COPY_PROPERTY_TO_VARIANT(PROP_VOXEL_VOLUME_SIZE, voxelVolumeSize);
+        COPY_PROPERTY_TO_VARIANT(PROP_VOXEL_DATA, voxelData);
+        COPY_PROPERTY_TO_VARIANT(PROP_VOXEL_SURFACE_STYLE, voxelSurfaceStyle);
+        COPY_PROPERTY_TO_VARIANT(PROP_X_TEXTURE_URL, xTextureURL);
+        COPY_PROPERTY_TO_VARIANT(PROP_Y_TEXTURE_URL, yTextureURL);
+        COPY_PROPERTY_TO_VARIANT(PROP_Z_TEXTURE_URL, zTextureURL);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_N_NEIGHBOR_ID, xNNeighborID);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_N_NEIGHBOR_ID, yNNeighborID);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Z_N_NEIGHBOR_ID, zNNeighborID);
+        COPY_PROPERTY_TO_VARIANT(PROP_X_N_NEIGHBOR_ID, xNNeighborID);
+        COPY_PROPERTY_TO_VARIANT(PROP_Y_N_NEIGHBOR_ID, yNNeighborID);
+        COPY_PROPERTY_TO_VARIANT(PROP_Z_N_NEIGHBOR_ID, zNNeighborID);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_P_NEIGHBOR_ID, xPNeighborID);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_P_NEIGHBOR_ID, yPNeighborID);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Z_P_NEIGHBOR_ID, zPNeighborID);
+        COPY_PROPERTY_TO_VARIANT(PROP_X_P_NEIGHBOR_ID, xPNeighborID);
+        COPY_PROPERTY_TO_VARIANT(PROP_Y_P_NEIGHBOR_ID, yPNeighborID);
+        COPY_PROPERTY_TO_VARIANT(PROP_Z_P_NEIGHBOR_ID, zPNeighborID);
     }
 
     // Lines & PolyLines
     if (_type == EntityTypes::Line || _type == EntityTypes::PolyLine) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LINE_WIDTH, lineWidth);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LINE_POINTS, linePoints);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_NORMALS, normals);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_STROKE_WIDTHS, strokeWidths);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXTURES, textures);
+        COPY_PROPERTY_TO_VARIANT(PROP_LINE_WIDTH, lineWidth);
+        COPY_PROPERTY_TO_VARIANT(PROP_LINE_POINTS, linePoints);
+        COPY_PROPERTY_TO_VARIANT(PROP_NORMALS, normals);
+        COPY_PROPERTY_TO_VARIANT(PROP_STROKE_WIDTHS, strokeWidths);
+        COPY_PROPERTY_TO_VARIANT(PROP_TEXTURES, textures);
     }
 
     // Sitting properties support
     if (!skipDefaults) {
-        QScriptValue sittingPoints = engine->newObject();
+        QVariantList sittingPoints;
         for (int i = 0; i < _sittingPoints.size(); ++i) {
-            QScriptValue sittingPoint = engine->newObject();
-            sittingPoint.setProperty("name", _sittingPoints.at(i).name);
-            sittingPoint.setProperty("position", vec3toScriptValue(engine, _sittingPoints.at(i).position));
-            sittingPoint.setProperty("rotation", quatToScriptValue(engine, _sittingPoints.at(i).rotation));
-            sittingPoints.setProperty(i, sittingPoint);
+            QVariantMap sittingPoint;
+            sittingPoint.insert("name", _sittingPoints.at(i).name);
+            sittingPoint.insert("position", vec3toVariant(_sittingPoints.at(i).position));
+            sittingPoint.insert("rotation", quatToVariant(_sittingPoints.at(i).rotation));
+            sittingPoints.insert(i, sittingPoint);
         }
-        sittingPoints.setProperty("length", _sittingPoints.size());
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(sittingPoints, sittingPoints); // gettable, but not settable
+        COPY_PROPERTY_TO_VARIANT_GETTER_ALWAYS(sittingPoints, sittingPoints); // gettable, but not settable
     }
 
     if (!skipDefaults) {
         AABox aaBox = getAABox();
-        QScriptValue boundingBox = engine->newObject();
-        QScriptValue bottomRightNear = vec3toScriptValue(engine, aaBox.getCorner());
-        QScriptValue topFarLeft = vec3toScriptValue(engine, aaBox.calcTopFarLeft());
-        QScriptValue center = vec3toScriptValue(engine, aaBox.calcCenter());
-        QScriptValue boundingBoxDimensions = vec3toScriptValue(engine, aaBox.getDimensions());
-        boundingBox.setProperty("brn", bottomRightNear);
-        boundingBox.setProperty("tfl", topFarLeft);
-        boundingBox.setProperty("center", center);
-        boundingBox.setProperty("dimensions", boundingBoxDimensions);
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(boundingBox, boundingBox); // gettable, but not settable
+        QVariantMap boundingBox;
+        QVariant bottomRightNear = vec3toVariant(aaBox.getCorner());
+        QVariant topFarLeft = vec3toVariant(aaBox.calcTopFarLeft());
+        QVariant center = vec3toVariant(aaBox.calcCenter());
+        QVariant boundingBoxDimensions = vec3toVariant(aaBox.getDimensions());
+        boundingBox.insert("brn", bottomRightNear);
+        boundingBox.insert("tfl", topFarLeft);
+        boundingBox.insert("center", center);
+        boundingBox.insert("dimensions", boundingBoxDimensions);
+        COPY_PROPERTY_TO_VARIANT_GETTER_NO_SKIP(boundingBox, boundingBox); // gettable, but not settable
     }
 
     QString textureNamesStr = QJsonDocument::fromVariant(_textureNames).toJson();
     if (!skipDefaults) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(originalTextures, textureNamesStr); // gettable, but not settable
+        COPY_PROPERTY_TO_VARIANT_GETTER_NO_SKIP(originalTextures, textureNamesStr); // gettable, but not settable
     }
 
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARENT_ID, parentID);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARENT_JOINT_INDEX, parentJointIndex);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_QUERY_AA_CUBE, queryAACube);
+    COPY_PROPERTY_TO_VARIANT(PROP_PARENT_ID, parentID);
+    COPY_PROPERTY_TO_VARIANT(PROP_PARENT_JOINT_INDEX, parentJointIndex);
+    COPY_PROPERTY_TO_VARIANT(PROP_QUERY_AA_CUBE, queryAACube);
 
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LOCAL_POSITION, localPosition);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LOCAL_ROTATION, localRotation);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LOCAL_VELOCITY, localVelocity);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LOCAL_ANGULAR_VELOCITY, localAngularVelocity);
+    COPY_PROPERTY_TO_VARIANT(PROP_LOCAL_POSITION, localPosition);
+    COPY_PROPERTY_TO_VARIANT(PROP_LOCAL_ROTATION, localRotation);
+    COPY_PROPERTY_TO_VARIANT(PROP_LOCAL_VELOCITY, localVelocity);
+    COPY_PROPERTY_TO_VARIANT(PROP_LOCAL_ANGULAR_VELOCITY, localAngularVelocity);
 
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_CLIENT_ONLY, clientOnly);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_OWNING_AVATAR_ID, owningAvatarID);
+    COPY_PROPERTY_TO_VARIANT(PROP_CLIENT_ONLY, clientOnly);
+    COPY_PROPERTY_TO_VARIANT(PROP_OWNING_AVATAR_ID, owningAvatarID);
 
-    properties.setProperty("clientOnly", convertScriptValue(engine, getClientOnly()));
-    properties.setProperty("owningAvatarID", convertScriptValue(engine, getOwningAvatarID()));
+    properties.insert("clientOnly", convertToVariant(getClientOnly()));
+    properties.insert("owningAvatarID", convertToVariant(getOwningAvatarID()));
 
     // FIXME - I don't think these properties are supported any more
-    //COPY_PROPERTY_TO_QSCRIPTVALUE(localRenderAlpha);
+    //COPY_PROPERTY_TO_VARIANT(localRenderAlpha);
 
     return properties;
+}
+
+QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const {
+    auto value = copyToVariantMap(skipDefaults);
+    if (!value.isValid()) {
+        return QScriptValue::UndefinedValue;
+    }
+    return engine->newVariant(value);
 }
 
 void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool honorReadOnly) {

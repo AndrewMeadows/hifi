@@ -183,6 +183,75 @@ inline QScriptValue convertScriptValue(QScriptEngine* e, const AACube& v) { retu
         properties.setProperty(#P, V); \
     }
 
+
+inline QVariant convertToVariant(float v) { return QVariant(v); }
+inline QVariant convertToVariant(int v) { return QVariant(v); }
+inline QVariant convertToVariant(quint16 v) { return QVariant(v); }
+inline QVariant convertToVariant(quint32 v) { return QVariant(v); }
+inline QVariant convertToVariant(quint64 v) { return QVariant(v); }
+inline QVariant convertToVariant(const QString& v) { return QVariant(v); }
+inline QVariant convertToVariant(const QByteArray& v) { return QVariant(v); }
+//inline QVariant convertToVariant(const EntityItemID& v) { return QVariant(v); }
+inline QVariant convertToVariant(const QVariant& v) { return v; }
+inline QVariant convertToVariant(const glm::vec3& v) { return vec3toVariant(v); }
+inline QVariant convertToVariant(const xColor& v) { return xColorToVariant(v); }
+inline QVariant convertToVariant(const glm::quat& v) { return quatToVariant(v); }
+inline QVariant convertToVariant(const QVector<glm::vec3>& v) { return qVectorVec3ToVariant(v); }
+inline QVariant convertToVariant(const QVector<glm::quat>& v) { return qVectorQuatToVariant(v); }
+inline QVariant convertToVariant(const QVector<bool>& v) { return qVectorBoolToVariant(v); }
+inline QVariant convertToVariant(const QVector<float>& v) { return qVectorFloatToVariant(v); }
+inline QVariant convertToVariant(const AACube& v) { return aaCubeToVariant(v); }
+
+
+#define COPY_GROUP_PROPERTY_TO_VARIANT(X, G, g, P, p) \
+    if ((desiredProperties.isEmpty() || desiredProperties.getHasProperty(X)) && \
+            (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) { \
+        QVariantMap groupProperties; \
+        if (properties[#g].isValid()) { \
+            groupProperties = properties[#g].toMap(); \
+        } \
+        groupProperties.insert(#p, convertToVariant(get##P())); \
+        properties.insert(#g, groupProperties); \
+    }
+
+#define COPY_GROUP_PROPERTY_TO_VARIANT_GETTER(X, G, g, P, p, M) \
+    if ((desiredProperties.isEmpty() || desiredProperties.getHasProperty(X)) && \
+            (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) { \
+        QVariantMap groupProperties; \
+        if (properties[#g].isValid()) { \
+            groupProperties = properties[#g].toMap(); \
+        } \
+        groupProperties.insert(#p, convertToVariant(M())); \
+        properties.insert(#g, groupProperties); \
+    }
+
+#define COPY_PROPERTY_TO_VARIANT(p, P) \
+    if ((_desiredProperties.isEmpty() || _desiredProperties.getHasProperty(p)) && \
+            (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
+        properties.insert(#P, convertToVariant(_##P)); \
+    }
+
+#define COPY_PROPERTY_TO_VARIANT_GETTER_NO_SKIP(P, G) \
+    properties.insert(#P, G);
+
+#define COPY_PROPERTY_TO_VARIANT_GETTER(p, P, G) \
+    if ((_desiredProperties.isEmpty() || _desiredProperties.getHasProperty(p)) && \
+            (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
+        properties.insert(#P, convertToVariant(G)); \
+    }
+
+// same as COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER but uses #X instead of #P in the setProperty() step
+#define COPY_PROXY_PROPERTY_TO_VARIANT_GETTER(p, P, X, G) \
+    if ((_desiredProperties.isEmpty() || _desiredProperties.getHasProperty(p)) && \
+            (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
+        properties.insert(#X, convertToVariant(G)); \
+    }
+
+#define COPY_PROPERTY_TO_VARIANT_GETTER_ALWAYS(P, G) \
+    if (!skipDefaults || defaultEntityProperties._##P != _##P) { \
+        properties.insert(#P, convertToVariant(G)); \
+    }
+
 typedef glm::vec3 glmVec3;
 typedef glm::quat glmQuat;
 typedef QVector<glm::vec3> qVectorVec3;

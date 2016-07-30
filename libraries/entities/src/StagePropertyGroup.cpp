@@ -26,14 +26,15 @@ const float StagePropertyGroup::DEFAULT_STAGE_ALTITUDE = 0.03f;
 const quint16 StagePropertyGroup::DEFAULT_STAGE_DAY = 60;
 const float StagePropertyGroup::DEFAULT_STAGE_HOUR = 12.0f;
 
-void StagePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties, QScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_SUN_MODEL_ENABLED, Stage, stage, SunModelEnabled, sunModelEnabled);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_LATITUDE, Stage, stage, Latitude, latitude);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_LONGITUDE, Stage, stage, Longitude, longitude);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_ALTITUDE, Stage, stage, Altitude, altitude);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_DAY, Stage, stage, Day, day);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_HOUR, Stage, stage, Hour, hour);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_STAGE_AUTOMATIC_HOURDAY, Stage, stage, AutomaticHourDay, automaticHourDay);
+void StagePropertyGroup::copyToVariant(const EntityPropertyFlags& desiredProperties, QVariantMap& properties, bool skipDefaults,
+                                       const EntityItemProperties& defaultEntityProperties) const {
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_SUN_MODEL_ENABLED, Stage, stage, SunModelEnabled, sunModelEnabled);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_LATITUDE, Stage, stage, Latitude, latitude);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_LONGITUDE, Stage, stage, Longitude, longitude);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_ALTITUDE, Stage, stage, Altitude, altitude);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_DAY, Stage, stage, Day, day);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_HOUR, Stage, stage, Hour, hour);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_STAGE_AUTOMATIC_HOURDAY, Stage, stage, AutomaticHourDay, automaticHourDay);
 }
 
 void StagePropertyGroup::copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) {

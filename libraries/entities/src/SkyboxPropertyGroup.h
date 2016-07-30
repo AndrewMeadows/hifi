@@ -30,7 +30,8 @@ class ReadBitstreamToTreeParams;
 class SkyboxPropertyGroup : public PropertyGroup {
 public:
     // EntityItemProperty related helpers
-    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties, QScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const;
+    virtual void copyToVariant(const EntityPropertyFlags& desiredProperties, QVariantMap& properties, bool skipDefaults,
+                               const EntityItemProperties& defaultEntityProperties) const;
     virtual void copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings);
     virtual void debugDump() const;
     virtual void listChangedProperties(QList<QString>& out);

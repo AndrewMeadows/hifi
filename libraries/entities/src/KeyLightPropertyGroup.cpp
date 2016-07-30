@@ -24,13 +24,14 @@ const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_INTENSITY = 1.0f;
 const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_AMBIENT_INTENSITY = 0.5f;
 const glm::vec3 KeyLightPropertyGroup::DEFAULT_KEYLIGHT_DIRECTION = { 0.0f, -1.0f, 0.0f };
 
-void KeyLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties, QScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
+void KeyLightPropertyGroup::copyToVariant(const EntityPropertyFlags& desiredProperties, QVariantMap& properties, bool skipDefaults,
+                                          const EntityItemProperties& defaultEntityProperties) const {
     
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_COLOR, KeyLight, keyLight, Color, color);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_INTENSITY, KeyLight, keyLight, Intensity, intensity);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_AMBIENT_INTENSITY, KeyLight, keyLight, AmbientIntensity, ambientIntensity);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_DIRECTION, KeyLight, keyLight, Direction, direction);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_AMBIENT_URL, KeyLight, keyLight, AmbientURL, ambientURL);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_KEYLIGHT_COLOR, KeyLight, keyLight, Color, color);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_KEYLIGHT_INTENSITY, KeyLight, keyLight, Intensity, intensity);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_KEYLIGHT_AMBIENT_INTENSITY, KeyLight, keyLight, AmbientIntensity, ambientIntensity);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_KEYLIGHT_DIRECTION, KeyLight, keyLight, Direction, direction);
+    COPY_GROUP_PROPERTY_TO_VARIANT(PROP_KEYLIGHT_AMBIENT_URL, KeyLight, keyLight, AmbientURL, ambientURL);
 
 }
 

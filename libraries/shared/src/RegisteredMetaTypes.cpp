@@ -140,28 +140,6 @@ QVariant vec3toVariant(const glm::vec3& vec3) {
     return result;
 }
 
-QVariant vec4toVariant(const glm::vec4& vec4) {
-    if (isNaN(vec4.x) || isNaN(vec4.y) || isNaN(vec4.z) || isNaN(vec4.w)) {
-        // if vec4 contains a NaN don't try to convert it
-        return QVariant();
-    }
-    QVariantMap result;
-    result["x"] = vec4.x;
-    result["y"] = vec4.y;
-    result["z"] = vec4.z;
-    result["w"] = vec4.w;
-    return result;
-}
-
-QScriptValue qVectorVec3ToScriptValue(QScriptEngine* engine, const QVector<glm::vec3>& vector) {
-    QScriptValue array = engine->newArray();
-    for (int i = 0; i < vector.size(); i++) {
-        array.setProperty(i, vec3toScriptValue(engine, vector.at(i)));
-    }
-    return array;
-}
-
-
 glm::vec3 vec3FromVariant(const QVariant& object, bool& valid) {
     glm::vec3 v;
     valid = false;
@@ -204,6 +182,19 @@ glm::vec3 vec3FromVariant(const QVariant& object, bool& valid) {
 glm::vec3 vec3FromVariant(const QVariant& object) {
     bool valid = false;
     return vec3FromVariant(object, valid);
+}
+
+QVariant vec4toVariant(const glm::vec4& vec4) {
+    if (isNaN(vec4.x) || isNaN(vec4.y) || isNaN(vec4.z) || isNaN(vec4.w)) {
+        // if vec4 contains a NaN don't try to convert it
+        return QVariant();
+    }
+    QVariantMap result;
+    result["x"] = vec4.x;
+    result["y"] = vec4.y;
+    result["z"] = vec4.z;
+    result["w"] = vec4.w;
+    return result;
 }
 
 glm::vec4 vec4FromVariant(const QVariant& object, bool& valid) {
@@ -375,8 +366,33 @@ void qVectorFloatFromScriptValue(const QScriptValue& array, QVector<float>& vect
         vector << array.property(i).toVariant().toFloat();
     }
 }
-//
-QVector<glm::vec3> qVectorVec3FromScriptValue(const QScriptValue& array){
+
+QVariant qVectorFloatToVariant(const QVector<float>& vector) {
+    QVariantList list;
+    for (int i = 0; i < vector.size(); i++) {
+        list.insert(i, QVariant(vector.at(i)));
+    }
+    return list;
+}
+
+QVector<float> qVectorFloatFromVariant(const QVariant& variant) {
+    auto list = variant.toList();
+    QVector<float> vector;
+    for (int i = 0; i < list.length(); i++) {
+        vector << list.at(i).toFloat();
+    }
+    return vector;
+}
+
+QScriptValue qVectorVec3ToScriptValue(QScriptEngine* engine, const QVector<glm::vec3>& vector) {
+    QScriptValue array = engine->newArray();
+    for (int i = 0; i < vector.size(); i++) {
+        array.setProperty(i, vec3toScriptValue(engine, vector.at(i)));
+    }
+    return array;
+}
+
+QVector<glm::vec3> qVectorVec3FromScriptValue(const QScriptValue& array) {
     QVector<glm::vec3> newVector;
     int length = array.property("length").toInteger();
     
@@ -396,6 +412,23 @@ void qVectorVec3FromScriptValue(const QScriptValue& array, QVector<glm::vec3>& v
         vec3FromScriptValue(array.property(i), newVec3);
         vector << newVec3;
     }
+}
+
+QVariant qVectorVec3ToVariant(const QVector<glm::vec3>& vector) {
+    QVariantList list;
+    for (int i = 0; i < vector.size(); i++) {
+        list.insert(i, vec3toVariant(vector.at(i)));
+    }
+    return list;
+}
+
+QVector<glm::vec3> qVectorVec3FromVariant(const QVariant& variant) {
+    auto list = variant.toList();
+    QVector<glm::vec3> vector;
+    for (int i = 0; i < list.length(); i++) {
+        vector << vec3FromVariant(list.at(i));
+    }
+    return vector;
 }
 
 QVector<glm::quat> qVectorQuatFromScriptValue(const QScriptValue& array){
@@ -420,6 +453,23 @@ void qVectorQuatFromScriptValue(const QScriptValue& array, QVector<glm::quat>& v
     }
 }
 
+QVariant qVectorQuatToVariant(const QVector<glm::quat>& vector) {
+    QVariantList list;
+    for (int i = 0; i < vector.size(); i++) {
+        list.insert(i, quatToVariant(vector.at(i)));
+    }
+    return list;
+}
+
+QVector<glm::quat> qVectorQuatFromVariant(const QVariant& variant) {
+    auto list = variant.toList();
+    QVector<glm::quat> vector;
+    for (int i = 0; i < list.length(); i++) {
+        vector << quatFromVariant(list.at(i));
+    }
+    return vector;
+}
+
 QVector<bool> qVectorBoolFromScriptValue(const QScriptValue& array){
     QVector<bool> newVector;
     int length = array.property("length").toInteger();
@@ -436,6 +486,23 @@ void qVectorBoolFromScriptValue(const QScriptValue& array, QVector<bool>& vector
     for (int i = 0; i < length; i++) {
         vector << array.property(i).toBool();
     }
+}
+
+QVariant qVectorBoolToVariant(const QVector<bool>& vector) {
+    QVariantList list;
+    for (int i = 0; i < vector.size(); i++) {
+        list.insert(i, QVariant(vector.at(i)));
+    }
+    return list;
+}
+
+QVector<bool> qVectorBoolFromVariant(const QVariant& variant) {
+    auto list = variant.toList();
+    QVector<bool> vector;
+    for (int i = 0; i < list.length(); i++) {
+        vector << list.at(i).toBool();
+    }
+    return vector;
 }
 
 QScriptValue vec2toScriptValue(QScriptEngine* engine, const glm::vec2 &vec2) {
@@ -651,6 +718,29 @@ void aaCubeFromScriptValue(const QScriptValue &object, AACube& aaCube) {
     float scale = object.property("scale").toVariant().toFloat();
 
     aaCube.setBox(corner, scale);
+}
+
+QVariant aaCubeToVariant(const AACube& aaCube) {
+    const glm::vec3& corner = aaCube.getCorner();
+    QVariantMap map;
+    map.insert("x", corner.x);
+    map.insert("y", corner.y);
+    map.insert("z", corner.z);
+    map.insert("scale", aaCube.getScale());
+    return map;
+}
+
+AACube aaCubeFromVariant(const QVariant& variant) {
+    AACube aaCube;
+    glm::vec3 corner;
+    auto map = variant.toMap();
+    corner.x = map["x"].toFloat();
+    corner.y = map["y"].toFloat();
+    corner.z = map["z"].toFloat();
+    float scale = map["scale"].toFloat();
+
+    aaCube.setBox(corner, scale);
+    return aaCube;
 }
 
 void qColorFromScriptValue(const QScriptValue& object, QColor& color) {
