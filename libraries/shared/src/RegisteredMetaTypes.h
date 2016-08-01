@@ -78,7 +78,6 @@ QRect qRectFromVariant(const QVariant& object, bool& isValid);
 QRect qRectFromVariant(const QVariant& object);
 QVariant qRectToVariant(const QRect& rect);
 
-
 // xColor
 QScriptValue xColorToScriptValue(QScriptEngine* engine, const xColor& color);
 void xColorFromScriptValue(const QScriptValue &object, xColor& color);

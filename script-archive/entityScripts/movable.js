@@ -204,7 +204,8 @@
             var zero = yawZero;
             var centerToZero = Vec3.subtract(center, zero);
             var centerToIntersect = Vec3.subtract(center, result.intersection);
-            var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal);
+            var RADIANS_TO_DEGREES = 180.0 / Math.PI;
+            var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal) * RADIANS_TO_DEGREES;
 
             var distanceFromCenter = Vec3.distance(center, result.intersection);
             var snapToInner = false;

@@ -44,27 +44,26 @@ class Vec3 : public QObject {
     Q_PROPERTY(glm::vec3 FRONT READ FRONT CONSTANT)
 
 public slots:
-    glm::vec3 reflect(const glm::vec3& v1, const glm::vec3& v2) { return glm::reflect(v1, v2); }
-    glm::vec3 cross(const glm::vec3& v1, const glm::vec3& v2) { return glm::cross(v1, v2); }
-    float dot(const glm::vec3& v1, const glm::vec3& v2) { return glm::dot(v1, v2); }
-    glm::vec3 multiply(const glm::vec3& v1, float f) { return v1 * f; }
-    glm::vec3 multiply(float f, const glm::vec3& v1) { return v1 * f; }
-    glm::vec3 multiplyVbyV(const glm::vec3& v1, const glm::vec3& v2) { return v1 * v2; }
-    glm::vec3 multiplyQbyV(const glm::quat& q, const glm::vec3& v) { return q * v; }
-    glm::vec3 sum(const glm::vec3& v1, const glm::vec3& v2) { return v1 + v2; }
-    glm::vec3 subtract(const glm::vec3& v1, const glm::vec3& v2) { return v1 - v2; }
-    float length(const glm::vec3& v) { return glm::length(v); }
-    float distance(const glm::vec3& v1, const glm::vec3& v2) { return glm::distance(v1, v2); }
-    float orientedAngle(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
-    glm::vec3 normalize(const glm::vec3& v) { return glm::normalize(v); };
-    glm::vec3 mix(const glm::vec3& v1, const glm::vec3& v2, float m) { return glm::mix(v1, v2, m); }
-    void print(const QString& label, const glm::vec3& v);
-    bool equal(const glm::vec3& v1, const glm::vec3& v2) { return v1 == v2; }
-    bool withinEpsilon(const glm::vec3& v1, const glm::vec3& v2, float epsilon);
-    // FIXME misnamed, should be 'spherical' or 'euler' depending on the implementation
-    glm::vec3 toPolar(const glm::vec3& v);
-    glm::vec3 fromPolar(const glm::vec3& polar);
-    glm::vec3 fromPolar(float elevation, float azimuth);
+    QVariant reflect(const QVariant& v1, const QVariant& v2);
+    QVariant cross(const QVariant& v1, const QVariant& v2);
+    float dot(const QVariant& v1, const QVariant& v2);
+    QVariant multiply(const QVariant& v1, float f);
+    QVariant multiply(float f, const QVariant& v1);
+    QVariant multiplyVbyV(const QVariant& v1, const QVariant& v2);
+    QVariant multiplyQbyV(const QVariant& q, const QVariant& v);
+    QVariant sum(const QVariant& v1, const QVariant& v2);
+    QVariant subtract(const QVariant& v1, const QVariant& v2);
+    float length(const QVariant& v);
+    float distance(const QVariant& v1, const QVariant& v2);
+    float orientedAngle(const QVariant& v1, const QVariant& v2, const QVariant& v3);
+    QVariant normalize(const QVariant& v);
+    QVariant mix(const QVariant& v1, const QVariant& v2, float m);
+    void print(const QString& label, const QVariant& v);
+    bool equal(const QVariant& v1, const QVariant& v2);
+    bool withinEpsilon(const QVariant& v1, const QVariant& v2, float epsilon);
+    QVariant toSpherical(const QVariant& v);
+    QVariant fromSpherical(const QVariant& polar);
+    QVariant fromSpherical(float elevation, float azimuth);
 
 private:
     const glm::vec3& UNIT_X() { return Vectors::UNIT_X; }

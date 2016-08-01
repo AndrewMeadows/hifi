@@ -178,7 +178,7 @@ function updateBirds(deltaTime) {
         if (followBirds) {
             MyAvatar.motorVelocity = averageVelocity;
             MyAvatar.motorTimescale = AVATAR_FOLLOW_VELOCITY_TIMESCALE;
-            var polarAngles = Vec3.toPolar(Vec3.normalize(averageVelocity));
+            var polarAngles = Vec3.toSpherical(Vec3.normalize(averageVelocity));
             if (!isNaN(polarAngles.x) && !isNaN(polarAngles.y)) {
                 var birdDirection = Quat.fromPitchYawRollRadians(polarAngles.x, polarAngles.y + Math.PI, polarAngles.z);
                 MyAvatar.orientation = Quat.mix(MyAvatar.orientation, birdDirection, AVATAR_FOLLOW_ORIENTATION_RATE);

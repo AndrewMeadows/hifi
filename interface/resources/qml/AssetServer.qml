@@ -207,18 +207,9 @@ ScrollingWindow {
                 } else if (url) {
                     var name = assetProxyModel.data(treeView.selection.currentIndex);
                     var addPosition = Vec3.sum(MyAvatar.position, Vec3.multiply(2, Quat.getFront(MyAvatar.orientation)));
-                    var gravity;
-                    if (dynamic) {
-                        // Create a vector <0, -10, 0>.  { x: 0, y: -10, z: 0 } won't work because Qt is dumb and this is a
-                        // different scripting engine from QTScript.
-                        gravity = Vec3.multiply(Vec3.fromPolar(Math.PI / 2, 0), 10);
-                    } else {
-                        gravity = Vec3.multiply(Vec3.fromPolar(Math.PI / 2, 0), 0);
-                    }
 
                     print("Asset browser - adding asset " + url + " (" + name + ") to world.");
 
-                    // Entities.addEntity doesn't work from QML, so we use this.
                     Entities.addEntity({
                         type: "Model",
                         name: name,
@@ -226,7 +217,7 @@ ScrollingWindow {
                         shapeType: shapeType,
                         dynamic: dynamic,
                         position: addPosition,
-                        gravity: gravity
+                        gravity: dynamic ? { x: 0, y: -10, z: 0 } : { x: 0, y: 0, z: 0 }
                     });
                 }
             }

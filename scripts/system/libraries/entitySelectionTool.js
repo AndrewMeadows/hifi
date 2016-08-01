@@ -16,6 +16,8 @@ HIFI_PUBLIC_BUCKET = "http://s3.amazonaws.com/hifi-public/";
 SPACE_LOCAL = "local";
 SPACE_WORLD = "world";
 
+var RADIANS_TO_DEGREES = 180.0 / Math.PI;
+
 function objectTranslationPlanePoint(position, dimensions) {
     var newPosition = { x: position.x, y: position.y, z: position.z };
     newPosition.y -= dimensions.y / 2.0;
@@ -1159,14 +1161,14 @@ SelectionDisplay = (function() {
         // determine which bottom corner we are closest to
         /*------------------------------
           example:
-          
+
             BRF +--------+ BLF
                 |        |
                 |        |
             BRN +--------+ BLN
-                   
+
                    *
-                
+
         ------------------------------*/
 
         var cameraPosition = Camera.getPosition();
@@ -2384,7 +2386,7 @@ SelectionDisplay = (function() {
             if (wantDebug) {
                     print("Start Elevation: " + translateXZTool.startingElevation + ", elevation: " + elevation);
             }
-            if ((translateXZTool.startingElevation > 0.0 && elevation < MIN_ELEVATION) || 
+            if ((translateXZTool.startingElevation > 0.0 && elevation < MIN_ELEVATION) ||
                 (translateXZTool.startingElevation < 0.0 && elevation > -MIN_ELEVATION)) {
                 if (wantDebug) {
                     print("too close to horizon!");
@@ -3420,7 +3422,7 @@ SelectionDisplay = (function() {
                 var zero = yawZero;
                 var centerToZero = Vec3.subtract(center, zero);
                 var centerToIntersect = Vec3.subtract(center, result.intersection);
-                var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal);
+                var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal) * RADIANS_TO_DEGREES;
                 var distanceFromCenter = Vec3.distance(center, result.intersection);
                 var snapToInner = distanceFromCenter < innerRadius;
                 var snapAngle = snapToInner ? innerSnapAngle : 1.0;
@@ -3590,7 +3592,7 @@ SelectionDisplay = (function() {
                 var zero = pitchZero;
                 var centerToZero = Vec3.subtract(center, zero);
                 var centerToIntersect = Vec3.subtract(center, result.intersection);
-                var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal);
+                var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal) * RADIANS_TO_DEGREES;
 
                 var distanceFromCenter = Vec3.distance(center, result.intersection);
                 var snapToInner = distanceFromCenter < innerRadius;
@@ -3752,7 +3754,7 @@ SelectionDisplay = (function() {
                 var zero = rollZero;
                 var centerToZero = Vec3.subtract(center, zero);
                 var centerToIntersect = Vec3.subtract(center, result.intersection);
-                var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal);
+                var angleFromZero = Vec3.orientedAngle(centerToZero, centerToIntersect, rotationNormal) * RADIANS_TO_DEGREES;
 
                 var distanceFromCenter = Vec3.distance(center, result.intersection);
                 var snapToInner = distanceFromCenter < innerRadius;
@@ -3846,7 +3848,7 @@ SelectionDisplay = (function() {
     };
 
     that.mousePressEvent = function(event) {
-        var wantDebug = false; 
+        var wantDebug = false;
         if (!event.isLeftButton && !that.triggered) {
             // if another mouse button than left is pressed ignore it
             return false;
@@ -3872,7 +3874,7 @@ SelectionDisplay = (function() {
 
         if (result.intersects) {
 
-            
+
             if (wantDebug) {
                 print("something intersects... ");
                 print("   result.overlayID:" + result.overlayID + "[" + overlayNames[result.overlayID] + "]");
@@ -3972,7 +3974,7 @@ SelectionDisplay = (function() {
             if (wantDebug) {
                 print("rotate handle case...");
             }
-            
+
 
             // After testing our stretch handles, then check out rotate handles
             Overlays.editOverlay(yawHandle, {
@@ -4194,7 +4196,7 @@ SelectionDisplay = (function() {
                     case selectionBox:
                         activeTool = translateXZTool;
                         translateXZTool.pickPlanePosition = result.intersection;
-                        translateXZTool.greatestDimension = Math.max(Math.max(SelectionManager.worldDimensions.x, SelectionManager.worldDimensions.y), 
+                        translateXZTool.greatestDimension = Math.max(Math.max(SelectionManager.worldDimensions.x, SelectionManager.worldDimensions.y),
                             SelectionManager.worldDimensions.z);
                         if (wantDebug) {
                             print("longest dimension: " + translateXZTool.greatestDimension);
@@ -4203,7 +4205,7 @@ SelectionDisplay = (function() {
                             translateXZTool.startingElevation = translateXZTool.elevation(pickRay.origin, translateXZTool.pickPlanePosition);
                             print(" starting elevation: " + translateXZTool.startingElevation);
                         }
-                        
+
                         mode = translateXZTool.mode;
                         activeTool.onBegin(event);
                         somethingClicked = 'selectionBox';
