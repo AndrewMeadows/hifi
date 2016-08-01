@@ -1070,10 +1070,8 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer) :
         [this, entityScriptingInterface](const EntityItemID& entityItemID, const MouseEvent& event) {
         if (_keyboardFocusedItem != entityItemID) {
             _keyboardFocusedItem = UNKNOWN_ENTITY_ID;
-            auto properties = entityScriptingInterface->getEntityProperties(entityItemID);
-            // TODO: parse back into EntityItemProperties here
-            //if (EntityTypes::Web == properties.getType() && !properties.getLocked() && properties.getVisible()) {
-            if (false) {
+            auto properties = entityScriptingInterface->getEntityPropertiesObject(entityItemID);
+            if (EntityTypes::Web == properties.getType() && !properties.getLocked() && properties.getVisible()) {
                 auto entity = entityScriptingInterface->getEntityTree()->findEntityByID(entityItemID);
                 RenderableWebEntityItem* webEntity = dynamic_cast<RenderableWebEntityItem*>(entity.get());
                 if (webEntity) {

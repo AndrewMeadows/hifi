@@ -56,7 +56,7 @@ public:
     // EntityItemProperty related helpers
     virtual void copyToVariant(const EntityPropertyFlags& desiredProperties, QVariantMap& properties, bool skipDefaults,
                                const EntityItemProperties& defaultEntityProperties) const = 0;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) = 0;
+    virtual void copyFromVariant(const QVariantMap& map, bool& _defaultSettings) = 0;
     virtual void debugDump() const { }
     virtual void listChangedProperties(QList<QString>& out) { }
 

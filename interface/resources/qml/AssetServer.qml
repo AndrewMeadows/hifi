@@ -219,10 +219,15 @@ ScrollingWindow {
                     print("Asset browser - adding asset " + url + " (" + name + ") to world.");
 
                     // Entities.addEntity doesn't work from QML, so we use this.
-                    var id = Entities.addModelEntity(name, url, shapeType, dynamic, addPosition, gravity);
-                    print("ZAN id = " + id);
-                    print("ZAN props = " + Entities.getEntityProperties(id));
-                    print("ZAN props JSON = " + JSON.stringify(Entities.getEntityProperties(id)));
+                    Entities.addEntity({
+                        type: "Model",
+                        name: name,
+                        url: url,
+                        shapeType: shapeType,
+                        dynamic: dynamic,
+                        position: addPosition,
+                        gravity: gravity
+                    });
                 }
             }
         });

@@ -41,43 +41,41 @@ void AnimationPropertyGroup::copyToVariant(const EntityPropertyFlags& desiredPro
     }
 }
 
-void AnimationPropertyGroup::copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) {
-
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, url, QString, setURL);
+void AnimationPropertyGroup::copyFromVariant(const QVariantMap& map, bool& _defaultSettings) {
+    COPY_GROUP_PROPERTY_FROM_VARIANT(animation, url, QString, setURL);
 
     // legacy property support
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationURL, QString, setURL, getURL);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_NOCHECK(animationSettings, QString, setFromOldAnimationSettings);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(animationURL, QString, setURL, getURL);
+    COPY_PROPERTY_FROM_VARIANT_NOCHECK(animationSettings, QString, setFromOldAnimationSettings);
 
     if (_animationLoop) {
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, fps, float, _animationLoop->setFPS);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, currentFrame, float, _animationLoop->setCurrentFrame);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, running, bool, _animationLoop->setRunning);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, loop, bool, _animationLoop->setLoop);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, firstFrame, float, _animationLoop->setFirstFrame);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, lastFrame, float, _animationLoop->setLastFrame);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, hold, bool, _animationLoop->setHold);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, fps, float, _animationLoop->setFPS);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, currentFrame, float, _animationLoop->setCurrentFrame);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, running, bool, _animationLoop->setRunning);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, loop, bool, _animationLoop->setLoop);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, firstFrame, float, _animationLoop->setFirstFrame);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, lastFrame, float, _animationLoop->setLastFrame);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, hold, bool, _animationLoop->setHold);
 
         // legacy property support
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFPS, float, _animationLoop->setFPS, _animationLoop->getFPS);
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationIsPlaying, bool, _animationLoop->setRunning, _animationLoop->getRunning);
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFrameIndex, float, _animationLoop->setCurrentFrame, _animationLoop->getCurrentFrame);
+        COPY_PROPERTY_FROM_VARIANT_GETTER(animationFPS, float, _animationLoop->setFPS, _animationLoop->getFPS);
+        COPY_PROPERTY_FROM_VARIANT_GETTER(animationIsPlaying, bool, _animationLoop->setRunning, _animationLoop->getRunning);
+        COPY_PROPERTY_FROM_VARIANT_GETTER(animationFrameIndex, float, _animationLoop->setCurrentFrame, _animationLoop->getCurrentFrame);
 
     } else {
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, fps, float, setFPS);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, currentFrame, float, setCurrentFrame);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, running, bool, setRunning);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, loop, bool, setLoop);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, firstFrame, float, setFirstFrame);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, lastFrame, float, setLastFrame);
-        COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, hold, bool, setHold);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, fps, float, setFPS);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, currentFrame, float, setCurrentFrame);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, running, bool, setRunning);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, loop, bool, setLoop);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, firstFrame, float, setFirstFrame);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, lastFrame, float, setLastFrame);
+        COPY_GROUP_PROPERTY_FROM_VARIANT(animation, hold, bool, setHold);
 
         // legacy property support
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFPS, float, setFPS, getFPS);
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationIsPlaying, bool, setRunning, getRunning);
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFrameIndex, float, setCurrentFrame, getCurrentFrame);
+        COPY_PROPERTY_FROM_VARIANT_GETTER(animationFPS, float, setFPS, getFPS);
+        COPY_PROPERTY_FROM_VARIANT_GETTER(animationIsPlaying, bool, setRunning, getRunning);
+        COPY_PROPERTY_FROM_VARIANT_GETTER(animationFrameIndex, float, setCurrentFrame, getCurrentFrame);
     }
-
 }
 
 void AnimationPropertyGroup::setFromOldAnimationSettings(const QString& value) {

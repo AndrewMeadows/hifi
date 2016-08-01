@@ -167,23 +167,25 @@ EntityItemProperties convertLocationFromScriptSemantics(const EntityItemProperti
 }
 
 
-QUuid EntityScriptingInterface::addEntity(const EntityItemProperties& properties, bool clientOnly) {
+QUuid EntityScriptingInterface::addEntity(const QVariant& propertiesVariant, bool clientOnly) {
     _activityTracking.addedEntityCount++;
 
-    EntityItemProperties propertiesWithSimID = convertLocationFromScriptSemantics(properties);
-    propertiesWithSimID.setDimensionsInitialized(properties.dimensionsChanged());
+    EntityItemProperties scriptSideProperties;
+    scriptSideProperties.copyFromVariant(propertiesVariant, true);
+    EntityItemProperties properties = convertLocationFromScriptSemantics(scriptSideProperties);
+    properties.setDimensionsInitialized(scriptSideProperties.dimensionsChanged());
 
     if (clientOnly) {
         auto nodeList = DependencyManager::get<NodeList>();
         const QUuid myNodeID = nodeList->getSessionUUID();
-        propertiesWithSimID.setClientOnly(clientOnly);
-        propertiesWithSimID.setOwningAvatarID(myNodeID);
+        properties.setClientOnly(clientOnly);
+        properties.setOwningAvatarID(myNodeID);
     }
 
-    auto dimensions = propertiesWithSimID.getDimensions();
+    auto dimensions = properties.getDimensions();
     float volume = dimensions.x * dimensions.y * dimensions.z;
-    auto density = propertiesWithSimID.getDensity();
-    auto newVelocity = propertiesWithSimID.getVelocity().length();
+    auto density = properties.getDensity();
+    auto newVelocity = properties.getVelocity().length();
     float cost = calculateCost(density * volume, 0, newVelocity);
     cost *= costMultiplier;
 
@@ -197,14 +199,14 @@ QUuid EntityScriptingInterface::addEntity(const EntityItemProperties& properties
     bool success = true;
     if (_entityTree) {
         _entityTree->withWriteLock([&] {
-            EntityItemPointer entity = _entityTree->addEntity(id, propertiesWithSimID);
+            EntityItemPointer entity = _entityTree->addEntity(id, properties);
             if (entity) {
-                if (propertiesWithSimID.parentRelatedPropertyChanged()) {
+                if (properties.parentRelatedPropertyChanged()) {
                     // due to parenting, the server may not know where something is in world-space, so include the bounding cube.
                     bool success;
                     AACube queryAACube = entity->getQueryAACube(success);
                     if (success) {
-                        propertiesWithSimID.setQueryAACube(queryAACube);
+                        properties.setQueryAACube(queryAACube);
                     }
                 }
 
@@ -214,12 +216,12 @@ QUuid EntityScriptingInterface::addEntity(const EntityItemProperties& properties
                     const QUuid myNodeID = nodeList->getSessionUUID();
 
                     // and make note of it now, so we can act on it right away.
-                    propertiesWithSimID.setSimulationOwner(myNodeID, SCRIPT_POKE_SIMULATION_PRIORITY);
+                    properties.setSimulationOwner(myNodeID, SCRIPT_POKE_SIMULATION_PRIORITY);
                     entity->setSimulationOwner(myNodeID, SCRIPT_POKE_SIMULATION_PRIORITY);
                 }
 
                 entity->setLastBroadcast(usecTimestampNow());
-                propertiesWithSimID.setLastEdited(entity->getLastEdited());
+                properties.setLastEdited(entity->getLastEdited());
             } else {
                 qCDebug(entities) << "script failed to add new Entity to local Octree";
                 success = false;
@@ -230,7 +232,7 @@ QUuid EntityScriptingInterface::addEntity(const EntityItemProperties& properties
     // queue the packet
     if (success) {
         emit debitEnergySource(cost);
-        queueEntityMessage(PacketType::EntityAdd, id, propertiesWithSimID);
+        queueEntityMessage(PacketType::EntityAdd, id, properties);
 
         return id;
     } else {
@@ -258,11 +260,12 @@ QVariant EntityScriptingInterface::getEntityProperties(QUuid identity) {
     return getEntityProperties(identity, noSpecificProperties);
 }
 
-QVariant EntityScriptingInterface::getEntityProperties(QUuid identity, EntityPropertyFlags desiredProperties) {
+EntityItemProperties EntityScriptingInterface::getEntityPropertiesObject(QUuid entityID,
+                                                                         EntityPropertyFlags desiredProperties) {
     EntityItemProperties results;
     if (_entityTree) {
         _entityTree->withReadLock([&] {
-            EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(identity));
+            EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
             if (entity) {
                 if (desiredProperties.getHasProperty(PROP_POSITION) ||
                     desiredProperties.getHasProperty(PROP_ROTATION) ||
@@ -301,12 +304,21 @@ QVariant EntityScriptingInterface::getEntityProperties(QUuid identity, EntityPro
         });
     }
 
-    return results.copyToVariantMap(false);
+    return results;
 }
 
-QUuid EntityScriptingInterface::editEntity(QUuid id, const EntityItemProperties& scriptSideProperties) {
-    _activityTracking.editedEntityCount++;
+QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID) {
+    return getEntityPropertiesObject(entityID).copyToVariant(false);
+}
 
+QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties) {
+    return getEntityPropertiesObject(entityID, desiredProperties).copyToVariant(false);
+}
+
+QUuid EntityScriptingInterface::editEntity(QUuid id, const QVariant& propertiesVariant) {
+    _activityTracking.editedEntityCount++;
+    EntityItemProperties scriptSideProperties;
+    scriptSideProperties.copyFromVariant(propertiesVariant, true);
     EntityItemProperties properties = scriptSideProperties;
 
     auto dimensions = properties.getDimensions();

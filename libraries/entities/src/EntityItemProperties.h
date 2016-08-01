@@ -72,7 +72,8 @@ public:
     EntityTypes::EntityType getType() const { return _type; }
     void setType(EntityTypes::EntityType type) { _type = type; }
 
-    virtual QVariant copyToVariantMap(bool skipDefaults) const;
+    virtual QVariant copyToVariant(bool skipDefaults) const;
+    virtual void copyFromVariant(const QVariant& variant, bool honorReadOnly);
     virtual QScriptValue copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const;
     virtual void copyFromScriptValue(const QScriptValue& object, bool honorReadOnly);
 
@@ -323,7 +324,7 @@ void EntityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityProper
 
 // define these inline here so the macros work
 inline void EntityItemProperties::setPosition(const glm::vec3& value)
-                    { _position = glm::clamp(value, (float)-HALF_TREE_SCALE, (float)HALF_TREE_SCALE); _positionChanged = true; }
+    { _position = glm::clamp(value, (float)-HALF_TREE_SCALE, (float)HALF_TREE_SCALE); _positionChanged = true; }
 
 inline QDebug operator<<(QDebug debug, const EntityItemProperties& properties) {
     debug << "EntityItemProperties[" << "\n";

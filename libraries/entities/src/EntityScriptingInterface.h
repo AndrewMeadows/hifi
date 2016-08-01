@@ -62,6 +62,7 @@ class EntityScriptingInterface : public OctreeScriptingInterface, public Depende
     
     Q_PROPERTY(float currentAvatarEnergy READ getCurrentAvatarEnergy WRITE setCurrentAvatarEnergy)
     Q_PROPERTY(float costMultiplier READ getCostMultiplier WRITE setCostMultiplier)
+
 public:
     EntityScriptingInterface(bool bidOnSimulationOwnership);
 
@@ -83,6 +84,9 @@ public:
 
     void resetActivityTracking();
     ActivityTracking getActivityTracking() const { return _activityTracking; }
+    EntityItemProperties getEntityPropertiesObject(QUuid entityID,
+                                                   EntityPropertyFlags desiredProperties = EntityPropertyFlags());
+
 public slots:
 
     // returns true if the DomainServer will allow this Node/Avatar to make changes
@@ -93,20 +97,16 @@ public slots:
     Q_INVOKABLE bool canRezTmp();
 
     /// adds a model with the specific properties
-    Q_INVOKABLE QUuid addEntity(const EntityItemProperties& properties, bool clientOnly = false);
-
-    /// temporary method until addEntity can be used from QJSEngine
-    Q_INVOKABLE QUuid addModelEntity(const QString& name, const QString& modelUrl, const QString& shapeType, bool dynamic,
-                                     const glm::vec3& position, const glm::vec3& gravity);
+    Q_INVOKABLE QUuid addEntity(const QVariant& properties, bool clientOnly = false);
 
     /// gets the current model properties for a specific model
     /// this function will not find return results in script engine contexts which don't have access to models
     Q_INVOKABLE QVariant getEntityProperties(QUuid entityID);
-    Q_INVOKABLE QVariant getEntityProperties(QUuid identity, EntityPropertyFlags desiredProperties);
+    Q_INVOKABLE QVariant getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties);
 
     /// edits a model updating only the included properties, will return the identified EntityItemID in case of
     /// successful edit, if the input entityID is for an unknown model this function will have no effect
-    Q_INVOKABLE QUuid editEntity(QUuid entityID, const EntityItemProperties& properties);
+    Q_INVOKABLE QUuid editEntity(QUuid entityID, const QVariant& properties);
 
     /// deletes a model
     Q_INVOKABLE void deleteEntity(QUuid entityID);
@@ -132,11 +132,15 @@ public slots:
     /// If the scripting context has visible entities, this will determine a ray intersection, the results
     /// may be inaccurate if the engine is unable to access the visible entities, in which case result.accurate
     /// will be false.
-    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersection(const PickRay& ray, bool precisionPicking = false, const QScriptValue& entityIdsToInclude = QScriptValue(), const QScriptValue& entityIdsToDiscard = QScriptValue());
+    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersection(const PickRay& ray, bool precisionPicking = false, 
+                                                                  const QScriptValue& entityIdsToInclude = QScriptValue(), 
+                                                                  const QScriptValue& entityIdsToDiscard = QScriptValue());
 
     /// If the scripting context has visible entities, this will determine a ray intersection, and will block in
     /// order to return an accurate result
-    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersectionBlocking(const PickRay& ray, bool precisionPicking = false, const QScriptValue& entityIdsToInclude = QScriptValue(), const QScriptValue& entityIdsToDiscard = QScriptValue());
+    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersectionBlocking(const PickRay& ray, bool precisionPicking = false, 
+                                                                          const QScriptValue& entityIdsToInclude = QScriptValue(), 
+                                                                          const QScriptValue& entityIdsToDiscard = QScriptValue());
 
     Q_INVOKABLE void setLightsArePickable(bool value);
     Q_INVOKABLE bool getLightsArePickable() const;

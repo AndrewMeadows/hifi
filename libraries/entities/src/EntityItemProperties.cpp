@@ -344,7 +344,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     return changedProperties;
 }
 
-QVariant EntityItemProperties::copyToVariantMap(bool skipDefaults) const {
+QVariant EntityItemProperties::copyToVariant(bool skipDefaults) const {
     QVariantMap properties; // magic name: the macros insert the properties on this name
     const EntityItemProperties defaultEntityProperties; // magic name: the macros query this name for the default properties
 
@@ -587,153 +587,162 @@ QVariant EntityItemProperties::copyToVariantMap(bool skipDefaults) const {
 }
 
 QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const {
-    auto value = copyToVariantMap(skipDefaults);
+    auto value = copyToVariant(skipDefaults);
     if (!value.isValid()) {
         return QScriptValue::UndefinedValue;
     }
     return engine->newVariant(value);
 }
 
-void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool honorReadOnly) {
-    QScriptValue typeScriptValue = object.property("type");
-    if (typeScriptValue.isValid()) {
-        setType(typeScriptValue.toVariant().toString());
+void EntityItemProperties::copyFromVariant(const QVariant& variant, bool honorReadOnly) {
+    if (!variant.isValid()) {
+        return;
     }
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(position, glmVec3, setPosition);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(dimensions, glmVec3, setDimensions);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(rotation, glmQuat, setRotation);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(density, float, setDensity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(velocity, glmVec3, setVelocity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(gravity, glmVec3, setGravity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(acceleration, glmVec3, setAcceleration);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(damping, float, setDamping);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(restitution, float, setRestitution);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(friction, float, setFriction);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(lifetime, float, setLifetime);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(script, QString, setScript);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(scriptTimestamp, quint64, setScriptTimestamp);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(registrationPoint, glmVec3, setRegistrationPoint);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(angularVelocity, glmVec3, setAngularVelocity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(angularDamping, float, setAngularDamping);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(visible, bool, setVisible);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(color, xColor, setColor);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(colorSpread, xColor, setColorSpread);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(colorStart, xColor, setColorStart);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(colorFinish, xColor, setColorFinish);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(alpha, float, setAlpha);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(alphaSpread, float, setAlphaSpread);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(alphaStart, float, setAlphaStart);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(alphaFinish, float, setAlphaFinish);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitterShouldTrail , bool, setEmitterShouldTrail);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(modelURL, QString, setModelURL);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(compoundShapeURL, QString, setCompoundShapeURL);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(localRenderAlpha, float, setLocalRenderAlpha);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(collisionless, bool, setCollisionless);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(ignoreForCollisions, bool, setCollisionless, getCollisionless); // legacy support
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(collisionMask, uint8_t, setCollisionMask);
-    COPY_PROPERTY_FROM_QSCRITPTVALUE_ENUM(collidesWith, CollisionMask);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(collisionsWillMove, bool, setDynamic, getDynamic); // legacy support
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(dynamic, bool, setDynamic);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(isSpotlight, bool, setIsSpotlight);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(intensity, float, setIntensity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(falloffRadius, float, setFalloffRadius);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(exponent, float, setExponent);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(cutoff, float, setCutoff);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(locked, bool, setLocked);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(textures, QString, setTextures);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(userData, QString, setUserData);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(text, QString, setText);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(lineHeight, float, setLineHeight);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(textColor, xColor, setTextColor);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(backgroundColor, xColor, setBackgroundColor);
-    COPY_PROPERTY_FROM_QSCRITPTVALUE_ENUM(shapeType, ShapeType);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(maxParticles, quint32, setMaxParticles);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(lifespan, float, setLifespan);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(isEmitting, bool, setIsEmitting);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitRate, float, setEmitRate);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitSpeed, float, setEmitSpeed);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(speedSpread, float, setSpeedSpread);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitOrientation, glmQuat, setEmitOrientation);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitDimensions, glmVec3, setEmitDimensions);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitRadiusStart, float, setEmitRadiusStart);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(polarStart, float, setPolarStart);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(polarFinish, float, setPolarFinish);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(azimuthStart, float, setAzimuthStart);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(azimuthFinish, float, setAzimuthFinish);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(emitAcceleration, glmVec3, setEmitAcceleration);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(accelerationSpread, glmVec3, setAccelerationSpread);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleRadius, float, setParticleRadius);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(radiusSpread, float, setRadiusSpread);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(radiusStart, float, setRadiusStart);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(radiusFinish, float, setRadiusFinish);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(marketplaceID, QString, setMarketplaceID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(name, QString, setName);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(collisionSoundURL, QString, setCollisionSoundURL);
+    QVariantMap map = variant.toMap();
+    QVariant typeVariant = map["type"];
+    if (typeVariant.isValid()) {
+        setType(typeVariant.toString());
+    }
 
-    COPY_PROPERTY_FROM_QSCRITPTVALUE_ENUM(backgroundMode, BackgroundMode);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(sourceUrl, QString, setSourceUrl);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(voxelVolumeSize, glmVec3, setVoxelVolumeSize);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(voxelData, QByteArray, setVoxelData);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(voxelSurfaceStyle, uint16_t, setVoxelSurfaceStyle);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(lineWidth, float, setLineWidth);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(linePoints, qVectorVec3, setLinePoints);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(href, QString, setHref);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(description, QString, setDescription);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(faceCamera, bool, setFaceCamera);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(actionData, QByteArray, setActionData);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(normals, qVectorVec3, setNormals);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(strokeWidths,qVectorFloat, setStrokeWidths);
+    COPY_PROPERTY_FROM_VARIANT(position, glmVec3, setPosition);
+    COPY_PROPERTY_FROM_VARIANT(dimensions, glmVec3, setDimensions);
+    COPY_PROPERTY_FROM_VARIANT(rotation, glmQuat, setRotation);
+    COPY_PROPERTY_FROM_VARIANT(density, float, setDensity);
+    COPY_PROPERTY_FROM_VARIANT(velocity, glmVec3, setVelocity);
+    COPY_PROPERTY_FROM_VARIANT(gravity, glmVec3, setGravity);
+    COPY_PROPERTY_FROM_VARIANT(acceleration, glmVec3, setAcceleration);
+    COPY_PROPERTY_FROM_VARIANT(damping, float, setDamping);
+    COPY_PROPERTY_FROM_VARIANT(restitution, float, setRestitution);
+    COPY_PROPERTY_FROM_VARIANT(friction, float, setFriction);
+    COPY_PROPERTY_FROM_VARIANT(lifetime, float, setLifetime);
+    COPY_PROPERTY_FROM_VARIANT(script, QString, setScript);
+    COPY_PROPERTY_FROM_VARIANT(scriptTimestamp, quint64, setScriptTimestamp);
+    COPY_PROPERTY_FROM_VARIANT(registrationPoint, glmVec3, setRegistrationPoint);
+    COPY_PROPERTY_FROM_VARIANT(angularVelocity, glmVec3, setAngularVelocity);
+    COPY_PROPERTY_FROM_VARIANT(angularDamping, float, setAngularDamping);
+    COPY_PROPERTY_FROM_VARIANT(visible, bool, setVisible);
+    COPY_PROPERTY_FROM_VARIANT(color, xColor, setColor);
+    COPY_PROPERTY_FROM_VARIANT(colorSpread, xColor, setColorSpread);
+    COPY_PROPERTY_FROM_VARIANT(colorStart, xColor, setColorStart);
+    COPY_PROPERTY_FROM_VARIANT(colorFinish, xColor, setColorFinish);
+    COPY_PROPERTY_FROM_VARIANT(alpha, float, setAlpha);
+    COPY_PROPERTY_FROM_VARIANT(alphaSpread, float, setAlphaSpread);
+    COPY_PROPERTY_FROM_VARIANT(alphaStart, float, setAlphaStart);
+    COPY_PROPERTY_FROM_VARIANT(alphaFinish, float, setAlphaFinish);
+    COPY_PROPERTY_FROM_VARIANT(emitterShouldTrail , bool, setEmitterShouldTrail);
+    COPY_PROPERTY_FROM_VARIANT(modelURL, QString, setModelURL);
+    COPY_PROPERTY_FROM_VARIANT(compoundShapeURL, QString, setCompoundShapeURL);
+    COPY_PROPERTY_FROM_VARIANT(localRenderAlpha, float, setLocalRenderAlpha);
+    COPY_PROPERTY_FROM_VARIANT(collisionless, bool, setCollisionless);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(ignoreForCollisions, bool, setCollisionless, getCollisionless); // legacy support
+    COPY_PROPERTY_FROM_VARIANT(collisionMask, uint8_t, setCollisionMask);
+    COPY_PROPERTY_FROM_VARIANT_ENUM(collidesWith, CollisionMask);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(collisionsWillMove, bool, setDynamic, getDynamic); // legacy support
+    COPY_PROPERTY_FROM_VARIANT(dynamic, bool, setDynamic);
+    COPY_PROPERTY_FROM_VARIANT(isSpotlight, bool, setIsSpotlight);
+    COPY_PROPERTY_FROM_VARIANT(intensity, float, setIntensity);
+    COPY_PROPERTY_FROM_VARIANT(falloffRadius, float, setFalloffRadius);
+    COPY_PROPERTY_FROM_VARIANT(exponent, float, setExponent);
+    COPY_PROPERTY_FROM_VARIANT(cutoff, float, setCutoff);
+    COPY_PROPERTY_FROM_VARIANT(locked, bool, setLocked);
+    COPY_PROPERTY_FROM_VARIANT(textures, QString, setTextures);
+    COPY_PROPERTY_FROM_VARIANT(userData, QString, setUserData);
+    COPY_PROPERTY_FROM_VARIANT(text, QString, setText);
+    COPY_PROPERTY_FROM_VARIANT(lineHeight, float, setLineHeight);
+    COPY_PROPERTY_FROM_VARIANT(textColor, xColor, setTextColor);
+    COPY_PROPERTY_FROM_VARIANT(backgroundColor, xColor, setBackgroundColor);
+    COPY_PROPERTY_FROM_VARIANT_ENUM(shapeType, ShapeType);
+    COPY_PROPERTY_FROM_VARIANT(maxParticles, quint32, setMaxParticles);
+    COPY_PROPERTY_FROM_VARIANT(lifespan, float, setLifespan);
+    COPY_PROPERTY_FROM_VARIANT(isEmitting, bool, setIsEmitting);
+    COPY_PROPERTY_FROM_VARIANT(emitRate, float, setEmitRate);
+    COPY_PROPERTY_FROM_VARIANT(emitSpeed, float, setEmitSpeed);
+    COPY_PROPERTY_FROM_VARIANT(speedSpread, float, setSpeedSpread);
+    COPY_PROPERTY_FROM_VARIANT(emitOrientation, glmQuat, setEmitOrientation);
+    COPY_PROPERTY_FROM_VARIANT(emitDimensions, glmVec3, setEmitDimensions);
+    COPY_PROPERTY_FROM_VARIANT(emitRadiusStart, float, setEmitRadiusStart);
+    COPY_PROPERTY_FROM_VARIANT(polarStart, float, setPolarStart);
+    COPY_PROPERTY_FROM_VARIANT(polarFinish, float, setPolarFinish);
+    COPY_PROPERTY_FROM_VARIANT(azimuthStart, float, setAzimuthStart);
+    COPY_PROPERTY_FROM_VARIANT(azimuthFinish, float, setAzimuthFinish);
+    COPY_PROPERTY_FROM_VARIANT(emitAcceleration, glmVec3, setEmitAcceleration);
+    COPY_PROPERTY_FROM_VARIANT(accelerationSpread, glmVec3, setAccelerationSpread);
+    COPY_PROPERTY_FROM_VARIANT(particleRadius, float, setParticleRadius);
+    COPY_PROPERTY_FROM_VARIANT(radiusSpread, float, setRadiusSpread);
+    COPY_PROPERTY_FROM_VARIANT(radiusStart, float, setRadiusStart);
+    COPY_PROPERTY_FROM_VARIANT(radiusFinish, float, setRadiusFinish);
+    COPY_PROPERTY_FROM_VARIANT(marketplaceID, QString, setMarketplaceID);
+    COPY_PROPERTY_FROM_VARIANT(name, QString, setName);
+    COPY_PROPERTY_FROM_VARIANT(collisionSoundURL, QString, setCollisionSoundURL);
+
+    COPY_PROPERTY_FROM_VARIANT_ENUM(backgroundMode, BackgroundMode);
+    COPY_PROPERTY_FROM_VARIANT(sourceUrl, QString, setSourceUrl);
+    COPY_PROPERTY_FROM_VARIANT(voxelVolumeSize, glmVec3, setVoxelVolumeSize);
+    COPY_PROPERTY_FROM_VARIANT(voxelData, QByteArray, setVoxelData);
+    COPY_PROPERTY_FROM_VARIANT(voxelSurfaceStyle, uint16_t, setVoxelSurfaceStyle);
+    COPY_PROPERTY_FROM_VARIANT(lineWidth, float, setLineWidth);
+    COPY_PROPERTY_FROM_VARIANT(linePoints, qVectorVec3, setLinePoints);
+    COPY_PROPERTY_FROM_VARIANT(href, QString, setHref);
+    COPY_PROPERTY_FROM_VARIANT(description, QString, setDescription);
+    COPY_PROPERTY_FROM_VARIANT(faceCamera, bool, setFaceCamera);
+    COPY_PROPERTY_FROM_VARIANT(actionData, QByteArray, setActionData);
+    COPY_PROPERTY_FROM_VARIANT(normals, qVectorVec3, setNormals);
+    COPY_PROPERTY_FROM_VARIANT(strokeWidths,qVectorFloat, setStrokeWidths);
 
     if (!honorReadOnly) {
         // this is used by the json reader to set things that we don't want javascript to able to affect.
-        COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(created, QDateTime, setCreated, [this]() {
+        COPY_PROPERTY_FROM_VARIANT_GETTER(created, QDateTime, setCreated, [this]() {
                 auto result = QDateTime::fromMSecsSinceEpoch(_created / 1000, Qt::UTC); // usec per msec
                 return result;
             });
         // TODO: expose this to QScriptValue for JSON saves?
-        //COPY_PROPERTY_FROM_QSCRIPTVALUE(simulationOwner, ???, setSimulatorPriority);
+        //COPY_PROPERTY_FROM_VARIANT(simulationOwner, ???, setSimulatorPriority);
     }
 
-    _animation.copyFromScriptValue(object, _defaultSettings);
-    _keyLight.copyFromScriptValue(object, _defaultSettings);
-    _skybox.copyFromScriptValue(object, _defaultSettings);
-    _stage.copyFromScriptValue(object, _defaultSettings);
+    _animation.copyFromVariant(map, _defaultSettings);
+    _keyLight.copyFromVariant(map, _defaultSettings);
+    _skybox.copyFromVariant(map, _defaultSettings);
+    _stage.copyFromVariant(map, _defaultSettings);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(xTextureURL, QString, setXTextureURL);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(yTextureURL, QString, setYTextureURL);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(zTextureURL, QString, setZTextureURL);
+    COPY_PROPERTY_FROM_VARIANT(xTextureURL, QString, setXTextureURL);
+    COPY_PROPERTY_FROM_VARIANT(yTextureURL, QString, setYTextureURL);
+    COPY_PROPERTY_FROM_VARIANT(zTextureURL, QString, setZTextureURL);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(xNNeighborID, EntityItemID, setXNNeighborID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(yNNeighborID, EntityItemID, setYNNeighborID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(zNNeighborID, EntityItemID, setZNNeighborID);
+    COPY_PROPERTY_FROM_VARIANT(xNNeighborID, EntityItemID, setXNNeighborID);
+    COPY_PROPERTY_FROM_VARIANT(yNNeighborID, EntityItemID, setYNNeighborID);
+    COPY_PROPERTY_FROM_VARIANT(zNNeighborID, EntityItemID, setZNNeighborID);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(xPNeighborID, EntityItemID, setXPNeighborID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(yPNeighborID, EntityItemID, setYPNeighborID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(zPNeighborID, EntityItemID, setZPNeighborID);
+    COPY_PROPERTY_FROM_VARIANT(xPNeighborID, EntityItemID, setXPNeighborID);
+    COPY_PROPERTY_FROM_VARIANT(yPNeighborID, EntityItemID, setYPNeighborID);
+    COPY_PROPERTY_FROM_VARIANT(zPNeighborID, EntityItemID, setZPNeighborID);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(parentID, QUuid, setParentID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(parentJointIndex, quint16, setParentJointIndex);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(queryAACube, AACube, setQueryAACube);
+    COPY_PROPERTY_FROM_VARIANT(parentID, QUuid, setParentID);
+    COPY_PROPERTY_FROM_VARIANT(parentJointIndex, quint16, setParentJointIndex);
+    COPY_PROPERTY_FROM_VARIANT(queryAACube, AACube, setQueryAACube);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(localPosition, glmVec3, setLocalPosition);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(localRotation, glmQuat, setLocalRotation);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(localVelocity, glmVec3, setLocalVelocity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(localAngularVelocity, glmVec3, setLocalAngularVelocity);
+    COPY_PROPERTY_FROM_VARIANT(localPosition, glmVec3, setLocalPosition);
+    COPY_PROPERTY_FROM_VARIANT(localRotation, glmQuat, setLocalRotation);
+    COPY_PROPERTY_FROM_VARIANT(localVelocity, glmVec3, setLocalVelocity);
+    COPY_PROPERTY_FROM_VARIANT(localAngularVelocity, glmVec3, setLocalAngularVelocity);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(jointRotationsSet, qVectorBool, setJointRotationsSet);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(jointRotations, qVectorQuat, setJointRotations);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(jointTranslationsSet, qVectorBool, setJointTranslationsSet);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(jointTranslations, qVectorVec3, setJointTranslations);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(shape, QString, setShape);
+    COPY_PROPERTY_FROM_VARIANT(jointRotationsSet, qVectorBool, setJointRotationsSet);
+    COPY_PROPERTY_FROM_VARIANT(jointRotations, qVectorQuat, setJointRotations);
+    COPY_PROPERTY_FROM_VARIANT(jointTranslationsSet, qVectorBool, setJointTranslationsSet);
+    COPY_PROPERTY_FROM_VARIANT(jointTranslations, qVectorVec3, setJointTranslations);
+    COPY_PROPERTY_FROM_VARIANT(shape, QString, setShape);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(flyingAllowed, bool, setFlyingAllowed);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(ghostingAllowed, bool, setGhostingAllowed);
+    COPY_PROPERTY_FROM_VARIANT(flyingAllowed, bool, setFlyingAllowed);
+    COPY_PROPERTY_FROM_VARIANT(ghostingAllowed, bool, setGhostingAllowed);
 
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(clientOnly, bool, setClientOnly);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(owningAvatarID, QUuid, setOwningAvatarID);
+    COPY_PROPERTY_FROM_VARIANT(clientOnly, bool, setClientOnly);
+    COPY_PROPERTY_FROM_VARIANT(owningAvatarID, QUuid, setOwningAvatarID);
 
     _lastEdited = usecTimestampNow();
+}
+
+void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool honorReadOnly) {
+    copyFromVariant(object.toVariant(), honorReadOnly);
 }
 
 QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {

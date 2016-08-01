@@ -35,19 +35,18 @@ void KeyLightPropertyGroup::copyToVariant(const EntityPropertyFlags& desiredProp
 
 }
 
-void KeyLightPropertyGroup::copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) {
-
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, color, xColor, setColor);
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, intensity, float, setIntensity);
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, ambientIntensity, float, setAmbientIntensity);
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, direction, glmVec3, setDirection);
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, ambientURL, QString, setAmbientURL);
+void KeyLightPropertyGroup::copyFromVariant(const QVariantMap& map, bool& _defaultSettings) {
+    COPY_GROUP_PROPERTY_FROM_VARIANT(keyLight, color, xColor, setColor);
+    COPY_GROUP_PROPERTY_FROM_VARIANT(keyLight, intensity, float, setIntensity);
+    COPY_GROUP_PROPERTY_FROM_VARIANT(keyLight, ambientIntensity, float, setAmbientIntensity);
+    COPY_GROUP_PROPERTY_FROM_VARIANT(keyLight, direction, glmVec3, setDirection);
+    COPY_GROUP_PROPERTY_FROM_VARIANT(keyLight, ambientURL, QString, setAmbientURL);
     
     // legacy property support
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightColor, xColor, setColor, getColor);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightIntensity, float, setIntensity, getIntensity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightAmbientIntensity, float, setAmbientIntensity, getAmbientIntensity);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightDirection, glmVec3, setDirection, getDirection);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(keyLightColor, xColor, setColor, getColor);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(keyLightIntensity, float, setIntensity, getIntensity);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(keyLightAmbientIntensity, float, setAmbientIntensity, getAmbientIntensity);
+    COPY_PROPERTY_FROM_VARIANT_GETTER(keyLightDirection, glmVec3, setDirection, getDirection);
 }
 
 
