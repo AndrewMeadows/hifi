@@ -29,20 +29,6 @@ static const QString DESKTOP_LOCATION = QStandardPaths::writableLocation(QStanda
 static const QString LAST_BROWSE_LOCATION_SETTING = "LastBrowseLocation";
 
 
-QScriptValue CustomPromptResultToScriptValue(QScriptEngine* engine, const CustomPromptResult& result) {
-    if (!result.value.isValid()) {
-        return QScriptValue::UndefinedValue;
-    }
-
-    Q_ASSERT(result.value.userType() == qMetaTypeId<QVariantMap>());
-    return engine->toScriptValue(result.value.toMap());
-}
-
-void CustomPromptResultFromScriptValue(const QScriptValue& object, CustomPromptResult& result) {
-    result.value = object.toVariant();
-}
-
-
 WindowScriptingInterface::WindowScriptingInterface() {
     const DomainHandler& domainHandler = DependencyManager::get<NodeList>()->getDomainHandler();
     connect(&domainHandler, &DomainHandler::connectedToDomain, this, &WindowScriptingInterface::domainChanged);
@@ -109,12 +95,11 @@ QScriptValue WindowScriptingInterface::prompt(const QString& message, const QStr
     return ok ? QScriptValue(result) : QScriptValue::NullValue;
 }
 
-CustomPromptResult WindowScriptingInterface::customPrompt(const QVariant& config) {
-    CustomPromptResult result;
+QVariant WindowScriptingInterface::customPrompt(const QVariant& config) {
     bool ok = false;
     auto configMap = config.toMap();
-    result.value = OffscreenUi::getCustomInfo(OffscreenUi::ICON_NONE, "", configMap, &ok);
-    return ok ? result : CustomPromptResult();
+    auto result = OffscreenUi::getCustomInfo(OffscreenUi::ICON_NONE, "", configMap, &ok);
+    return ok ? result : QVariant();
 }
 
 QString fixupPathForMac(const QString& directory) {
