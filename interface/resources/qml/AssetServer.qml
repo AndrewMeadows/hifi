@@ -206,7 +206,8 @@ ScrollingWindow {
                     print("Error: model cannot be both static mesh and dynamic.  This should never happen.");
                 } else if (url) {
                     var name = assetProxyModel.data(treeView.selection.currentIndex);
-                    var addPosition = Vec3.sum(MyAvatar.position, Vec3.multiply(2, Quat.getFront(MyAvatar.orientation)));
+                    var addPosition = Vec3.sum(Vec3.toObject(MyAvatar.position),
+                                               Vec3.multiply(2, Quat.getFront(Quat.toObject(MyAvatar.orientation))));
 
                     print("Asset browser - adding asset " + url + " (" + name + ") to world.");
 
