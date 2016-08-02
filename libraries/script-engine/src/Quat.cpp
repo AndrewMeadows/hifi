@@ -15,109 +15,114 @@
 
 #include <OctreeConstants.h>
 #include <GLMHelpers.h>
+
+#include "RegisteredMetaTypes.h"
 #include "ScriptEngineLogging.h"
 #include "Quat.h"
 
-quat Quat::normalize(const glm::quat& q) {
-    return glm::normalize(q);
+QVariant Quat::normalize(const QVariant& q) {
+    return quatToVariant(glm::normalize(quatFromVariant(q)));
 }
 
-quat Quat::conjugate(const glm::quat& q) {
-    return glm::conjugate(q);
+QVariant Quat::conjugate(const QVariant& q) {
+    return quatToVariant(glm::conjugate(quatFromVariant(q)));
 }
 
-glm::quat Quat::rotationBetween(const glm::vec3& v1, const glm::vec3& v2) {
-    return ::rotationBetween(v1, v2);
+QVariant Quat::rotationBetween(const QVariant& v1, const QVariant& v2) {
+    return quatToVariant(::rotationBetween(vec3FromVariant(v1), vec3FromVariant(v2)));
 }
 
-glm::quat Quat::lookAt(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) {
-    return glm::inverse(glm::quat_cast(glm::lookAt(eye, center, up)));  // OpenGL view matrix is inverse of our camera matrix.
+QVariant Quat::lookAt(const QVariant& eye, const QVariant& center, const QVariant& up) {
+    // OpenGL view matrix is inverse of our camera matrix.
+    return quatToVariant(glm::inverse(glm::quat_cast(glm::lookAt(vec3FromVariant(eye), vec3FromVariant(center), 
+                                                                 vec3FromVariant(up)))));
 }
 
-glm::quat Quat::lookAtSimple(const glm::vec3& eye, const glm::vec3& center) {
-    auto dir = glm::normalize(center - eye);
+QVariant Quat::lookAtSimple(const QVariant& eye, const QVariant& center) {
+    auto dir = glm::normalize(vec3FromVariant(center) - vec3FromVariant(eye));
     // if the direction is nearly aligned with the Y axis, then use the X axis for 'up'
     if (dir.x < 0.001f && dir.z < 0.001f) {
-        return lookAt(eye, center, Vectors::UNIT_X);
+        return lookAt(eye, center, vec3toVariant(Vectors::UNIT_X));
     }
-    return lookAt(eye, center, Vectors::UNIT_Y);
+    return lookAt(eye, center, vec3toVariant(Vectors::UNIT_Y));
 }
 
-glm::quat Quat::multiply(const glm::quat& q1, const glm::quat& q2) { 
-    return q1 * q2; 
+QVariant Quat::multiply(const QVariant& q1, const QVariant& q2) { 
+    return quatToVariant(quatFromVariant(q1) * quatFromVariant(q2));
 }
 
-glm::quat Quat::fromVec3Degrees(const glm::vec3& eulerAngles) { 
-    return glm::quat(glm::radians(eulerAngles)); 
+QVariant Quat::fromVec3Degrees(const QVariant& eulerAngles) { 
+    return quatToVariant(glm::quat(glm::radians(vec3FromVariant(eulerAngles))));
 }
 
-glm::quat Quat::fromVec3Radians(const glm::vec3& eulerAngles) { 
-    return glm::quat(eulerAngles); 
+QVariant Quat::fromVec3Radians(const QVariant& eulerAngles) { 
+    return quatToVariant(glm::quat(vec3FromVariant(eulerAngles)));
 }
 
-glm::quat Quat::fromPitchYawRollDegrees(float pitch, float yaw, float roll) { 
-    return glm::quat(glm::radians(glm::vec3(pitch, yaw, roll)));
+QVariant Quat::fromPitchYawRollDegrees(float pitch, float yaw, float roll) { 
+    return quatToVariant(glm::quat(glm::radians(glm::vec3(pitch, yaw, roll))));
 }
 
-glm::quat Quat::fromPitchYawRollRadians(float pitch, float yaw, float roll) { 
-    return glm::quat(glm::vec3(pitch, yaw, roll));
+QVariant Quat::fromPitchYawRollRadians(float pitch, float yaw, float roll) { 
+    return quatToVariant(glm::quat(glm::vec3(pitch, yaw, roll)));
 }
 
-glm::quat Quat::inverse(const glm::quat& q) {
-    return glm::inverse(q);
+QVariant Quat::inverse(const QVariant& q) {
+    return quatToVariant(glm::inverse(quatFromVariant(q)));
 }
 
-glm::vec3 Quat::getFront(const glm::quat& orientation) {
-    return orientation * Vectors::FRONT;
+QVariant Quat::getFront(const QVariant& orientation) {
+    return vec3toVariant(quatFromVariant(orientation) * Vectors::FRONT);
 }
 
-glm::vec3 Quat::getRight(const glm::quat& orientation) {
-    return orientation * Vectors::RIGHT;
+QVariant Quat::getRight(const QVariant& orientation) {
+    return vec3toVariant(quatFromVariant(orientation) * Vectors::RIGHT);
 }
 
-glm::vec3 Quat::getUp(const glm::quat& orientation) {
-    return orientation * Vectors::UP;
+QVariant Quat::getUp(const QVariant& orientation) {
+    return vec3toVariant(quatFromVariant(orientation) * Vectors::UP);
 }
 
-glm::vec3 Quat::safeEulerAngles(const glm::quat& orientation) {
-    return glm::degrees(::safeEulerAngles(orientation));
+QVariant Quat::safeEulerAngles(const QVariant& orientation) {
+    return vec3toVariant(glm::degrees(::safeEulerAngles(quatFromVariant(orientation))));
 }
 
-glm::quat Quat::angleAxis(float angle, const glm::vec3& v) {
-    return glm::angleAxis(glm::radians(angle), v);
+QVariant Quat::angleAxis(float angle, const QVariant& v) {
+    return quatToVariant(glm::angleAxis(glm::radians(angle), vec3FromVariant(v)));
 }
 
-glm::vec3 Quat::axis(const glm::quat& orientation) {
-    return glm::axis(orientation);
+QVariant Quat::axis(const QVariant& orientation) {
+    return vec3toVariant(glm::axis(quatFromVariant(orientation)));
 }
 
-float Quat::angle(const glm::quat& orientation) {
-    return glm::angle(orientation);
+float Quat::angle(const QVariant& orientation) {
+    return glm::angle(quatFromVariant(orientation));
 }
 
-glm::quat Quat::mix(const glm::quat& q1, const glm::quat& q2, float alpha) {
-    return safeMix(q1, q2, alpha);
+QVariant Quat::mix(const QVariant& q1, const QVariant& q2, float alpha) {
+    return quatToVariant(safeMix(quatFromVariant(q1), quatFromVariant(q2), alpha));
 }
 
 /// Spherical Linear Interpolation
-glm::quat Quat::slerp(const glm::quat& q1, const glm::quat& q2, float alpha) {
-    return glm::slerp(q1, q2, alpha);
+QVariant Quat::slerp(const QVariant& q1, const QVariant& q2, float alpha) {
+    return quatToVariant(glm::slerp(quatFromVariant(q1), quatFromVariant(q2), alpha));
 }
 
 // Spherical Quadratic Interpolation
-glm::quat Quat::squad(const glm::quat& q1, const glm::quat& q2, const glm::quat& s1, const glm::quat& s2, float h) {
-    return glm::squad(q1, q2, s1, s2, h);
+QVariant Quat::squad(const QVariant& q1, const QVariant& q2, const QVariant& s1, const QVariant& s2, float h) {
+    return quatToVariant(glm::squad(quatFromVariant(q1), quatFromVariant(q2), quatFromVariant(s1), quatFromVariant(s2), h));
 }
 
-float Quat::dot(const glm::quat& q1, const glm::quat& q2) {
-    return glm::dot(q1, q2);
+float Quat::dot(const QVariant& q1, const QVariant& q2) {
+    return glm::dot(quatFromVariant(q1), quatFromVariant(q2));
 }
 
-void Quat::print(const QString& label, const glm::quat& q) {
+void Quat::print(const QString& label, const QVariant& variant) {
+    auto q = quatFromVariant(variant);
     qCDebug(scriptengine) << qPrintable(label) << q.x << "," << q.y << "," << q.z << "," << q.w;
 }
 
-bool Quat::equal(const glm::quat& q1, const glm::quat& q2) {
-    return q1 == q2;
+bool Quat::equal(const QVariant& q1, const QVariant& q2) {
+    return quatFromVariant(q1) == quatFromVariant(q2);
 }
 

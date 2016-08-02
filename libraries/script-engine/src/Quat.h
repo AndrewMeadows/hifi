@@ -24,30 +24,34 @@ class Quat : public QObject {
     Q_OBJECT
 
 public slots:
-    glm::quat multiply(const glm::quat& q1, const glm::quat& q2);
-    glm::quat normalize(const glm::quat& q);
-    glm::quat conjugate(const glm::quat& q);
-    glm::quat lookAt(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up);
-    glm::quat lookAtSimple(const glm::vec3& eye, const glm::vec3& center);
-    glm::quat rotationBetween(const glm::vec3& v1, const glm::vec3& v2);
-    glm::quat fromVec3Degrees(const glm::vec3& vec3); // degrees
-    glm::quat fromVec3Radians(const glm::vec3& vec3); // radians
-    glm::quat fromPitchYawRollDegrees(float pitch, float yaw, float roll); // degrees
-    glm::quat fromPitchYawRollRadians(float pitch, float yaw, float roll); // radians
-    glm::quat inverse(const glm::quat& q);
-    glm::vec3 getFront(const glm::quat& orientation);
-    glm::vec3 getRight(const glm::quat& orientation);
-    glm::vec3 getUp(const glm::quat& orientation);
-    glm::vec3 safeEulerAngles(const glm::quat& orientation); // degrees
-    glm::quat angleAxis(float angle, const glm::vec3& v);   // degrees
-    glm::vec3 axis(const glm::quat& orientation);
-    float angle(const glm::quat& orientation);
-    glm::quat mix(const glm::quat& q1, const glm::quat& q2, float alpha);
-    glm::quat slerp(const glm::quat& q1, const glm::quat& q2, float alpha);
-    glm::quat squad(const glm::quat& q1, const glm::quat& q2, const glm::quat& s1, const glm::quat& s2, float h);
-    float dot(const glm::quat& q1, const glm::quat& q2);
-    void print(const QString& label, const glm::quat& q);
-    bool equal(const glm::quat& q1, const glm::quat& q2);
+    QVariant multiply(const QVariant& q1, const QVariant& q2);
+    QVariant normalize(const QVariant& q);
+    QVariant conjugate(const QVariant& q);
+    QVariant lookAt(const QVariant& eye, const QVariant& center, const QVariant& up);
+    QVariant lookAtSimple(const QVariant& eye, const QVariant& center);
+    QVariant rotationBetween(const QVariant& v1, const QVariant& v2);
+    QVariant fromVec3Degrees(const QVariant& vec3); // degrees
+    QVariant fromVec3Radians(const QVariant& vec3); // radians
+    QVariant fromPitchYawRollDegrees(float pitch, float yaw, float roll); // degrees
+    QVariant fromPitchYawRollRadians(float pitch, float yaw, float roll); // radians
+    QVariant inverse(const QVariant& q);
+    QVariant getFront(const QVariant& orientation);
+    QVariant getRight(const QVariant& orientation);
+    QVariant getUp(const QVariant& orientation);
+    QVariant safeEulerAngles(const QVariant& orientation); // degrees
+    QVariant angleAxis(float angle, const QVariant& v);   // degrees
+    QVariant axis(const QVariant& orientation);
+    float angle(const QVariant& orientation);
+    QVariant mix(const QVariant& q1, const QVariant& q2, float alpha);
+    QVariant slerp(const QVariant& q1, const QVariant& q2, float alpha);
+    QVariant squad(const QVariant& q1, const QVariant& q2, const QVariant& s1, const QVariant& s2, float h);
+    float dot(const QVariant& q1, const QVariant& q2);
+    void print(const QString& label, const QVariant& q);
+    bool equal(const QVariant& q1, const QVariant& q2);
+
+    // for QJSEngine so it can access things like MyAvatar.orientation
+    glm::quat fromObject(const QVariant& v) { return quatFromVariant(v); }
+    QVariant toObject(const glm::quat& v) { return quatToVariant(v); }
 };
 
 #endif // hifi_Quat_h
