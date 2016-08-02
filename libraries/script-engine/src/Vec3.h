@@ -23,25 +23,25 @@
 /// Scriptable interface a Vec3 helper class object. Used exclusively in the JavaScript API
 class Vec3 : public QObject {
     Q_OBJECT
-    Q_PROPERTY(QVariant UNIT_X READ UNIT_X CONSTANT)
-    Q_PROPERTY(QVariant UNIT_Y READ UNIT_Y CONSTANT)
-    Q_PROPERTY(QVariant UNIT_Z READ UNIT_Z CONSTANT)
-    Q_PROPERTY(QVariant UNIT_NEG_X READ UNIT_NEG_X CONSTANT)
-    Q_PROPERTY(QVariant UNIT_NEG_Y READ UNIT_NEG_Y CONSTANT)
-    Q_PROPERTY(QVariant UNIT_NEG_Z READ UNIT_NEG_Z CONSTANT)
-    Q_PROPERTY(QVariant UNIT_XY READ UNIT_XY CONSTANT)
-    Q_PROPERTY(QVariant UNIT_XZ READ UNIT_XZ CONSTANT)
-    Q_PROPERTY(QVariant UNIT_YZ READ UNIT_YZ CONSTANT)
-    Q_PROPERTY(QVariant UNIT_XYZ READ UNIT_XYZ CONSTANT)
-    Q_PROPERTY(QVariant FLOAT_MAX READ FLOAT_MAX CONSTANT)
-    Q_PROPERTY(QVariant FLOAT_MIN READ FLOAT_MIN CONSTANT)
-    Q_PROPERTY(QVariant ZERO READ ZERO CONSTANT)
-    Q_PROPERTY(QVariant ONE READ ONE CONSTANT)
-    Q_PROPERTY(QVariant TWO READ TWO CONSTANT)
-    Q_PROPERTY(QVariant HALF READ HALF CONSTANT)
-    Q_PROPERTY(QVariant RIGHT READ RIGHT CONSTANT)
-    Q_PROPERTY(QVariant UP READ UP CONSTANT)
-    Q_PROPERTY(QVariant FRONT READ FRONT CONSTANT)
+    Q_PROPERTY(QVariant UNIT_X READ UNIT_X_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_Y READ UNIT_Y_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_Z READ UNIT_Z_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_NEG_X READ UNIT_NEG_X_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_NEG_Y READ UNIT_NEG_Y_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_NEG_Z READ UNIT_NEG_Z_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_XY READ UNIT_XY_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_XZ READ UNIT_XZ_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_YZ READ UNIT_YZ_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UNIT_XYZ READ UNIT_XYZ_GETTER CONSTANT)
+    Q_PROPERTY(QVariant FLOAT_MAX READ FLOAT_MAX_GETTER CONSTANT)
+    Q_PROPERTY(QVariant FLOAT_MIN READ FLOAT_MIN_GETTER CONSTANT)
+    Q_PROPERTY(QVariant ZERO READ ZERO_GETTER CONSTANT)
+    Q_PROPERTY(QVariant ONE READ ONE_GETTER CONSTANT)
+    Q_PROPERTY(QVariant TWO READ TWO_GETTER CONSTANT)
+    Q_PROPERTY(QVariant HALF READ HALF_GETTER CONSTANT)
+    Q_PROPERTY(QVariant RIGHT READ RIGHT_GETTER CONSTANT)
+    Q_PROPERTY(QVariant UP READ UP_GETTER CONSTANT)
+    Q_PROPERTY(QVariant FRONT READ FRONT_GETTER CONSTANT)
 
 public slots:
     QVariant reflect(const QVariant& v1, const QVariant& v2);
@@ -70,25 +70,45 @@ public slots:
     QVariant toObject(const glm::vec3& v) { return vec3toVariant(v); }
 
 private:
-    const QVariant& UNIT_X() { return vec3toVariant(Vectors::UNIT_X); }
-    const QVariant& UNIT_Y() { return vec3toVariant(Vectors::UNIT_Y); }
-    const QVariant& UNIT_Z() { return vec3toVariant(Vectors::UNIT_Z); }
-    const QVariant& UNIT_NEG_X() { return vec3toVariant(Vectors::UNIT_NEG_X); }
-    const QVariant& UNIT_NEG_Y() { return vec3toVariant(Vectors::UNIT_NEG_Y); }
-    const QVariant& UNIT_NEG_Z() { return vec3toVariant(Vectors::UNIT_NEG_Z); }
-    const QVariant& UNIT_XY() { return vec3toVariant(Vectors::UNIT_XY); }
-    const QVariant& UNIT_XZ() { return vec3toVariant(Vectors::UNIT_XZ); }
-    const QVariant& UNIT_YZ() { return vec3toVariant(Vectors::UNIT_YZ); }
-    const QVariant& UNIT_XYZ() { return vec3toVariant(Vectors::UNIT_XYZ); }
-    const QVariant& FLOAT_MAX() { return vec3toVariant(Vectors::MAX); }
-    const QVariant& FLOAT_MIN() { return vec3toVariant(Vectors::MIN); }
-    const QVariant& ZERO() { return vec3toVariant(Vectors::ZERO); }
-    const QVariant& ONE() { return vec3toVariant(Vectors::ONE); }
-    const QVariant& TWO() { return vec3toVariant(Vectors::TWO); }
-    const QVariant& HALF() { return vec3toVariant(Vectors::HALF); }
-    const QVariant& RIGHT() { return vec3toVariant(Vectors::RIGHT); }
-    const QVariant& UP() { return vec3toVariant(Vectors::UP); }
-    const QVariant& FRONT() { return vec3toVariant(Vectors::FRONT); }
+    QVariant UNIT_X{ vec3toVariant(Vectors::UNIT_X) };
+    QVariant UNIT_Y{ vec3toVariant(Vectors::UNIT_Y) };
+    QVariant UNIT_Z{ vec3toVariant(Vectors::UNIT_Z) };
+    QVariant UNIT_NEG_X{ vec3toVariant(Vectors::UNIT_NEG_X) };
+    QVariant UNIT_NEG_Y{ vec3toVariant(Vectors::UNIT_NEG_Y) };
+    QVariant UNIT_NEG_Z{ vec3toVariant(Vectors::UNIT_NEG_Z) };
+    QVariant UNIT_XY{ vec3toVariant(Vectors::UNIT_XY) };
+    QVariant UNIT_XZ{ vec3toVariant(Vectors::UNIT_XZ) };
+    QVariant UNIT_YZ{ vec3toVariant(Vectors::UNIT_YZ) };
+    QVariant UNIT_XYZ{ vec3toVariant(Vectors::UNIT_XYZ) };
+    QVariant FLOAT_MAX{ vec3toVariant(Vectors::MAX) };
+    QVariant FLOAT_MIN{ vec3toVariant(Vectors::MIN) };
+    QVariant ZERO{ vec3toVariant(Vectors::ZERO) };
+    QVariant ONE{ vec3toVariant(Vectors::ONE) };
+    QVariant TWO{ vec3toVariant(Vectors::TWO) };
+    QVariant HALF{ vec3toVariant(Vectors::HALF) };
+    QVariant RIGHT{ vec3toVariant(Vectors::RIGHT) };
+    QVariant UP{ vec3toVariant(Vectors::UP) };
+    QVariant FRONT{ vec3toVariant(Vectors::FRONT) };
+
+    const QVariant& UNIT_X_GETTER() { return UNIT_X; }
+    const QVariant& UNIT_Y_GETTER() { return UNIT_Y; }
+    const QVariant& UNIT_Z_GETTER() { return UNIT_Z; }
+    const QVariant& UNIT_NEG_X_GETTER() { return UNIT_NEG_X; }
+    const QVariant& UNIT_NEG_Y_GETTER() { return UNIT_NEG_Y; }
+    const QVariant& UNIT_NEG_Z_GETTER() { return UNIT_NEG_Z; }
+    const QVariant& UNIT_XY_GETTER() { return UNIT_XY; }
+    const QVariant& UNIT_XZ_GETTER() { return UNIT_XZ; }
+    const QVariant& UNIT_YZ_GETTER() { return UNIT_YZ; }
+    const QVariant& UNIT_XYZ_GETTER() { return UNIT_XYZ; }
+    const QVariant& FLOAT_MAX_GETTER() { return FLOAT_MAX; }
+    const QVariant& FLOAT_MIN_GETTER() { return FLOAT_MIN; }
+    const QVariant& ZERO_GETTER() { return ZERO; }
+    const QVariant& ONE_GETTER() { return ONE; }
+    const QVariant& TWO_GETTER() { return TWO; }
+    const QVariant& HALF_GETTER() { return HALF; }
+    const QVariant& RIGHT_GETTER() { return RIGHT; }
+    const QVariant& UP_GETTER() { return UP; }
+    const QVariant& FRONT_GETTER() { return FRONT; }
 };
 
 #endif // hifi_Vec3_h
