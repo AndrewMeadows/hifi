@@ -84,8 +84,6 @@ public:
 
     void resetActivityTracking();
     ActivityTracking getActivityTracking() const { return _activityTracking; }
-    EntityItemProperties getEntityPropertiesObject(QUuid entityID,
-                                                   EntityPropertyFlags desiredProperties = EntityPropertyFlags());
 
 public slots:
 
@@ -101,8 +99,7 @@ public slots:
 
     /// gets the current model properties for a specific model
     /// this function will not find return results in script engine contexts which don't have access to models
-    Q_INVOKABLE QVariant getEntityProperties(QUuid entityID);
-    Q_INVOKABLE QVariant getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties);
+    Q_INVOKABLE QVariant getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties = EntityPropertyFlags());
 
     /// edits a model updating only the included properties, will return the identified EntityItemID in case of
     /// successful edit, if the input entityID is for an unknown model this function will have no effect

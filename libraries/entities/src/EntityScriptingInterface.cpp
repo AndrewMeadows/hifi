@@ -260,8 +260,7 @@ QVariant EntityScriptingInterface::getEntityProperties(QUuid identity) {
     return getEntityProperties(identity, noSpecificProperties);
 }
 
-EntityItemProperties EntityScriptingInterface::getEntityPropertiesObject(QUuid entityID,
-                                                                         EntityPropertyFlags desiredProperties) {
+QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties) {
     EntityItemProperties results;
     if (_entityTree) {
         _entityTree->withReadLock([&] {
@@ -283,7 +282,7 @@ EntityItemProperties EntityScriptingInterface::getEntityPropertiesObject(QUuid e
                     desiredProperties = entity->getEntityProperties(params);
                     desiredProperties.setHasProperty(PROP_LOCAL_POSITION);
                     desiredProperties.setHasProperty(PROP_LOCAL_ROTATION);
-                 }
+                }
 
                 results = entity->getProperties(desiredProperties);
 
@@ -304,15 +303,7 @@ EntityItemProperties EntityScriptingInterface::getEntityPropertiesObject(QUuid e
         });
     }
 
-    return results;
-}
-
-QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID) {
-    return getEntityPropertiesObject(entityID).copyToVariant(false);
-}
-
-QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties) {
-    return getEntityPropertiesObject(entityID, desiredProperties).copyToVariant(false);
+    return results.copyToVariant(false);
 }
 
 QUuid EntityScriptingInterface::editEntity(QUuid id, const QVariant& propertiesVariant) {

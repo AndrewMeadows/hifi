@@ -1058,11 +1058,9 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer) :
     // Now that menu is initialized we can sync myAvatar with it's state.
     getMyAvatar()->updateMotionBehaviorFromMenu();
 
-// FIXME spacemouse code still needs cleanup
-#if 0
+    // FIXME spacemouse code still needs cleanup
     // the 3Dconnexion device wants to be initialized after a window is displayed.
-    SpacemouseManager::getInstance().init();
-#endif
+    //SpacemouseManager::getInstance().init();
 
     // If the user clicks an an entity, we will check that it's an unlocked web entity, and if so, set the focus to it
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -1070,9 +1068,8 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer) :
         [this, entityScriptingInterface](const EntityItemID& entityItemID, const MouseEvent& event) {
         if (_keyboardFocusedItem != entityItemID) {
             _keyboardFocusedItem = UNKNOWN_ENTITY_ID;
-            auto properties = entityScriptingInterface->getEntityPropertiesObject(entityItemID);
-            if (EntityTypes::Web == properties.getType() && !properties.getLocked() && properties.getVisible()) {
-                auto entity = entityScriptingInterface->getEntityTree()->findEntityByID(entityItemID);
+            auto entity = entityScriptingInterface->getEntityTree()->findEntityByID(entityItemID);
+            if (EntityTypes::Web == entity->getType() && !entity->getLocked() && entity->getVisible()) {
                 RenderableWebEntityItem* webEntity = dynamic_cast<RenderableWebEntityItem*>(entity.get());
                 if (webEntity) {
                     webEntity->setProxyWindow(_window->windowHandle());
