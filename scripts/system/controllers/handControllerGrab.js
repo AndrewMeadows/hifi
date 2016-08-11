@@ -968,7 +968,7 @@ function MyController(hand) {
         } else if (potentialEquipHotspot && Vec3.distance(this.lastHapticPulseLocation, currentLocation) > HAPTIC_TEXTURE_DISTANCE) {
             Controller.triggerHapticPulse(HAPTIC_TEXTURE_STRENGTH, HAPTIC_TEXTURE_DURATION, this.hand);
             this.lastHapticPulseLocation = currentLocation;
-        }       
+        }
         this.prevPotentialEquipHotspot = potentialEquipHotspot;
     };
 
@@ -1446,8 +1446,8 @@ function MyController(hand) {
     };
 
     this.distanceHolding = function(deltaTime, timestamp) {
-        
-        if (!this.triggerClicked) {    
+
+        if (!this.triggerClicked) {
             this.callEntityMethodOnGrabbed("releaseGrab");
             this.setState(STATE_OFF, "trigger released");
             return;
@@ -1986,13 +1986,9 @@ function MyController(hand) {
             // and rotation of the held thing to help content creators set the userData.
             var grabData = getEntityCustomData(GRAB_USER_DATA_KEY, this.grabbedEntity, {});
             if (grabData.refCount > 1) {
-                var grabbedProperties = Entities.getEntityProperties(this.grabbedEntity, ["localPosition", "localRotation"]);
-                if (grabbedProperties && grabbedProperties.localPosition && grabbedProperties.localRotation) {
+                if (this.offsetPosition && this.offsetRotation) {
                     print((this.hand === RIGHT_HAND ? '"LeftHand"' : '"RightHand"') + ":" +
-                        '[{"x":' + grabbedProperties.localPosition.x + ', "y":' + grabbedProperties.localPosition.y +
-                        ', "z":' + grabbedProperties.localPosition.z + '}, {"x":' + grabbedProperties.localRotation.x +
-                        ', "y":' + grabbedProperties.localRotation.y + ', "z":' + grabbedProperties.localRotation.z +
-                        ', "w":' + grabbedProperties.localRotation.w + '}]');
+                          JSON.stringify([this.offsetPosition, this.offsetRotation]));
                 }
             }
 

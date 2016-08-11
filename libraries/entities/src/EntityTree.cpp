@@ -1435,11 +1435,10 @@ bool EntityTree::sendEntitiesOperation(OctreeElementPointer element, void* extra
 
 bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer element, bool skipDefaultValues,
                             bool skipThoseWithBadParents) {
-    if (! entityDescription.contains("Entities")) {
+    if (!entityDescription.contains("Entities")) {
         entityDescription["Entities"] = QVariantList();
     }
-    QScriptEngine scriptEngine;
-    RecurseOctreeToMapOperator theOperator(entityDescription, element, &scriptEngine, skipDefaultValues, skipThoseWithBadParents);
+    RecurseOctreeToMapOperator theOperator(entityDescription, element, skipDefaultValues, skipThoseWithBadParents);
     recurseTreeWithOperator(&theOperator);
     return true;
 }

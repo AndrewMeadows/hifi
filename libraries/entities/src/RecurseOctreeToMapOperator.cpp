@@ -13,15 +13,11 @@
 
 #include "EntityItemProperties.h"
 
-RecurseOctreeToMapOperator::RecurseOctreeToMapOperator(QVariantMap& map,
-                                                       OctreeElementPointer top,
-                                                       QScriptEngine* engine,
-                                                       bool skipDefaultValues,
+RecurseOctreeToMapOperator::RecurseOctreeToMapOperator(QVariantMap& map, OctreeElementPointer top, bool skipDefaultValues,
                                                        bool skipThoseWithBadParents) :
         RecurseOctreeOperator(),
         _map(map),
         _top(top),
-        _engine(engine),
         _skipDefaultValues(skipDefaultValues),
         _skipThoseWithBadParents(skipThoseWithBadParents)
 {
