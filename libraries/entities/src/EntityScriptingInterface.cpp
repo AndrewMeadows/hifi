@@ -569,23 +569,25 @@ QVector<QUuid> EntityScriptingInterface::findEntitiesInBox(const glm::vec3& corn
     return result;
 }
 
-RayToEntityIntersectionResult EntityScriptingInterface::findRayIntersection(const PickRay& ray, bool precisionPicking, 
-                const QScriptValue& entityIdsToInclude, const QScriptValue& entityIdsToDiscard) {
-
+QVariant EntityScriptingInterface::findRayIntersection(const PickRay& ray, bool precisionPicking,
+                                                       const QScriptValue& entityIdsToInclude,
+                                                       const QScriptValue& entityIdsToDiscard) {
     QVector<EntityItemID> entitiesToInclude = qVectorEntityItemIDFromScriptValue(entityIdsToInclude);
     QVector<EntityItemID> entitiesToDiscard = qVectorEntityItemIDFromScriptValue(entityIdsToDiscard);
-    return findRayIntersectionWorker(ray, Octree::Lock, precisionPicking, entitiesToInclude, entitiesToDiscard);
+    return findRayIntersectionWorker(ray, Octree::Lock, precisionPicking, entitiesToInclude, entitiesToDiscard)
+        .copyToVariant();
 }
 
 // FIXME - we should remove this API and encourage all users to use findRayIntersection() instead. We've changed
 //         findRayIntersection() to be blocking because it never makes sense for a script to get back a non-answer
-RayToEntityIntersectionResult EntityScriptingInterface::findRayIntersectionBlocking(const PickRay& ray, bool precisionPicking, 
-                const QScriptValue& entityIdsToInclude, const QScriptValue& entityIdsToDiscard) {
-
+QVariant EntityScriptingInterface::findRayIntersectionBlocking(const PickRay& ray, bool precisionPicking,
+                                                               const QScriptValue& entityIdsToInclude,
+                                                               const QScriptValue& entityIdsToDiscard) {
     qWarning() << "Entities.findRayIntersectionBlocking() is obsolete, use Entities.findRayIntersection() instead.";
     const QVector<EntityItemID>& entitiesToInclude = qVectorEntityItemIDFromScriptValue(entityIdsToInclude);
     const QVector<EntityItemID> entitiesToDiscard = qVectorEntityItemIDFromScriptValue(entityIdsToDiscard);
-    return findRayIntersectionWorker(ray, Octree::Lock, precisionPicking, entitiesToInclude, entitiesToDiscard);
+    return findRayIntersectionWorker(ray, Octree::Lock, precisionPicking, entitiesToInclude, entitiesToDiscard)
+        .copyToVariant();
 }
 
 RayToEntityIntersectionResult EntityScriptingInterface::findRayIntersectionWorker(const PickRay& ray,
@@ -644,21 +646,18 @@ RayToEntityIntersectionResult::RayToEntityIntersectionResult() :
 {
 }
 
-QScriptValue RayToEntityIntersectionResultToScriptValue(QScriptEngine* engine, const RayToEntityIntersectionResult& value) {
-    QScriptValue obj = engine->newObject();
-    obj.setProperty("intersects", value.intersects);
-    obj.setProperty("accurate", value.accurate);
-    QScriptValue entityItemValue = EntityItemIDtoScriptValue(engine, value.entityID);
-    obj.setProperty("entityID", entityItemValue);
+QVariant RayToEntityIntersectionResult::copyToVariant() const {
+    QVariantMap map;
+    map.insert("intersects", intersects);
+    map.insert("accurate", accurate);
+    map.insert("entityID", entityID);
+    map.insert("properties", properties.copyToVariant(false));
 
-    QScriptValue propertiesValue = EntityItemPropertiesToScriptValue(engine, value.properties);
-    obj.setProperty("properties", propertiesValue);
-
-    obj.setProperty("distance", value.distance);
+    map.insert("distance", distance);
 
     QString faceName = "";
     // handle BoxFace
-    switch (value.face) {
+    switch (face) {
         case MIN_X_FACE:
             faceName = "MIN_X_FACE";
             break;
@@ -681,50 +680,47 @@ QScriptValue RayToEntityIntersectionResultToScriptValue(QScriptEngine* engine, c
             faceName = "UNKNOWN_FACE";
             break;
     }
-    obj.setProperty("face", faceName);
+    map.insert("face", faceName);
 
-    QScriptValue intersection = vec3toScriptValue(engine, value.intersection);
-    obj.setProperty("intersection", intersection);
-
-    QScriptValue surfaceNormal = vec3toScriptValue(engine, value.surfaceNormal);
-    obj.setProperty("surfaceNormal", surfaceNormal);
-    return obj;
+    map.insert("intersection", vec3toVariant(intersection));
+    map.insert("surfaceNormal", vec3toVariant(surfaceNormal));
+    return map;
 }
 
-void RayToEntityIntersectionResultFromScriptValue(const QScriptValue& object, RayToEntityIntersectionResult& value) {
-    value.intersects = object.property("intersects").toVariant().toBool();
-    value.accurate = object.property("accurate").toVariant().toBool();
-    QScriptValue entityIDValue = object.property("entityID");
-    // EntityItemIDfromScriptValue(entityIDValue, value.entityID);
-    quuidFromScriptValue(entityIDValue, value.entityID);
-    QScriptValue entityPropertiesValue = object.property("properties");
-    if (entityPropertiesValue.isValid()) {
-        EntityItemPropertiesFromScriptValueHonorReadOnly(entityPropertiesValue, value.properties);
+void RayToEntityIntersectionResult::copyFromVariant(const QVariant& variant) {
+    if (!variant.isValid() || variant.isNull()) {
+        return;
     }
-    value.distance = object.property("distance").toVariant().toFloat();
 
-    QString faceName = object.property("face").toVariant().toString();
+    auto map = variant.toMap();
+
+    intersects = map.value("intersects", false).toBool();
+    accurate = map.value("accurate", true).toBool();
+    entityID = map.value("entityID", QVariant()).toUuid();
+
+    EntityItemProperties props;
+    props.copyFromVariant(map["properties"], true);
+    properties = props;
+
+    distance = map.value("distance", 0.0f).toFloat();
+
+    QString faceName = map["face"].toString();
     if (faceName == "MIN_X_FACE") {
-        value.face = MIN_X_FACE;
+        face = MIN_X_FACE;
     } else if (faceName == "MAX_X_FACE") {
-        value.face = MAX_X_FACE;
+        face = MAX_X_FACE;
     } else if (faceName == "MIN_Y_FACE") {
-        value.face = MIN_Y_FACE;
+        face = MIN_Y_FACE;
     } else if (faceName == "MAX_Y_FACE") {
-        value.face = MAX_Y_FACE;
+        face = MAX_Y_FACE;
     } else if (faceName == "MIN_Z_FACE") {
-        value.face = MIN_Z_FACE;
+        face = MIN_Z_FACE;
     } else {
-        value.face = MAX_Z_FACE;
-    };
-    QScriptValue intersection = object.property("intersection");
-    if (intersection.isValid()) {
-        vec3FromScriptValue(intersection, value.intersection);
+        face = MAX_Z_FACE;
     }
-    QScriptValue surfaceNormal = object.property("surfaceNormal");
-    if (surfaceNormal.isValid()) {
-        vec3FromScriptValue(surfaceNormal, value.surfaceNormal);
-    }
+
+    intersection = vec3FromVariant(map["intersection"]);
+    surfaceNormal = vec3FromVariant(map["surfaceNormal"]);
 }
 
 bool EntityScriptingInterface::setVoxels(QUuid entityID,

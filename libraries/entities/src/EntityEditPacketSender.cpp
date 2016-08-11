@@ -65,10 +65,7 @@ void EntityEditPacketSender::queueEditAvatarEntityMessage(PacketType type,
     // rather than just the ones being edited.
     entity->setProperties(properties);
     EntityItemProperties entityProperties = entity->getProperties();
-
-    QScriptValue scriptProperties = EntityItemNonDefaultPropertiesToScriptValue(&_scriptEngine, entityProperties);
-    QVariant variantProperties = scriptProperties.toVariant();
-    QJsonDocument jsonProperties = QJsonDocument::fromVariant(variantProperties);
+    QJsonDocument jsonProperties = QJsonDocument::fromVariant(entityProperties.copyToVariant(true));
 
     // the ID of the parent/avatar changes from session to session.  use a special UUID to indicate the avatar
     QJsonObject jsonObject = jsonProperties.object();

@@ -312,10 +312,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(EntityItemProperties);
-QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties);
-QScriptValue EntityItemNonDefaultPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties);
-void EntityItemPropertiesFromScriptValueIgnoreReadOnly(const QScriptValue& object, EntityItemProperties& properties);
-void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue& object, EntityItemProperties& properties);
 
 Q_DECLARE_METATYPE(EntityPropertyFlags);
 QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags);

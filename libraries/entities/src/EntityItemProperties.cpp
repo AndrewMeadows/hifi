@@ -745,27 +745,9 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     copyFromVariant(object.toVariant(), honorReadOnly);
 }
 
-QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {
-    return properties.copyToScriptValue(engine, false);
-}
-
-QScriptValue EntityItemNonDefaultPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {
-    return properties.copyToScriptValue(engine, true);
-}
-
-void EntityItemPropertiesFromScriptValueIgnoreReadOnly(const QScriptValue &object, EntityItemProperties& properties) {
-    properties.copyFromScriptValue(object, false);
-}
-
-void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue &object, EntityItemProperties& properties) {
-    properties.copyFromScriptValue(object, true);
-}
-
 
 QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags) {
     return EntityItemProperties::entityPropertyFlagsToScriptValue(engine, flags);
-    QScriptValue result = engine->newObject();
-	return result;
 }
 
 void EntityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags) {

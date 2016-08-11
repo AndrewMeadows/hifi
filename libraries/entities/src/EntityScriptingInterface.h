@@ -39,6 +39,9 @@ class MouseEvent;
 class RayToEntityIntersectionResult {
 public:
     RayToEntityIntersectionResult();
+    QVariant copyToVariant() const;
+    void copyFromVariant(const QVariant& variant);
+
     bool intersects;
     bool accurate;
     QUuid entityID;
@@ -50,10 +53,7 @@ public:
     EntityItemPointer entity;
 };
 
-Q_DECLARE_METATYPE(RayToEntityIntersectionResult)
-
-QScriptValue RayToEntityIntersectionResultToScriptValue(QScriptEngine* engine, const RayToEntityIntersectionResult& results);
-void RayToEntityIntersectionResultFromScriptValue(const QScriptValue& object, RayToEntityIntersectionResult& results);
+Q_DECLARE_METATYPE(RayToEntityIntersectionResult);
 
 
 /// handles scripting of Entity commands from JS passed to assigned clients
@@ -129,15 +129,15 @@ public slots:
     /// If the scripting context has visible entities, this will determine a ray intersection, the results
     /// may be inaccurate if the engine is unable to access the visible entities, in which case result.accurate
     /// will be false.
-    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersection(const PickRay& ray, bool precisionPicking = false, 
-                                                                  const QScriptValue& entityIdsToInclude = QScriptValue(), 
-                                                                  const QScriptValue& entityIdsToDiscard = QScriptValue());
+    Q_INVOKABLE QVariant findRayIntersection(const PickRay& ray, bool precisionPicking = false,
+                                             const QScriptValue& entityIdsToInclude = QScriptValue(),
+                                             const QScriptValue& entityIdsToDiscard = QScriptValue());
 
     /// If the scripting context has visible entities, this will determine a ray intersection, and will block in
     /// order to return an accurate result
-    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersectionBlocking(const PickRay& ray, bool precisionPicking = false, 
-                                                                          const QScriptValue& entityIdsToInclude = QScriptValue(), 
-                                                                          const QScriptValue& entityIdsToDiscard = QScriptValue());
+    Q_INVOKABLE QVariant findRayIntersectionBlocking(const PickRay& ray, bool precisionPicking = false,
+                                                     const QScriptValue& entityIdsToInclude = QScriptValue(),
+                                                     const QScriptValue& entityIdsToDiscard = QScriptValue());
 
     Q_INVOKABLE void setLightsArePickable(bool value);
     Q_INVOKABLE bool getLightsArePickable() const;

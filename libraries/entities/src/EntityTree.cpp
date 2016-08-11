@@ -1459,12 +1459,11 @@ bool EntityTree::readFromMap(QVariantMap& map) {
 
     bool success = true;
     foreach (QVariant entityVariant, entitiesQList) {
-        // QVariantMap --> QScriptValue --> EntityItemProperties --> Entity
-        QVariantMap entityMap = entityVariant.toMap();
-        QScriptValue entityScriptValue = variantMapToScriptValue(entityMap, scriptEngine);
+        // QVariantMap --> EntityItemProperties --> Entity
         EntityItemProperties properties;
-        EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
+        properties.copyFromVariant(entityVariant, false);
 
+        QVariantMap entityMap = entityVariant.toMap();
         EntityItemID entityItemID;
         if (entityMap.contains("id")) {
             entityItemID = EntityItemID(QUuid(entityMap["id"].toString()));
