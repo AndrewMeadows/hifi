@@ -586,14 +586,6 @@ QVariant EntityItemProperties::copyToVariant(bool skipDefaults) const {
     return properties;
 }
 
-QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const {
-    auto value = copyToVariant(skipDefaults);
-    if (!value.isValid()) {
-        return QScriptValue::UndefinedValue;
-    }
-    return engine->newVariant(value);
-}
-
 void EntityItemProperties::copyFromVariant(const QVariant& variant, bool honorReadOnly) {
     if (!variant.isValid()) {
         return;
@@ -739,10 +731,6 @@ void EntityItemProperties::copyFromVariant(const QVariant& variant, bool honorRe
     COPY_PROPERTY_FROM_VARIANT(owningAvatarID, QUuid, setOwningAvatarID);
 
     _lastEdited = usecTimestampNow();
-}
-
-void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool honorReadOnly) {
-    copyFromVariant(object.toVariant(), honorReadOnly);
 }
 
 

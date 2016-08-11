@@ -74,8 +74,6 @@ public:
 
     virtual QVariant copyToVariant(bool skipDefaults) const;
     virtual void copyFromVariant(const QVariant& variant, bool honorReadOnly);
-    virtual QScriptValue copyToScriptValue(QScriptEngine* engine, bool skipDefaults) const;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool honorReadOnly);
 
     static QScriptValue entityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags);
     static void entityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags);
