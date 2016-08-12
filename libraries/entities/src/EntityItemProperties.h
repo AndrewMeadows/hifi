@@ -72,8 +72,8 @@ public:
     EntityTypes::EntityType getType() const { return _type; }
     void setType(EntityTypes::EntityType type) { _type = type; }
 
-    virtual QVariant copyToVariant(bool skipDefaults) const;
-    virtual void copyFromVariant(const QVariant& variant, bool honorReadOnly);
+    virtual QVariant copyToVariant(bool skipDefaults = false) const;
+    virtual void copyFromVariant(const QVariant& variant, bool honorReadOnly = true);
 
     static QScriptValue entityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags);
     static void entityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags);

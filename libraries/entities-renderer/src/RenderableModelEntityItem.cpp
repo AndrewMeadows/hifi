@@ -514,7 +514,7 @@ void RenderableModelEntityItem::update(const quint64& now) {
             QMetaObject::invokeMethod(DependencyManager::get<EntityScriptingInterface>().data(), "editEntity",
                                       Qt::QueuedConnection,
                                       Q_ARG(QUuid, getEntityItemID()),
-                                      Q_ARG(EntityItemProperties, properties));
+                                      Q_ARG(QVariant, properties.copyToVariant()));
         }
     }
 

@@ -171,7 +171,7 @@ QUuid EntityScriptingInterface::addEntity(const QVariant& propertiesVariant, boo
     _activityTracking.addedEntityCount++;
 
     EntityItemProperties scriptSideProperties;
-    scriptSideProperties.copyFromVariant(propertiesVariant, true);
+    scriptSideProperties.copyFromVariant(propertiesVariant);
     EntityItemProperties properties = convertLocationFromScriptSemantics(scriptSideProperties);
     properties.setDimensionsInitialized(scriptSideProperties.dimensionsChanged());
 
@@ -303,13 +303,13 @@ QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPro
         });
     }
 
-    return results.copyToVariant(false);
+    return results.copyToVariant();
 }
 
 QUuid EntityScriptingInterface::editEntity(QUuid id, const QVariant& propertiesVariant) {
     _activityTracking.editedEntityCount++;
     EntityItemProperties scriptSideProperties;
-    scriptSideProperties.copyFromVariant(propertiesVariant, true);
+    scriptSideProperties.copyFromVariant(propertiesVariant);
     EntityItemProperties properties = scriptSideProperties;
 
     auto dimensions = properties.getDimensions();
@@ -651,7 +651,7 @@ QVariant RayToEntityIntersectionResult::copyToVariant() const {
     map.insert("intersects", intersects);
     map.insert("accurate", accurate);
     map.insert("entityID", entityID);
-    map.insert("properties", properties.copyToVariant(false));
+    map.insert("properties", properties.copyToVariant());
 
     map.insert("distance", distance);
 
