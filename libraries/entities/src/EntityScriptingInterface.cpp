@@ -261,7 +261,7 @@ QVariant EntityScriptingInterface::getEntityProperties(QUuid identity) {
 }
 
 QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties) {
-    EntityItemProperties results;
+    EntityItemProperties results(desiredProperties);
     if (_entityTree) {
         _entityTree->withReadLock([&] {
             EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));

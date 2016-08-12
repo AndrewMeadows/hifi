@@ -135,6 +135,7 @@ var ACTION_TTL_REFRESH = 5;
 var PICKS_PER_SECOND_PER_HAND = 60;
 var MSECS_PER_SEC = 1000.0;
 var GRABBABLE_PROPERTIES = [
+    "type",
     "position",
     "rotation",
     "gravity",
@@ -272,11 +273,11 @@ function entityIsGrabbedByOther(entityID) {
 }
 
 function propsArePhysical(props) {
-    if (!props.dynamic) {
-        return false;
+    if (props.type === "Model") {
+        return props.shapeType !== "none" && props.dynamic;
+    } else {
+        return props.dynamic;
     }
-    var isPhysical = (props.shapeType && props.shapeType != 'none');
-    return isPhysical;
 }
 
 var USE_ATTACH_POINT_SETTINGS = true;
