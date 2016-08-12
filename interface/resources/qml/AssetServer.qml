@@ -214,7 +214,7 @@ ScrollingWindow {
                     Entities.addEntity({
                         type: "Model",
                         name: name,
-                        url: url,
+                        modelURL: url,
                         shapeType: shapeType,
                         dynamic: dynamic,
                         position: addPosition,
