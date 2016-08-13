@@ -10,14 +10,13 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-// todo: 
+// todo:
 // add camera countdown / freezing unfreezing the doppelganger
 // add ability to drop wearables on doppelganger
 // which means creating a mirror entity on the avatar ...
 
 Script.include("../libraries/utils.js");
 
-var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
 var DEFAULT_WEARABLE_DATA = {
     joints: {}
 };
@@ -81,7 +80,7 @@ function WearablesManager() {
         var allowedJoints = getEntityCustomData('wearable', grabbedEntity, DEFAULT_WEARABLE_DATA).joints;
 
         var props = Entities.getEntityProperties(grabbedEntity, ["position", "parentID"]);
-        if (props.parentID === NULL_UUID || props.parentID === MyAvatar.sessionUUID) {
+        if (props.parentID === null || props.parentID === MyAvatar.sessionUUID) {
             var bestJointName = "";
             var bestJointIndex = -1;
             var bestJointDistance = 0;
@@ -115,7 +114,7 @@ function WearablesManager() {
                 }
             } else {
                 Entities.editEntity(grabbedEntity, {
-                    parentID: NULL_UUID
+                    parentID: null
                 });
 
                 var hasWearableAlready = this.wearables.indexOf(grabbedEntity);
