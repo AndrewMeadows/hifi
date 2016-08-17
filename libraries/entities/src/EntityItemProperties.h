@@ -48,8 +48,8 @@
 const quint64 UNKNOWN_CREATED_TIME = 0;
 
 /// A collection of properties of an entity item used in the scripting API. Translates between the actual properties of an
-/// entity and a JavaScript style hash/QScriptValue storing a set of properties. Used in scripting to set/get the complete
-/// set of entity item properties via JavaScript hashes/QScriptValues
+/// entity and a JavaScript style hash/QVariant storing a set of properties. Used in scripting to set/get the complete
+/// set of entity item properties via JavaScript hashes/QVariant
 /// all units for SI units (meter, second, radian, etc) 
 class EntityItemProperties {
     friend class EntityItem; // TODO: consider removing this friend relationship and use public methods
@@ -310,6 +310,9 @@ private:
 };
 
 Q_DECLARE_METATYPE(EntityItemProperties);
+QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties);
+QScriptValue EntityItemNonDefaultPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties);
+void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue& object, EntityItemProperties& properties);
 
 Q_DECLARE_METATYPE(EntityPropertyFlags);
 QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags);

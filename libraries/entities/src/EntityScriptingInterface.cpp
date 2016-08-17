@@ -77,24 +77,23 @@ void EntityScriptingInterface::setEntityTree(EntityTreePointer elementTree) {
     }
 }
 
-EntityItemProperties convertLocationToScriptSemantics(const EntityItemProperties& entitySideProperties) {
+void convertLocationToScriptSemantics(EntityItemProperties& properties) {
     // In EntityTree code, properties.position and properties.rotation are relative to the parent.  In javascript,
     // they are in world-space.  The local versions are put into localPosition and localRotation and position and
     // rotation are converted from local to world space.
-    EntityItemProperties scriptSideProperties = entitySideProperties;
-    scriptSideProperties.setLocalPosition(entitySideProperties.getPosition());
-    scriptSideProperties.setLocalRotation(entitySideProperties.getRotation());
-    scriptSideProperties.setLocalVelocity(entitySideProperties.getLocalVelocity());
-    scriptSideProperties.setLocalAngularVelocity(entitySideProperties.getLocalAngularVelocity());
+    properties.setLocalPosition(properties.getPosition());
+    properties.setLocalRotation(properties.getRotation());
+    properties.setLocalVelocity(entitySideProperties.getLocalVelocity());
+    properties.setLocalAngularVelocity(entitySideProperties.getLocalAngularVelocity());
 
     bool success;
-    glm::vec3 worldPosition = SpatiallyNestable::localToWorld(entitySideProperties.getPosition(),
-                                                              entitySideProperties.getParentID(),
-                                                              entitySideProperties.getParentJointIndex(),
+    glm::vec3 worldPosition = SpatiallyNestable::localToWorld(properties.getPosition(),
+                                                              properties.getParentID(),
+                                                              properties.getParentJointIndex(),
                                                               success);
-    glm::quat worldRotation = SpatiallyNestable::localToWorld(entitySideProperties.getRotation(),
-                                                              entitySideProperties.getParentID(),
-                                                              entitySideProperties.getParentJointIndex(),
+    glm::quat worldRotation = SpatiallyNestable::localToWorld(properties.getRotation(),
+                                                              properties.getParentID(),
+                                                              properties.getParentJointIndex(),
                                                               success);
     glm::vec3 worldVelocity = SpatiallyNestable::localToWorldVelocity(entitySideProperties.getVelocity(),
                                                                       entitySideProperties.getParentID(),
@@ -104,16 +103,13 @@ EntityItemProperties convertLocationToScriptSemantics(const EntityItemProperties
                                                                                     entitySideProperties.getParentID(),
                                                                                     entitySideProperties.getParentJointIndex(),
                                                                                     success);
-
-    scriptSideProperties.setPosition(worldPosition);
-    scriptSideProperties.setRotation(worldRotation);
-    scriptSideProperties.setVelocity(worldVelocity);
-    scriptSideProperties.setAngularVelocity(worldAngularVelocity);
-
-    return scriptSideProperties;
+    properties.setPosition(worldPosition);
+    properties.setRotation(worldRotation);
+    properties.setVelocity(worldVelocity);
+    properties.setAngularVelocity(worldAngularVelocity);
 }
 
-
+// adebug TODO: speed this up by eliminating some copies
 EntityItemProperties convertLocationFromScriptSemantics(const EntityItemProperties& scriptSideProperties) {
     // convert position and rotation properties from world-space to local, unless localPosition and localRotation
     // are set.  If they are set, they overwrite position and rotation.
@@ -303,6 +299,10 @@ QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPro
         });
     }
 
+    if (desiredProperties.getHasProperty(PROP_POSITION) ||
+            desiredProperties.getHasProperty(PROP_ROTATION)) {
+        convertLocationToScriptSemantics(results);
+    }
     return results.copyToVariant();
 }
 
@@ -722,6 +722,11 @@ void RayToEntityIntersectionResult::copyFromVariant(const QVariant& variant) {
     intersection = vec3FromVariant(map["intersection"]);
     surfaceNormal = vec3FromVariant(map["surfaceNormal"]);
 }
+
+// adebug TODO: figure out if we need this
+//void RayToEntityIntersectionResultFromVariant(const QVariant& variant, RayToEntityIntersectionResult& value) {
+//    value.copyFromVariant(variant);
+//}
 
 bool EntityScriptingInterface::setVoxels(QUuid entityID,
                                          std::function<bool(PolyVoxEntityItem&)> actor) {

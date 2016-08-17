@@ -688,7 +688,7 @@ void EntityItemProperties::copyFromVariant(const QVariant& variant, bool honorRe
                 auto result = QDateTime::fromMSecsSinceEpoch(_created / 1000, Qt::UTC); // usec per msec
                 return result;
             });
-        // TODO: expose this to QScriptValue for JSON saves?
+        // TODO: expose this to QVariant for JSON saves?
         //COPY_PROPERTY_FROM_VARIANT(simulationOwner, ???, setSimulatorPriority);
     }
 
@@ -733,6 +733,18 @@ void EntityItemProperties::copyFromVariant(const QVariant& variant, bool honorRe
     _lastEdited = usecTimestampNow();
 }
 
+QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {
+    assert(engine);
+    return engine->newVariant(properties.copyToVariant(false));
+}
+
+QScriptValue EntityItemNonDefaultPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {
+    return engine->newVariant(properties.copyToVariant(false));
+}
+
+void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue &object, EntityItemProperties& properties) {
+    properties.copyFromVariant(object.toVariant(), true);
+}
 
 QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags) {
     return EntityItemProperties::entityPropertyFlagsToScriptValue(engine, flags);
