@@ -127,6 +127,7 @@ inline QVariant convertToVariant(const qVectorQuat& v) { return qVectorQuatToVar
 inline QVariant convertToVariant(const qVectorBool& v) { return qVectorBoolToVariant(v); }
 inline QVariant convertToVariant(const qVectorFloat& v) { return qVectorFloatToVariant(v); }
 inline QVariant convertToVariant(const AACube& v) { return aaCubeToVariant(v); }
+inline QVariant convertToVariant(const QUuid& v) { return QVariant(v); }
 
 
 #define COPY_GROUP_PROPERTY_TO_VARIANT(X, G, g, P, p) \
