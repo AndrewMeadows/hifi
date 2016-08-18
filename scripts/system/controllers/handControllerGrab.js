@@ -126,6 +126,8 @@ var ZERO_VEC = {
     z: 0
 };
 
+var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
+
 // these control how long an abandoned pointer line or action will hang around
 var LIFETIME = 10;
 var ACTION_TTL = 15; // seconds
@@ -1418,7 +1420,7 @@ function MyController(hand) {
         var distanceToObject = Vec3.length(Vec3.subtract(MyAvatar.position, grabbedProperties.position));
         var timeScale = this.distanceGrabTimescale(this.mass, distanceToObject);
 
-        this.actionID = null;
+        this.actionID = NULL_UUID;
         this.actionID = Entities.addAction("spring", this.grabbedEntity, {
             targetPosition: this.currentObjectPosition,
             linearTimeScale: timeScale,
@@ -1427,7 +1429,7 @@ function MyController(hand) {
             tag: getTag(),
             ttl: ACTION_TTL
         });
-        if (this.actionID === null) {
+        if (this.actionID === NULL_UUID) {
             this.actionID = null;
         }
         this.actionTimeout = now + (ACTION_TTL * MSECS_PER_SEC);
@@ -1568,7 +1570,7 @@ function MyController(hand) {
             kinematicSetVelocity: true,
             ignoreIK: this.ignoreIK
         });
-        if (this.actionID === null) {
+        if (this.actionID === NULL_UUID) {
             this.actionID = null;
             return false;
         }
@@ -2079,7 +2081,7 @@ function MyController(hand) {
                 data["collidesWith"] = grabbedProperties.collidesWith;
                 data["collisionless"] = grabbedProperties.collisionless;
                 data["dynamic"] = grabbedProperties.dynamic;
-                data["parentID"] = wasLoaded ? null : grabbedProperties.parentID;
+                data["parentID"] = wasLoaded ? NULL_UUID : grabbedProperties.parentID;
                 data["parentJointIndex"] = grabbedProperties.parentJointIndex;
 
                 var whileHeldProperties = {
@@ -2127,7 +2129,7 @@ function MyController(hand) {
         children.forEach(function(childID) {
             print("disconnecting stray child of hand: (" + _this.hand + ") " + childID);
             Entities.editEntity(childID, {
-                parentID: null
+                parentID: NULL_UUID
             });
         });
     };
@@ -2174,7 +2176,7 @@ function MyController(hand) {
                     collidesWith: removeMyAvatarFromCollidesWith(data["collidesWith"]),
                     collisionless: data["collisionless"],
                     dynamic: data["dynamic"],
-                    parentID: data["parentID"],
+                    parentID: NULL_UUID,
                     parentJointIndex: data["parentJointIndex"]
                 };
 
@@ -2194,8 +2196,8 @@ function MyController(hand) {
                     delayedDeactivateEntityID = entityID;
                 }
 
-                // things that are held by parenting and dropped with no velocity will end up as "static" in bullet.  If
-                // it looks like the dropped thing should fall, give it a little velocity.
+                // things that are held by parenting and dropped with no velocity will end up as "inactive" in bullet,
+                // even if they are dynamic.  If it looks like the dropped thing should fall, give it a little velocity.
                 var props = Entities.getEntityProperties(entityID, ["parentID", "velocity", "dynamic", "shapeType"]);
                 var parentID = props.parentID;
 
@@ -2203,7 +2205,7 @@ function MyController(hand) {
                     parentID == MyAvatar.sessionUUID &&
                     Vec3.length(data["gravity"]) > 0.0 &&
                     data["dynamic"] &&
-                    data["parentID"] == null &&
+                    data["parentID"] == NULL_UUID &&
                     !data["collisionless"]) {
                     deactiveProps["velocity"] = this.currentVelocity;
                 }
