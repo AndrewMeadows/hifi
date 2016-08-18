@@ -8,7 +8,7 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-//
+//  
 
 //some experimental options
 var ONLY_I_CAN_EDIT = false;
@@ -52,6 +52,8 @@ if (SHOW_OVERLAYS === true) {
     });
     lightOverlayManager.setVisible(true);
 }
+
+var DEFAULT_PARENT_ID = '{00000000-0000-0000-0000-000000000000}'
 
 var AXIS_SCALE = 1;
 var COLOR_MAX = 255;
@@ -747,7 +749,7 @@ function handleLightOverlayRayCheckMessages(channel, message, sender) {
 
         currentLight = lightID;
         var lightProperties = Entities.getEntityProperties(lightID);
-        if (lightProperties.parentID !== null) {
+        if (lightProperties.parentID !== DEFAULT_PARENT_ID) {
             //this light has a parent already.  so lets call our block the parent and then make sure not to delete it at the end;
             oldParent = lightProperties.parentID;
             hasParent = true;

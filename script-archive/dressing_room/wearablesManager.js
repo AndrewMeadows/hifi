@@ -17,6 +17,7 @@
 
 Script.include("../libraries/utils.js");
 
+var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
 var DEFAULT_WEARABLE_DATA = {
     joints: {}
 };
@@ -80,7 +81,7 @@ function WearablesManager() {
         var allowedJoints = getEntityCustomData('wearable', grabbedEntity, DEFAULT_WEARABLE_DATA).joints;
 
         var props = Entities.getEntityProperties(grabbedEntity, ["position", "parentID"]);
-        if (props.parentID === null || props.parentID === MyAvatar.sessionUUID) {
+        if (props.parentID === NULL_UUID || props.parentID === MyAvatar.sessionUUID) {
             var bestJointName = "";
             var bestJointIndex = -1;
             var bestJointDistance = 0;
@@ -114,7 +115,7 @@ function WearablesManager() {
                 }
             } else {
                 Entities.editEntity(grabbedEntity, {
-                    parentID: null
+                    parentID: NULL_UUID
                 });
 
                 var hasWearableAlready = this.wearables.indexOf(grabbedEntity);
