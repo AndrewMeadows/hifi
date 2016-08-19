@@ -229,26 +229,6 @@ QUuid EntityScriptingInterface::addEntity(const QVariant& propertiesVariant, boo
     }
 }
 
-QUuid EntityScriptingInterface::addModelEntity(const QString& name, const QString& modelUrl, const QString& shapeType,
-                                               bool dynamic, const glm::vec3& position, const glm::vec3& gravity) {
-    _activityTracking.addedEntityCount++;
-
-    EntityItemProperties properties;
-    properties.setType(EntityTypes::Model);
-    properties.setName(name);
-    properties.setModelURL(modelUrl);
-    properties.setShapeTypeFromString(shapeType);
-    properties.setDynamic(dynamic);
-    properties.setPosition(position);
-    properties.setGravity(gravity);
-    return addEntity(properties);
-}
-
-QVariant EntityScriptingInterface::getEntityProperties(QUuid identity) {
-    EntityPropertyFlags noSpecificProperties;
-    return getEntityProperties(identity, noSpecificProperties);
-}
-
 QVariant EntityScriptingInterface::getEntityProperties(QUuid entityID, EntityPropertyFlags desiredProperties) {
     EntityItemProperties results(desiredProperties);
     if (_entityTree) {
