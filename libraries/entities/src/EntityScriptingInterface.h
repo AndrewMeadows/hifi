@@ -55,15 +55,10 @@ public:
 
 Q_DECLARE_METATYPE(RayToEntityIntersectionResult);
 
-// adebug TODO: figure out if we need these
-//QVariant RayToEntityIntersectionResultToVariant(QScriptEngine* engine, const RayToEntityIntersectionResult& results);
-//void RayToEntityIntersectionResultFromVariant(const QVariant& object, RayToEntityIntersectionResult& results);
-
-
 /// handles scripting of Entity commands from JS passed to assigned clients
 class EntityScriptingInterface : public OctreeScriptingInterface, public Dependency  {
     Q_OBJECT
-    
+
     Q_PROPERTY(float currentAvatarEnergy READ getCurrentAvatarEnergy WRITE setCurrentAvatarEnergy)
     Q_PROPERTY(float costMultiplier READ getCostMultiplier WRITE setCostMultiplier)
 

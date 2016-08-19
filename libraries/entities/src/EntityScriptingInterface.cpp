@@ -716,11 +716,6 @@ void RayToEntityIntersectionResult::copyFromVariant(const QVariant& variant) {
     surfaceNormal = vec3FromVariant(map["surfaceNormal"]);
 }
 
-// adebug TODO: figure out if we need this
-//void RayToEntityIntersectionResultFromVariant(const QVariant& variant, RayToEntityIntersectionResult& value) {
-//    value.copyFromVariant(variant);
-//}
-
 bool EntityScriptingInterface::setVoxels(QUuid entityID,
                                          std::function<bool(PolyVoxEntityItem&)> actor) {
     if (!_entityTree) {
