@@ -37,7 +37,7 @@ void MyCharacterController::updateShapeIfNecessary() {
         // compute new dimensions from avatar's bounding box
         float x = _boxScale.x;
         float z = _boxScale.z;
-        _radius = 0.5f * sqrtf(0.5f * (x * x + z * z));
+        setCapsuleRadius(0.5f * sqrtf(0.5f * (x * x + z * z)));
         _halfHeight = 0.5f * _boxScale.y - _radius;
         float MIN_HALF_HEIGHT = 0.1f;
         if (_halfHeight < MIN_HALF_HEIGHT) {

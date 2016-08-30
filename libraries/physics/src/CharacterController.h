@@ -1,5 +1,5 @@
 //
-//  CharacterControllerInterface.h
+//  CharacterController.h
 //  libraries/physcis/src
 //
 //  Created by Andrew Meadows 2015.10.21
@@ -9,8 +9,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_CharacterControllerInterface_h
-#define hifi_CharacterControllerInterface_h
+#ifndef hifi_CharacterController_h
+#define hifi_CharacterController_h
 
 #include <assert.h>
 #include <stdint.h>
@@ -20,6 +20,7 @@
 
 #include <GLMHelpers.h>
 #include "BulletUtil.h"
+#include "SweepProbe.h"
 
 const uint32_t PENDING_FLAG_ADD_TO_SIMULATION = 1U << 0;
 const uint32_t PENDING_FLAG_REMOVE_FROM_SIMULATION = 1U << 1;
@@ -91,6 +92,7 @@ public:
     glm::vec3 getLinearVelocity() const;
     glm::vec3 getVelocityChange() const;
 
+    void setCapsuleRadius(float radius);
     float getCapsuleRadius() const { return _radius; }
     float getCapsuleHalfHeight() const { return _halfHeight; }
     glm::vec3 getCapsuleLocalOffset() const { return _shapeLocalOffset; }
@@ -136,6 +138,7 @@ protected:
     };
 
     std::vector<CharacterMotor> _motors;
+    SweepProbe _sweepProbe;
     btVector3 _currentUp;
     btVector3 _targetVelocity;
     btVector3 _parentVelocity;
@@ -181,4 +184,4 @@ protected:
     bool _flyingAllowed { true };
 };
 
-#endif // hifi_CharacterControllerInterface_h
+#endif // hifi_CharacterController_h

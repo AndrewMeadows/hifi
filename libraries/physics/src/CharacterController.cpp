@@ -107,6 +107,8 @@ bool CharacterController::needsAddition() const {
 
 void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
     if (_dynamicsWorld != world) {
+        std::cout << "adebug CharacterController::setDynamicsWorld " << (void*)(world) << std::endl;  // adebug
+        // remove from old world
         if (_dynamicsWorld) {
             if (_rigidBody) {
                 _dynamicsWorld->removeRigidBody(_rigidBody);
@@ -115,6 +117,7 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
             _dynamicsWorld = nullptr;
         }
         if (world && _rigidBody) {
+            // add to new world
             _dynamicsWorld = world;
             _pendingFlags &= ~PENDING_FLAG_JUMP;
             // Before adding the RigidBody to the world we must save its oldGravity to the side
@@ -124,7 +127,13 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
             _dynamicsWorld->addAction(this);
             // restore gravity settings
             _rigidBody->setGravity(oldGravity);
+            _sweepProbe.setCollisionShape(_rigidBody->getCollisionShape());
         }
+        _sweepProbe.setOverlapMargin(1.0f);
+        int16_t group = BULLET_COLLISION_GROUP_MY_AVATAR;
+        int16_t mask = BULLET_COLLISION_MASK_MY_AVATAR & (~ group);
+        _sweepProbe.setCollisionFilterGroupAndMask(group, mask);
+        _sweepProbe.setCollisionWorld(_dynamicsWorld);
     }
     if (_dynamicsWorld) {
         if (_pendingFlags & PENDING_FLAG_UPDATE_SHAPE) {
@@ -185,6 +194,13 @@ void CharacterController::preStep(btCollisionWorld* collisionWorld) {
     }
 
     _hasSupport = checkForSupport(collisionWorld);
+    _sweepProbe.setWorldTransform(xform);
+
+    btSphereShape sphere(_radius);
+    btTransform start = xform;
+    btTransform end = xform;
+    end.setOrigin(rayEnd);
+    _sweepProbe.sweep(&sphere, start, end);
 }
 
 const btScalar MIN_TARGET_SPEED = 0.001f;
@@ -196,7 +212,7 @@ void CharacterController::playerStep(btCollisionWorld* dynaWorld, btScalar dt) {
     _rigidBody->setLinearVelocity(velocity + _parentVelocity);
 
     // Dynamicaly compute a follow velocity to move this body toward the _followDesiredBodyTransform.
-    // Rather than add this velocity to velocity the RigidBody, we explicitly teleport the RigidBody towards its goal.
+    // But, rather than add this velocity to that of the RigidBody, we explicitly teleport the RigidBody towards its goal.
     // This mirrors the computation done in MyAvatar::FollowHelper::postPhysicsUpdate().
 
     const float MINIMUM_TIME_REMAINING = 0.005f;
@@ -398,6 +414,10 @@ glm::vec3 CharacterController::getLinearVelocity() const {
         velocity = bulletToGLM(_rigidBody->getLinearVelocity());
     }
     return velocity;
+}
+
+void CharacterController::setCapsuleRadius(float radius) {
+    _radius = radius;
 }
 
 glm::vec3 CharacterController::getVelocityChange() const {
