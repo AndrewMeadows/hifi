@@ -20,7 +20,7 @@
 
 #include <GLMHelpers.h>
 #include "BulletUtil.h"
-#include "SweepProbe.h"
+#include "CharacterGhostObject.h"
 
 const uint32_t PENDING_FLAG_ADD_TO_SIMULATION = 1U << 0;
 const uint32_t PENDING_FLAG_REMOVE_FROM_SIMULATION = 1U << 1;
@@ -138,7 +138,7 @@ protected:
     };
 
     std::vector<CharacterMotor> _motors;
-    SweepProbe _sweepProbe;
+    CharacterGhostObject _ghost;
     btVector3 _currentUp;
     btVector3 _targetVelocity;
     btVector3 _parentVelocity;

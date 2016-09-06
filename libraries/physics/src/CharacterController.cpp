@@ -12,6 +12,8 @@
 #include "CharacterController.h"
 
 #include <NumericalConstants.h>
+#include <StreamUtils.h> // adebug
+#include <glm/gtc/quaternion.hpp>
 
 #include "PhysicsCollisionGroups.h"
 #include "ObjectMotionState.h"
@@ -107,7 +109,6 @@ bool CharacterController::needsAddition() const {
 
 void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
     if (_dynamicsWorld != world) {
-        std::cout << "adebug CharacterController::setDynamicsWorld " << (void*)(world) << std::endl;  // adebug
         // remove from old world
         if (_dynamicsWorld) {
             if (_rigidBody) {
@@ -127,13 +128,15 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
             _dynamicsWorld->addAction(this);
             // restore gravity settings
             _rigidBody->setGravity(oldGravity);
-            _sweepProbe.setCollisionShape(_rigidBody->getCollisionShape());
+            _ghost.setCollisionShape(_rigidBody->getCollisionShape());
         }
-        _sweepProbe.setOverlapMargin(1.0f);
         int16_t group = BULLET_COLLISION_GROUP_MY_AVATAR;
         int16_t mask = BULLET_COLLISION_MASK_MY_AVATAR & (~ group);
-        _sweepProbe.setCollisionFilterGroupAndMask(group, mask);
-        _sweepProbe.setCollisionWorld(_dynamicsWorld);
+        _ghost.setCollisionGroupAndMask(group, mask);
+        _ghost.setCollisionWorld(_dynamicsWorld);
+        _ghost.setMaxStepHeight(0.5f);
+        _ghost.setDistanceToFeet(_radius + _halfHeight);
+        _ghost.setMinWallAngle(PI / 4.0f);
     }
     if (_dynamicsWorld) {
         if (_pendingFlags & PENDING_FLAG_UPDATE_SHAPE) {
@@ -194,19 +197,13 @@ void CharacterController::preStep(btCollisionWorld* collisionWorld) {
     }
 
     _hasSupport = checkForSupport(collisionWorld);
-    _sweepProbe.setWorldTransform(xform);
-
-    btSphereShape sphere(_radius);
-    btTransform start = xform;
-    btTransform end = xform;
-    end.setOrigin(rayEnd);
-    _sweepProbe.sweep(&sphere, start, end);
 }
 
 const btScalar MIN_TARGET_SPEED = 0.001f;
 const btScalar MIN_TARGET_SPEED_SQUARED = MIN_TARGET_SPEED * MIN_TARGET_SPEED;
 
 void CharacterController::playerStep(btCollisionWorld* dynaWorld, btScalar dt) {
+    static int adebug=0;++adebug;bool verbose=(0==(adebug%300)); // adebug 
     btVector3 velocity = _rigidBody->getLinearVelocity() - _parentVelocity;
     computeNewVelocity(dt, velocity);
     _rigidBody->setLinearVelocity(velocity + _parentVelocity);
@@ -247,6 +244,18 @@ void CharacterController::playerStep(btCollisionWorld* dynaWorld, btScalar dt) {
         _rigidBody->setWorldTransform(btTransform(endRot, endPos));
     }
     _followTime += dt;
+
+    if (verbose) {
+        btTransform xform = _rigidBody->getWorldTransform();
+        _ghost.setWorldTransform(xform);
+
+        xform.setOrigin(btVector3(0.0f, 0.0f, 0.0f));
+        btVector3 forward = xform * btVector3(0.0f, 0.0f, -60.0f);
+        _ghost.setMotorVelocity(forward);
+        _ghost.setGravity(-10.0f);
+        btScalar DT = 1.0f / 60.0f;
+        _ghost.move(DT);
+    }
 }
 
 void CharacterController::jump() {
@@ -356,6 +365,7 @@ void CharacterController::setEnabled(bool enabled) {
 void CharacterController::updateUpAxis(const glm::quat& rotation) {
     btVector3 oldUp = _currentUp;
     _currentUp = quatRotate(glmToBullet(rotation), LOCAL_UP_AXIS);
+    _ghost.setUpDirection(_currentUp);
     if (_state != State::Hover) {
         const btScalar MIN_UP_ERROR = 0.01f;
         if (oldUp.distance(_currentUp) > MIN_UP_ERROR) {
