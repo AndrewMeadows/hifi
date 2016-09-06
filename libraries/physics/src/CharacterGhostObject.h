@@ -16,6 +16,7 @@
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 #include "CharacterSweepResult.h"
+#include "CharacterRayResult.h"
 
 
 class CharacterGhostObject : public btPairCachingGhostObject {
@@ -37,20 +38,26 @@ public:
 
     void setCollisionWorld(btCollisionWorld* world);
 
-    void updateTraction();
-
     void move(btScalar dt);
-
-    bool sweepTest(const btConvexShape* shape, const btTransform& start, const btTransform& end, CharacterSweepResult& result) const;
 
 protected:
     void removeFromWorld();
     void addToWorld();
 
+    bool sweepTest(const btConvexShape* shape,
+            const btTransform& start,
+            const btTransform& end,
+            CharacterSweepResult& result) const;
+    bool rayTest(const btVector3& start,
+            const btVector3& end,
+            CharacterRayResult& result) const;
+
     bool resolvePenetration(int numTries);
     void refreshOverlappingPairCache();
     void integrateKinematicMotion(btScalar dt);
+    void updateTraction();
     btScalar measureAvailableStepHeight() const;
+    void updateHoverState(const btTransform& transform);
 
 protected:
     btVector3 _upDirection { 0.0f, 1.0f, 0.0f }; // input, up in world-frame

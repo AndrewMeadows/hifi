@@ -13,6 +13,8 @@
 
 #include <assert.h>
 
+#include "CharacterRayResult.h"
+
 const btScalar DEFAULT_STEP_UP_HEIGHT = 0.5f;
 
 
@@ -69,20 +71,6 @@ void CharacterGhostObject::setCollisionWorld(btCollisionWorld* world) {
     }
 }
 
-void CharacterGhostObject::updateTraction() {
-    if (_hovering) {
-        // TODO: implement this
-    } else if (_onFloor) {
-        btVector3 pathDirection = _floorNormal.cross(_motorVelocity).cross(_floorNormal);
-        btScalar pathLength = pathDirection.length();
-        if (pathLength > FLT_EPSILON) {
-            _linearVelocity = (_motorSpeed / pathLength) * pathDirection;
-        } else {
-            _linearVelocity = btVector3(0.0f, 0.0f, 0.0f);
-        }
-    }
-}
-
 void CharacterGhostObject::move(btScalar dt) {
     _onFloor = false;
     assert(_world && _inWorld);
@@ -111,6 +99,7 @@ void CharacterGhostObject::move(btScalar dt) {
         // TODO: figure out how to untrap character
     }
     if (_onFloor) {
+        _hovering = false;
         updateTraction();
     }
 
@@ -145,6 +134,7 @@ void CharacterGhostObject::move(btScalar dt) {
     if (!result.hasHit()) {
         transform = nextTransform;
         //setWorldTransform(nextTransform);
+        updateHoverState(transform);
         updateTraction();
         return;
     }
@@ -186,36 +176,19 @@ void CharacterGhostObject::move(btScalar dt) {
         if (result.m_hitNormalWorld.dot(_upDirection) > _maxWallNormalUpComponent) {
             _floorNormal = result.m_hitNormalWorld;
             _onFloor = true;
+            _hovering = false;
             transform.setOrigin(transform.getOrigin() + result.m_closestHitFraction * sweepTranslation);
         } else {
-            if (!_onFloor) {
-                btScalar velocityDotFloor = _linearVelocity.dot(result.m_hitNormalWorld);
-                if (velocityDotFloor < 0.0f) {
-                    _linearVelocity -= velocityDotFloor * result.m_hitNormalWorld;
-                }
-            }
+            // TODO? anything to do here?
         }
     } else {
-        // TODO: test for nearby floor below the feet, change to hover when not there
+        // sweep didn't hit anything
         transform = nextTransform;
+        updateHoverState(transform);
         _onFloor = false;
     }
     updateTraction();
     //setWorldTransform(transform);
-}
-
-bool CharacterGhostObject::sweepTest(const btConvexShape* shape, const btTransform& start, const btTransform& end, CharacterSweepResult& result) const {
-    if (_world && _inWorld) {
-        assert(shape);
-
-        btScalar allowedPenetration = _world->getDispatchInfo().m_allowedCcdPenetration;
-        convexSweepTest(shape, start, end, result, allowedPenetration);
-
-        if (result.hasHit()) {
-            return true;
-        }
-    }
-    return false;
 }
 
 void CharacterGhostObject::removeFromWorld() {
@@ -235,6 +208,33 @@ void CharacterGhostObject::addToWorld() {
         _world->addCollisionObject(this, _collisionFilterGroup, _collisionFilterMask);
         _inWorld = true;
     }
+}
+
+bool CharacterGhostObject::sweepTest(
+        const btConvexShape* shape,
+        const btTransform& start,
+        const btTransform& end,
+        CharacterSweepResult& result) const {
+    if (_world && _inWorld) {
+        assert(shape);
+
+        btScalar allowedPenetration = _world->getDispatchInfo().m_allowedCcdPenetration;
+        convexSweepTest(shape, start, end, result, allowedPenetration);
+
+        if (result.hasHit()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CharacterGhostObject::rayTest(const btVector3& start,
+        const btVector3& end,
+        CharacterRayResult& result) const {
+    if (_world && _inWorld) {
+        _world->rayTest(start, end, result);
+	}
+    return result.hasHit();
 }
 
 bool CharacterGhostObject::resolvePenetration(int numTries) {
@@ -330,6 +330,20 @@ void CharacterGhostObject::integrateKinematicMotion(btScalar dt) {
     _linearVelocity += (dt * _gravity) * _upDirection;
 }
 
+void CharacterGhostObject::updateTraction() {
+    if (_hovering) {
+        _linearVelocity = _motorVelocity;
+    } else if (_onFloor) {
+        btVector3 pathDirection = _floorNormal.cross(_motorVelocity).cross(_floorNormal);
+        btScalar pathLength = pathDirection.length();
+        if (pathLength > FLT_EPSILON) {
+            _linearVelocity = (_motorSpeed / pathLength) * pathDirection;
+        } else {
+            _linearVelocity = btVector3(0.0f, 0.0f, 0.0f);
+        }
+    }
+}
+
 btScalar CharacterGhostObject::measureAvailableStepHeight() const {
     const btCollisionShape* shape = getCollisionShape();
     assert(shape->isConvex());
@@ -341,6 +355,16 @@ btScalar CharacterGhostObject::measureAvailableStepHeight() const {
     nextTransform.setOrigin(transform.getOrigin() + _maxStepHeight * _upDirection);
     sweepTest(convexShape, transform, nextTransform, result);
     return result.m_closestHitFraction * _maxStepHeight;
+}
+
+void CharacterGhostObject::updateHoverState(const btTransform& transform) {
+    // cast a ray down looking for floor support
+    CharacterRayResult rayResult(this);
+    btVector3 startPos = transform.getOrigin() - (_distanceToFeet * _upDirection);
+    btVector3 endPos = startPos - (2.0f * _distanceToFeet) * _upDirection;
+    rayTest(startPos, endPos, rayResult);
+    // we're hovering if the ray didn't hit an object we can stand on
+    _hovering = !(rayResult.hasHit() && rayResult.m_hitNormalWorld.dot(_upDirection) > _maxWallNormalUpComponent);
 }
 
 #if 0

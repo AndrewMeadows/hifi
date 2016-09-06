@@ -26,19 +26,19 @@ public:
 protected:
     const CharacterGhostObject* _character;
 
-// NOTE: Public data members inherited from ClosestConvexResultCallback:
-//
-//	btVector3   m_convexFromWorld; // unused except by btClosestNotMeConvexResultCallback
-//  btVector3   m_convexToWorld;   // unused except by btClosestNotMeConvexResultCallback
-//  btVector3   m_hitNormalWorld;
-//  btVector3   m_hitPointWorld;
-//  const btCollisionObject*    m_hitCollisionObject;
-//
-// NOTE: Public data members inherited from ConvexResultCallback:
-//
-//  btScalar    m_closestHitFraction;
-//  short int   m_collisionFilterGroup;
-//  short int   m_collisionFilterMask;
+    // NOTE: Public data members inherited from ClosestConvexResultCallback:
+    //
+    //	btVector3   m_convexFromWorld; // unused except by btClosestNotMeConvexResultCallback
+    //  btVector3   m_convexToWorld;   // unused except by btClosestNotMeConvexResultCallback
+    //  btVector3   m_hitNormalWorld;
+    //  btVector3   m_hitPointWorld;
+    //  const btCollisionObject*    m_hitCollisionObject;
+    //
+    // NOTE: Public data members inherited from ConvexResultCallback:
+    //
+    //  btScalar    m_closestHitFraction;
+    //  short int   m_collisionFilterGroup;
+    //  short int   m_collisionFilterMask;
 
 };
 
