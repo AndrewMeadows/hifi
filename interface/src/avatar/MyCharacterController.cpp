@@ -75,6 +75,12 @@ void MyCharacterController::updateShapeIfNecessary() {
                 _rigidBody->setGravity(DEFAULT_CHARACTER_GRAVITY * _currentUp);
             }
             //_rigidBody->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
+            if (_moveKinematically) {
+                _rigidBody->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+            } else {
+                _rigidBody->setCollisionFlags(_rigidBody->getCollisionFlags() &
+                        ~(btCollisionObject::CF_KINEMATIC_OBJECT | btCollisionObject::CF_STATIC_OBJECT));
+            }
         } else {
             // TODO: handle this failure case
         }

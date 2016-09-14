@@ -116,6 +116,7 @@ public:
 
     void setFlyingAllowed(bool value);
 
+    void setMoveKinematically(bool kinematic); // HACK
 
 protected:
 #ifdef DEBUG_STATE_CHANGE
@@ -144,6 +145,7 @@ protected:
     btVector3 _parentVelocity;
     btVector3 _preSimulationVelocity;
     btVector3 _velocityChange;
+    btVector3 _simpleMotorVelocity;
     btTransform _followDesiredBodyTransform;
     btScalar _followTimeRemaining;
     btTransform _characterBodyTransform;
@@ -182,6 +184,7 @@ protected:
     uint32_t _previousFlags { 0 };
 
     bool _flyingAllowed { true };
+    bool _moveKinematically { false }; // HACK
 };
 
 #endif // hifi_CharacterController_h

@@ -1912,6 +1912,9 @@ void MyAvatar::updateMotionBehaviorFromMenu() {
         _motionBehaviors &= ~AVATAR_MOTION_SCRIPTED_MOTOR_ENABLED;
     }
 
+    bool moveKinematically = menu->isOptionChecked(MenuOption::MoveKinematically);
+    _characterController.setMoveKinematically(moveKinematically);
+
     setCharacterControllerEnabled(menu->isOptionChecked(MenuOption::EnableCharacterController));
 }
 
