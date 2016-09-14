@@ -514,6 +514,10 @@ Menu::Menu() {
         avatar, SLOT(updateMotionBehaviorFromMenu()),
         UNSPECIFIED_POSITION, "Developer");
 
+    addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::MoveKinematically, 0, false,
+        avatar, SLOT(updateMotionBehaviorFromMenu()),
+        UNSPECIFIED_POSITION, "Developer");
+
     // Developer > Hands >>>
     MenuWrapper* handOptionsMenu = developerMenu->addMenu("Hands");
     addCheckableActionToQMenuAndActionHash(handOptionsMenu, MenuOption::DisplayHandTargets, 0, false,
