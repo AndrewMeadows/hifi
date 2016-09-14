@@ -71,27 +71,27 @@ void CharacterGhostObject::setCollisionWorld(btCollisionWorld* world) {
     }
 }
 
-void CharacterGhostObject::move(btScalar dt) {
+void CharacterGhostObject::move(btScalar dt, btScalar overshoot) {
     _onFloor = false;
     assert(_world && _inWorld);
-    integrateKinematicMotion(dt);
+    updateVelocity(dt);
 
     // resolve any penetrations before sweeping
     int32_t MAX_LOOPS = 4;
-    int32_t numTries = 0;
+    int32_t numExtractions = 0;
     btVector3 totalPosition(0.0f, 0.0f, 0.0f);
-    while (numTries < MAX_LOOPS) {
-        if (resolvePenetration(numTries)) {
-            numTries = 0;
+    while (numExtractions < MAX_LOOPS) {
+        if (resolvePenetration(numExtractions)) {
+            numExtractions = 0;
             break;
         }
         totalPosition += getWorldTransform().getOrigin();
-        ++numTries;
+        ++numExtractions;
     }
-    if (numTries > 1) {
+    if (numExtractions > 1) {
         // penetration resolution was probably oscillating between opposing objects
         // so we use the average of the solutions
-        totalPosition /= btScalar(numTries);
+        totalPosition /= btScalar(numExtractions);
         btTransform transform = getWorldTransform();
         transform.setOrigin(totalPosition);
         setWorldTransform(transform);
@@ -99,96 +99,115 @@ void CharacterGhostObject::move(btScalar dt) {
         // TODO: figure out how to untrap character
     }
     if (_onFloor) {
+        // a floor was identified during resolvePenetration()
         _hovering = false;
         updateTraction();
+    }
+
+    btVector3 forwardSweep = dt * _linearVelocity;
+    btScalar stepDistance = forwardSweep.length();
+    btScalar MIN_SWEEP_DISTANCE = 0.0001f;
+    if (stepDistance < MIN_SWEEP_DISTANCE) {
+        // not moving, no need to sweep
+        updateHoverState(getWorldTransform());
+        return;
     }
 
     const btCollisionShape* shape = getCollisionShape();
     assert(shape->isConvex());
     const btConvexShape* convexShape= static_cast<const btConvexShape*>(shape);
 
-    btVector3 sweepTranslation = dt * _linearVelocity;
+    // augment forwardSweep to help slow moving sweeps get over steppable ledges
     btScalar margin = shape->getMargin();
-    if (numTries > 0 || _linearVelocity.length2() > margin * margin) {
-        // update the pairCache for the sweepTests we intend to do
-        btVector3 minAabb, maxAabb;
-        getCollisionShape()->getAabb(getWorldTransform(), minAabb, maxAabb);
-        minAabb.setMin(minAabb - btVector3(margin, margin, margin));
-        maxAabb.setMax(maxAabb + btVector3(margin, margin, margin));
-        minAabb.setMin(minAabb + sweepTranslation);
-        maxAabb.setMax(maxAabb + sweepTranslation);
-        minAabb.setMin(minAabb + _maxStepHeight * _upDirection);
-        maxAabb.setMax(maxAabb + _maxStepHeight * _upDirection);
-
-        // this updates both pairCaches: world broadphase and ghostobject
-        _world->getBroadphase()->setAabb(getBroadphaseHandle(), minAabb, maxAabb, _world->getDispatcher());
+    if (overshoot < margin) {
+        overshoot = margin;
     }
+    btScalar longSweepDistance = stepDistance + overshoot;
+    forwardSweep *= longSweepDistance / stepDistance;
+
+    // expand this object's Aabb in the broadphase and
+    // update the pairCache for the sweepTests we intend to do
+    btVector3 minAabb, maxAabb;
+    getCollisionShape()->getAabb(getWorldTransform(), minAabb, maxAabb);
+    minAabb.setMin(minAabb - btVector3(margin, margin, margin));
+    maxAabb.setMax(maxAabb + btVector3(margin, margin, margin));
+    minAabb.setMin(minAabb + forwardSweep);
+    maxAabb.setMax(maxAabb + forwardSweep);
+    minAabb.setMin(minAabb + _maxStepHeight * _upDirection);
+    maxAabb.setMax(maxAabb + _maxStepHeight * _upDirection);
+
+    // this updates both pairCaches: world broadphase and ghostobject
+    _world->getBroadphase()->setAabb(getBroadphaseHandle(), minAabb, maxAabb, _world->getDispatcher());
 
     // step forward
     CharacterSweepResult result(this);
-    btTransform transform = getWorldTransform();
+    btTransform startTransform = getWorldTransform();
+    btTransform transform = startTransform;
     btTransform nextTransform = transform;
-    nextTransform.setOrigin(transform.getOrigin() + sweepTranslation);
+    nextTransform.setOrigin(transform.getOrigin() + forwardSweep);
     sweepTest(convexShape, transform, nextTransform, result); // forward
 
     if (!result.hasHit()) {
-        transform = nextTransform;
-        //setWorldTransform(nextTransform);
-        updateHoverState(transform);
+        nextTransform.setOrigin(transform.getOrigin() + (stepDistance / longSweepDistance) * forwardSweep);
+        setWorldTransform(nextTransform);
+        updateHoverState(nextTransform);
         updateTraction();
         return;
     }
 
-    // update transform forward as much as possible
-    transform.setOrigin(transform.getOrigin() + result.m_closestHitFraction * sweepTranslation);
-
-    // truncate sweepTranslation to remainder
-    sweepTranslation *= (1.0f - result.m_closestHitFraction);
-
-    // early exit if this hit is obviously steppable
+    // check if this hit is obviously unsteppable
     btVector3 hitFromBase = result.m_hitPointWorld - (transform.getOrigin() - (_distanceToFeet * _upDirection));
     btScalar hitHeight = hitFromBase.dot(_upDirection);
     if (hitHeight > _maxStepHeight) {
-        // capsule can't step over the obstacle so stop at hit
-        //setWorldTransform(transform);
+        // capsule can't step over the obstacle so move forward as much as possible before we bail
+        btVector3 forwardTranslation = result.m_closestHitFraction * forwardSweep;
+        btScalar forwardDistance = forwardTranslation.length();
+        if (forwardDistance > stepDistance) {
+            forwardTranslation *= stepDistance / forwardDistance;
+        }
+        transform.setOrigin(transform.getOrigin() + forwardTranslation);
+        setWorldTransform(transform);
         return;
     }
     // if we get here then we hit something that might be steppable
 
-    // sweep remainder after moving up availableStepHeight
+    // remember the forward sweep hit fraction for later
+    btScalar forwardSweepHitFraction = result.m_closestHitFraction;
+
+    // figure out how high we can step up
     btScalar availableStepHeight = measureAvailableStepHeight();
+
+    // raise by availableStepHeight before sweeping forward
     result.resetHitHistory();
-    transform.setOrigin(transform.getOrigin() + availableStepHeight * _upDirection);
-    nextTransform.setOrigin(transform.getOrigin() + sweepTranslation);
+    transform.setOrigin(startTransform.getOrigin() + availableStepHeight * _upDirection);
+    nextTransform.setOrigin(transform.getOrigin() + forwardSweep);
     sweepTest(convexShape, transform, nextTransform, result);
     if (result.hasHit()) {
-        transform.setOrigin(transform.getOrigin() + result.m_closestHitFraction * sweepTranslation);
+        transform.setOrigin(transform.getOrigin() + result.m_closestHitFraction * forwardSweep);
     } else {
         transform = nextTransform;
     }
 
-    // sweep down in search of ground
+    // sweep down in search of future landing spot
     result.resetHitHistory();
-    sweepTranslation = (dt * _linearVelocity.dot(_upDirection) - availableStepHeight) * _upDirection;
-    nextTransform.setOrigin(transform.getOrigin() + sweepTranslation);
+    btVector3 downSweep = (dt * _linearVelocity.dot(_upDirection) - availableStepHeight) * _upDirection;
+    nextTransform.setOrigin(transform.getOrigin() + downSweep);
     sweepTest(convexShape, transform, nextTransform, result);
-    if (result.hasHit()) {
-        if (result.m_hitNormalWorld.dot(_upDirection) > _maxWallNormalUpComponent) {
-            _floorNormal = result.m_hitNormalWorld;
-            _onFloor = true;
-            _hovering = false;
-            transform.setOrigin(transform.getOrigin() + result.m_closestHitFraction * sweepTranslation);
-        } else {
-            // TODO? anything to do here?
-        }
+    if (result.hasHit() && result.m_hitNormalWorld.dot(_upDirection) > _maxWallNormalUpComponent) {
+        // can stand on future landing spot, so we interpolate toward it
+        _floorNormal = result.m_hitNormalWorld;
+        _onFloor = true;
+        _hovering = false;
+        nextTransform.setOrigin(transform.getOrigin() + result.m_closestHitFraction * downSweep);
+        btVector3 totalStep = nextTransform.getOrigin() - startTransform.getOrigin();
+        transform.setOrigin(startTransform.getOrigin() + (stepDistance / totalStep.length()) * totalStep);
     } else {
-        // sweep didn't hit anything
-        transform = nextTransform;
-        updateHoverState(transform);
-        _onFloor = false;
+        // either there is no future landing spot, or there is but we can't stand on it
+        // in any case: we go forward as much as possible
+        transform.setOrigin(startTransform.getOrigin() + forwardSweepHitFraction * (stepDistance / longSweepDistance) * forwardSweep);
     }
+    setWorldTransform(transform);
     updateTraction();
-    //setWorldTransform(transform);
 }
 
 void CharacterGhostObject::removeFromWorld() {
@@ -239,8 +258,8 @@ bool CharacterGhostObject::rayTest(const btVector3& start,
 
 bool CharacterGhostObject::resolvePenetration(int numTries) {
     assert(_world);
-    // We refresh the overlapping pairCache because any previous movement may have pushed us into an
-    // overlap that was not in the cache.
+    // We refresh the overlapping pairCache because any previous movement may have pushed us
+    // into an overlap that was not in the cache.
     refreshOverlappingPairCache();
 
     // compute collision details
@@ -253,6 +272,7 @@ bool CharacterGhostObject::resolvePenetration(int numTries) {
     btVector3 minBox =btVector3(0.0f, 0.0f, 0.0f);
     btVector3 maxBox = btVector3(0.0f, 0.0f, 0.0f);
     btManifoldArray manifoldArray;
+    const btScalar PENETRATION_RESOLUTION_FUDGE_FACTOR = 0.0001f; // speeds up resolvation
 
     int numPairs = pairCache->getNumOverlappingPairs();
     for (int i = 0; i < numPairs; i++) {
@@ -298,7 +318,7 @@ bool CharacterGhostObject::resolvePenetration(int numTries) {
                     }
                 }
 
-                btVector3 penetration = (-penetrationDepth + 0.0001f) * normal;
+                btVector3 penetration = (-penetrationDepth + PENETRATION_RESOLUTION_FUDGE_FACTOR) * normal;
                 minBox.setMin(penetration);
                 maxBox.setMax(penetration);
             }
@@ -323,11 +343,12 @@ void CharacterGhostObject::refreshOverlappingPairCache() {
     _world->getBroadphase()->setAabb(getBroadphaseHandle(), minAabb, maxAabb, _world->getDispatcher());
 }
 
-void CharacterGhostObject::integrateKinematicMotion(btScalar dt) {
-    //btTransform transform = getWorldTransform();
-    //transform.setOrigin(transform.getOrigin() + dt * _linearVelocity + (0.5f * dt * dt * _gravity) * _upDirection);
-    //setWorldTransform(transform);
-    _linearVelocity += (dt * _gravity) * _upDirection;
+void CharacterGhostObject::updateVelocity(btScalar dt) {
+    if (_hovering) {
+        _linearVelocity *= 0.99f; // HACK damping
+    } else {
+        _linearVelocity += (dt * _gravity) * _upDirection;
+    }
 }
 
 void CharacterGhostObject::updateTraction() {
@@ -360,71 +381,10 @@ btScalar CharacterGhostObject::measureAvailableStepHeight() const {
 void CharacterGhostObject::updateHoverState(const btTransform& transform) {
     // cast a ray down looking for floor support
     CharacterRayResult rayResult(this);
-    btVector3 startPos = transform.getOrigin() - (_distanceToFeet * _upDirection);
+    btVector3 startPos = transform.getOrigin() - ((_distanceToFeet - 0.1f) * _upDirection); // 0.1 HACK to make ray hit
     btVector3 endPos = startPos - (2.0f * _distanceToFeet) * _upDirection;
     rayTest(startPos, endPos, rayResult);
     // we're hovering if the ray didn't hit an object we can stand on
     _hovering = !(rayResult.hasHit() && rayResult.m_hitNormalWorld.dot(_upDirection) > _maxWallNormalUpComponent);
 }
-
-#if 0
-void CharacterController::scanDown(btCollisionWorld* world) {
-    BT_PROFILE("scanDown");
-    // we test with downward raycast and if we don't find floor close enough then turn on "hover"
-    btKinematicClosestNotMeRayResultCallback callback(_ghostObject);
-    callback.m_collisionFilterGroup = getGhostObject()->getBroadphaseHandle()->m_collisionFilterGroup;
-    callback.m_collisionFilterMask = getGhostObject()->getBroadphaseHandle()->m_collisionFilterMask;
-
-    btVector3 start = _currentPosition;
-    const btScalar MAX_SCAN_HEIGHT = 20.0f + _halfHeight + _radius; // closest possible floor for disabling hover
-    const btScalar MIN_HOVER_HEIGHT = 3.0f + _halfHeight + _radius; // distance to floor for enabling hover
-    btVector3 end = start - MAX_SCAN_HEIGHT * _currentUp;
-
-    world->rayTest(start, end, callback);
-    if (!callback.hasHit()) {
-        _isHovering = true;
-    } else if (_isHovering && callback.m_closestHitFraction * MAX_SCAN_HEIGHT < MIN_HOVER_HEIGHT) {
-        _isHovering = false;
-    }
-}
-
-void CharacterController::stepUp(btCollisionWorld* world) {
-    BT_PROFILE("stepUp");
-    // phase 1: up
-
-    // compute start and end
-    btTransform start, end;
-    start.setIdentity();
-    start.setOrigin(_currentPosition + _currentUp * (_convexShape->getMargin() + _addedMargin));
-
-    _targetPosition = _currentPosition + _currentUp * _stepUpHeight;
-    end.setIdentity();
-    end.setOrigin(_targetPosition);
-
-    // sweep up
-    btVector3 sweepDirNegative = - _currentUp;
-    btKinematicClosestNotMeConvexResultCallback callback(_ghostObject, sweepDirNegative, btScalar(0.7071));
-    callback.m_collisionFilterGroup = getGhostObject()->getBroadphaseHandle()->m_collisionFilterGroup;
-    callback.m_collisionFilterMask = getGhostObject()->getBroadphaseHandle()->m_collisionFilterMask;
-    _ghostObject->convexSweepTest(_convexShape, start, end, callback, world->getDispatchInfo().m_allowedCcdPenetration);
-
-    if (callback.hasHit()) {
-        // we hit something, so zero our vertical velocity
-        _verticalVelocity = 0.0f;
-        _verticalOffset = 0.0f;
-
-        // Only modify the position if the hit was a slope and not a wall or ceiling.
-        if (callback.m_hitNormalWorld.dot(_currentUp) > 0.0f) {
-            _availableStepHeight = _stepUpHeight * callback.m_closestHitFraction;
-            _currentPosition.setInterpolate3(_currentPosition, _targetPosition, callback.m_closestHitFraction);
-        } else {
-            _availableStepHeight = _stepUpHeight;
-            _currentPosition = _targetPosition;
-        }
-    } else {
-        _currentPosition = _targetPosition;
-        _availableStepHeight = _stepUpHeight;
-    }
-}
-#endif // FOO
 

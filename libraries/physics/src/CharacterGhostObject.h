@@ -34,11 +34,13 @@ public:
     void setMinWallAngle(btScalar angle) { _maxWallNormalUpComponent = cosf(angle); }
     void setMaxStepHeight(btScalar height) { _maxStepHeight = height; }
 
+    const btVector3& getLinearVelocity() const { return _linearVelocity; }
+
     void setCollisionShape(btCollisionShape* shape) override;
 
     void setCollisionWorld(btCollisionWorld* world);
 
-    void move(btScalar dt);
+    void move(btScalar dt, btScalar overshoot);
 
 protected:
     void removeFromWorld();
@@ -54,7 +56,7 @@ protected:
 
     bool resolvePenetration(int numTries);
     void refreshOverlappingPairCache();
-    void integrateKinematicMotion(btScalar dt);
+    void updateVelocity(btScalar dt);
     void updateTraction();
     btScalar measureAvailableStepHeight() const;
     void updateHoverState(const btTransform& transform);
