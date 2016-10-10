@@ -15,14 +15,21 @@
 #include <PhysicsHelpers.h>
 #include <SharedUtil.h>
 
-// The problem is that objects are sometimes teleported into penetration while trying to settle, e.g. when
-// their collision neighbors not have been updated yet.  The solution is to ease objects into their settling
-// transform over time rather than teleporting them directly.  Since the object is settling we don't want
-// its velocities to exceed the sleeping threshold speeds during the deactivation time:
+// One problem with a remote-authoritative distributed physics simulation is that local objects in an dynamic
+// pile can sometimes be teleported into penetration with their neighbors, e.g. when their collision neighbors
+// have not been updated yet.  The solution is to ease objects into their new transform over finite time rather
+// than teleporting them directly.  This is especially problematic for Hifi when objects are settling down
+// because fewer updates are sent for objects that are not moving fast and whose positions don't differ much
+// from the last update sent to the entity-server.  To solve this problem we introduce this SettleAction
+// which will try to ease objects into their final resting place without letting them exceed their sleeping
+// threshold speeds:
+//
+// Bullet will deactivate objects that have speeds below sleeping thresholds for some "deactivation time".
+// We set these thresholds to custom values, but the deactivation time is hard coded by Bullet:
 //
 // DYNAMIC_LINEAR_SPEED_THRESHOLD = 0.05 m/sec
 // DYNAMIC_ANGULAR_SPEED_THRESHOLD = 0.087266f deg/sec (~5 deg/sec)
-// btRigidBody::gDeactivationTime = 2.0 sec  <-- hard coded in btRigidBody.cpp
+// btRigidBody::gDeactivationTime = 2.0 sec
 //
 // This means there is a maximum distance over which the object can be eased.  For the linear case:
 //
