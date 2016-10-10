@@ -762,6 +762,17 @@ void EntityMotionState::computeCollisionGroupAndMask(int16_t& group, int16_t& ma
     _entity->computeCollisionGroupAndFinalMask(group, mask);
 }
 
+bool EntityMotionState::isSettlingDownInRemoteSimulation() const {
+    assert(entityTreeIsLocked());
+    return
+        !_body->isStaticOrKinematicObject() && // is dynamic
+        _entity->getSimulatorID() != Physics::getSessionUUID() && // we don't own the simulation
+        _entity->getSimulationPriority() <= _outgoingPriority && // we don't want to own the simulation
+        glm::length(_entity->getVelocity()) < DYNAMIC_LINEAR_SPEED_THRESHOLD && // moving slowly
+        glm::length(_entity->getAngularVelocity()) < DYNAMIC_ANGULAR_SPEED_THRESHOLD &&
+        !_entity->hasActions(); // doesn't have any custom actions
+}
+
 void EntityMotionState::upgradeOutgoingPriority(uint8_t priority) {
     _outgoingPriority = glm::max<uint8_t>(_outgoingPriority, priority);
 }

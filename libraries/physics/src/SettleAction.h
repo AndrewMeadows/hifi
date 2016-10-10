@@ -21,6 +21,8 @@
 // the goal being to help piles of dynamic objects settle down on the remote side of a distributed
 // physics simulation.
 
+const btScalar MAX_DEACTIVATION_TIME = 2.0f; // hard-coded in btRigidBody.cpp
+
 class SettleAction : public btActionInterface {
 public:
     SettleAction(uint8_t maxNumBodies);

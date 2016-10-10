@@ -35,8 +35,6 @@
 //
 // MAX_EASE_DISTANCE = DYNAMIC_LINEAR_SPEED_THRESHOLD * btRigidBody::gDeactivationTime = 0.20 m
 
-const btScalar MAX_DEACTIVATION_TIME = 2.0f; // hard-coded in btRigidBody.cpp
-
 // local helper function
 void slamBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
     const btVector3 zero(0.0f, 0.0f, 0.0f);

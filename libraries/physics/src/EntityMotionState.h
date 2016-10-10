@@ -74,9 +74,11 @@ public:
     void resetMeasuredBodyAcceleration();
     void measureBodyAcceleration();
 
-    virtual QString getName() const override;
+    QString getName() const override;
 
-    virtual void computeCollisionGroupAndMask(int16_t& group, int16_t& mask) const override;
+    void  computeCollisionGroupAndMask(int16_t& group, int16_t& mask) const override;
+
+    bool isSettlingDownInRemoteSimulation() const override;
 
     friend class PhysicalEntitySimulation;
 

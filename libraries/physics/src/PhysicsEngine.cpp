@@ -191,6 +191,7 @@ void PhysicsEngine::addObjects(const VectorOfMotionStates& objects) {
 }
 
 VectorOfMotionStates PhysicsEngine::changeObjects(const VectorOfMotionStates& objects) {
+    uint64_t expiry = usecTimestampNow() + (uint64_t)(MAX_DEACTIVATION_TIME * USECS_PER_SECOND);
     VectorOfMotionStates stillNeedChange;
     for (auto object : objects) {
         uint32_t flags = object->getIncomingDirtyFlags() & DIRTY_PHYSICS_FLAGS;
@@ -200,7 +201,19 @@ VectorOfMotionStates PhysicsEngine::changeObjects(const VectorOfMotionStates& ob
             } else {
                 stillNeedChange.push_back(object);
             }
+            _settleAction.removeBody(object->getRigidBody());
         } else if (flags & EASY_DIRTY_PHYSICS_FLAGS) {
+            if (object->isSettlingDownInRemoteSimulation()) {
+                btTransform transform;
+                object->getWorldTransform(transform);
+                _settleAction.addBody(object->getRigidBody(), transform, expiry);
+
+                // it's the duty of _settleAction to move the object to its final destination
+                // so we remove DIRTY_TRANSFORM flags
+                flags &= ~Simulation::DIRTY_TRANSFORM;
+            } else {
+                _settleAction.removeBody(object->getRigidBody());
+            }
             object->handleEasyChanges(flags);
             object->clearIncomingDirtyFlags();
         }
