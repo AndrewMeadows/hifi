@@ -18,7 +18,10 @@
 #include "ThreadSafeDynamicsWorld.h"
 #include "PhysicsLogging.h"
 
+const uint8_t MAX_NUM_SETTLING_OBJECTS = 100;
+
 PhysicsEngine::PhysicsEngine(const glm::vec3& offset) :
+        _settleAction(MAX_NUM_SETTLING_OBJECTS),
         _originOffset(offset),
         _myAvatarController(nullptr) {
 }
@@ -27,6 +30,7 @@ PhysicsEngine::~PhysicsEngine() {
     if (_myAvatarController) {
         _myAvatarController->setDynamicsWorld(nullptr);
     }
+    _dynamicsWorld->removeAction(&_settleAction);
     delete _collisionConfig;
     delete _collisionDispatcher;
     delete _broadphaseFilter;
@@ -56,6 +60,8 @@ void PhysicsEngine::init() {
         // in order for its broadphase collision queries to work correctly. Look at how we use
         // _activeStaticBodies to track and update the Aabb's of moved static objects.
         _dynamicsWorld->setForceUpdateAllAabbs(false);
+
+        _dynamicsWorld->addAction(&_settleAction);
     }
 }
 
@@ -151,6 +157,7 @@ void PhysicsEngine::removeObjects(const VectorOfMotionStates& objects) {
         btRigidBody* body = object->getRigidBody();
         if (body) {
             _dynamicsWorld->removeRigidBody(body);
+            _settleAction.removeBody(body);
 
             // NOTE: setRigidBody() modifies body->m_userPointer so we should clear the MotionState's body BEFORE deleting it.
             object->setRigidBody(nullptr);
@@ -167,6 +174,7 @@ void PhysicsEngine::removeObjects(const SetOfMotionStates& objects) {
         btRigidBody* body = object->getRigidBody();
         if (body) {
             _dynamicsWorld->removeRigidBody(body);
+            _settleAction.removeBody(body);
 
             // NOTE: setRigidBody() modifies body->m_userPointer so we should clear the MotionState's body BEFORE deleting it.
             object->setRigidBody(nullptr);

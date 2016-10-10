@@ -21,9 +21,10 @@
 
 #include "BulletUtil.h"
 #include "ContactInfo.h"
-#include "ObjectMotionState.h"
-#include "ThreadSafeDynamicsWorld.h"
 #include "ObjectAction.h"
+#include "ObjectMotionState.h"
+#include "SettleAction.h"
+#include "ThreadSafeDynamicsWorld.h"
 
 const float HALF_SIMULATION_EXTENT = 512.0f; // meters
 
@@ -97,6 +98,7 @@ private:
 
     void doOwnershipInfection(const btCollisionObject* objectA, const btCollisionObject* objectB);
 
+    SettleAction _settleAction;
     btClock _clock;
     btDefaultCollisionConfiguration* _collisionConfig = NULL;
     btCollisionDispatcher* _collisionDispatcher = NULL;
