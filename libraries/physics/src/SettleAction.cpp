@@ -28,16 +28,17 @@
 //
 // MAX_EASE_DISTANCE = DYNAMIC_LINEAR_SPEED_THRESHOLD * btRigidBody::gDeactivationTime = 0.20 m
 
-const btScalar MAX_DEACTIVATION_TIME = 2.0f;
+const btScalar MAX_DEACTIVATION_TIME = 2.0f; // hard-coded in btRigidBody.cpp
 
+// local helper function
 void slamBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
-    // yes we can teleport directly
     const btVector3 zero(0.0f, 0.0f, 0.0f);
     body->setLinearVelocity(zero);
     body->setAngularVelocity(zero);
     body->setWorldTransform(targetTransform);
 }
 
+// local helper function
 void slaveBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
     btScalar timeRemaining = MAX_DEACTIVATION_TIME - body->getDeactivationTime();
     if (timeRemaining < 0.0f) {
@@ -52,6 +53,9 @@ void slaveBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
     btScalar distance = offset.length();
     const btScalar maxEaseDistance = DYNAMIC_LINEAR_SPEED_THRESHOLD * timeRemaining;
     if (distance > maxEaseDistance) {
+        // The object won't be able to reach its target within timeRemaining while keeping below
+        // the deactivation thresholds, so we micro-teleport close enought to the target to make
+        // it possible for next frame.
         timeRemaining = distance / DYNAMIC_LINEAR_SPEED_THRESHOLD;
         if (timeRemaining > MAX_DEACTIVATION_TIME) {
             timeRemaining = MAX_DEACTIVATION_TIME;
@@ -67,6 +71,7 @@ void slaveBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
     btScalar angle = dQ.getAngle();
     const btScalar maxEaseAngle = DYNAMIC_ANGULAR_SPEED_THRESHOLD * timeRemaining;
     if (angle > maxEaseAngle) {
+        // micro-teleport for angular displacement
         angle = maxEaseAngle;
         dQ.setRotation(dQ.getAxis(), angle);
         // Q2 = dQ * Q1  -->  Q1 = dQ^ * Q2
@@ -130,9 +135,9 @@ void SettleAction::addBody(btRigidBody* body, const btTransform& targetTransform
 
 void SettleAction::removeBody(btRigidBody* body) {
     assert(body);
-    uint8_t lastIndex = _numBodies - 1;
     for (uint8_t i = 0; i < _numBodies; ++i) {
         if (_body[i] == body) {
+            uint8_t lastIndex = _numBodies - 1;
             if (i < lastIndex) {
                 _body[i] = _body[lastIndex];
                 _transform[i] = _transform[lastIndex];
@@ -149,24 +154,23 @@ void SettleAction::updateAction(btCollisionWorld* collisionWorld, btScalar delta
     uint8_t i = _numBodies;
     while (i > 0) {
         --i;
-        btRigidBody* body = _body[i];
-        if (!body->isActive()) {
-            continue;
-        }
-
         if (now > _expiry[i]) {
-            // the body isn't inactive yet, but we're out of time
-            slamBodyToTarget(_body[i], _transform[i]);
+            if (_body[i]->isActive()) {
+                // the body is still active, but we're out of time
+                slamBodyToTarget(_body[i], _transform[i]);
+            }
 
+            // remove this one
             uint8_t lastIndex = _numBodies - 1;
-            _body[i] = _body[lastIndex];
-            _transform[i] = _transform[lastIndex];
-            _expiry[i] = _expiry[lastIndex];
+            if (i < lastIndex) {
+                _body[i] = _body[lastIndex];
+                _transform[i] = _transform[lastIndex];
+                _expiry[i] = _expiry[lastIndex];
+            }
             --_numBodies;
-            continue;
+        } else if (_body[i]->isActive()) {
+            slaveBodyToTarget(_body[i], _transform[i]);
         }
-
-        slaveBodyToTarget(_body[i], _transform[i]);
     }
 }
 
