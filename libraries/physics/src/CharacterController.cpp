@@ -336,10 +336,6 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
         _rigidBody->setWorldTransform(transform);
         _rigidBody->setLinearVelocity(_ghost.getLinearVelocity());
     } else {
-        // Dynamicaly compute a follow velocity to move this body toward the _followDesiredBodyTransform.
-        // Rather than add this velocity to velocity the RigidBody, we explicitly teleport the RigidBody towards its goal.
-        // This mirrors the computation done in MyAvatar::FollowHelper::postPhysicsUpdate().
-
         _rigidBody->setLinearVelocity(velocity + _parentVelocity);
         _ghost.setWorldTransform(_rigidBody->getWorldTransform());
     }
