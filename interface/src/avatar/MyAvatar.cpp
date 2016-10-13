@@ -120,7 +120,7 @@ MyAvatar::MyAvatar(RigPointer rig) :
     _rig(rig),
     _prevShouldDrawHead(true),
     _audioListenerMode(FROM_HEAD),
-    _hmdAtRestDetector(glm::vec3(0), glm::quat())
+    _hmdAtRestDetector(glm::vec3(0.0f), glm::quat())
 {
     using namespace recording;
 
@@ -592,7 +592,7 @@ void MyAvatar::setSensorToWorldMatrix(const glm::mat4& sensorToWorld) {
 
     if (_enableDebugDrawSensorToWorldMatrix) {
         DebugDraw::getInstance().addMarker("sensorToWorldMatrix", glmExtractRotation(_sensorToWorldMatrix),
-                                           extractTranslation(_sensorToWorldMatrix), glm::vec4(1));
+                                           extractTranslation(_sensorToWorldMatrix), glm::vec4(1.0f));
     }
 
     _sensorToWorldMatrixCache.set(_sensorToWorldMatrix);
@@ -1325,7 +1325,7 @@ void MyAvatar::updateMotors() {
 
         if (qApp->isHMDMode()) {
             // OUTOFBODY_HACK: only apply vertical component of _actionMotorVelocity to the characterController
-            _characterController.addMotor(glm::vec3(0, _actionMotorVelocity.y, 0), motorRotation, DEFAULT_MOTOR_TIMESCALE, INVALID_MOTOR_TIMESCALE);
+            _characterController.addMotor(glm::vec3(0.0f, _actionMotorVelocity.y, 0.0f), motorRotation, DEFAULT_MOTOR_TIMESCALE, INVALID_MOTOR_TIMESCALE);
         } else {
             if (_isPushing || _isBraking || !_isBeingPushed) {
                 _characterController.addMotor(_actionMotorVelocity, motorRotation, DEFAULT_MOTOR_TIMESCALE, INVALID_MOTOR_TIMESCALE);
@@ -1347,7 +1347,7 @@ void MyAvatar::updateMotors() {
         }
         if (qApp->isHMDMode()) {
             // OUTOFBODY_HACK: only apply vertical component of _scriptedMotorVelocity to the characterController
-            _characterController.addMotor(glm::vec3(0, _scriptedMotorVelocity.y, 0), motorRotation, DEFAULT_MOTOR_TIMESCALE, INVALID_MOTOR_TIMESCALE);
+            _characterController.addMotor(glm::vec3(0.0f, _scriptedMotorVelocity.y, 0.0f), motorRotation, DEFAULT_MOTOR_TIMESCALE, INVALID_MOTOR_TIMESCALE);
         } else {
             _characterController.addMotor(_scriptedMotorVelocity, motorRotation, _scriptedMotorTimescale);
         }
@@ -1605,7 +1605,7 @@ void MyAvatar::postUpdate(float deltaTime) {
         auto animSkeleton = _rig->getAnimSkeleton();
 
         // the rig is in the skeletonModel frame
-        AnimPose xform(glm::vec3(1), _skeletonModel->getRotation(), _skeletonModel->getTranslation());
+        AnimPose xform(glm::vec3(1.0f), _skeletonModel->getRotation(), _skeletonModel->getTranslation());
 
         if (_enableDebugDrawDefaultPose && animSkeleton) {
             glm::vec4 gray(0.2f, 0.2f, 0.2f, 0.2f);
@@ -1629,13 +1629,13 @@ void MyAvatar::postUpdate(float deltaTime) {
         auto rightHandPose = getRightHandControllerPoseInWorldFrame();
 
         if (leftHandPose.isValid()) {
-            DebugDraw::getInstance().addMarker("leftHandController", leftHandPose.getRotation(), leftHandPose.getTranslation(), glm::vec4(1));
+            DebugDraw::getInstance().addMarker("leftHandController", leftHandPose.getRotation(), leftHandPose.getTranslation(), glm::vec4(1.0f));
         } else {
             DebugDraw::getInstance().removeMarker("leftHandController");
         }
 
         if (rightHandPose.isValid()) {
-            DebugDraw::getInstance().addMarker("rightHandController", rightHandPose.getRotation(), rightHandPose.getTranslation(), glm::vec4(1));
+            DebugDraw::getInstance().addMarker("rightHandController", rightHandPose.getRotation(), rightHandPose.getTranslation(), glm::vec4(1.0f));
         } else {
             DebugDraw::getInstance().removeMarker("rightHandController");
         }
@@ -1856,16 +1856,6 @@ void MyAvatar::updateActionMotor(float deltaTime) {
     _boomLength = glm::clamp<float>(_boomLength, ZOOM_MIN, ZOOM_MAX);
 }
 
-void MyAvatar::applyVelocityToSensorToWorldMatrix(const glm::vec3& velocity, float deltaTime) {
-    glm::vec3 horizontalVelocity(velocity.x, 0.0f, velocity.z);
-    float speed2 = glm::length2(horizontalVelocity);
-    if (speed2 > MIN_AVATAR_SPEED_SQUARED) {
-        glm::vec3 position = extractTranslation(_sensorToWorldMatrix) + deltaTime * horizontalVelocity;
-        // update the position column of matrix
-        _sensorToWorldMatrix[3] = glm::vec4(position, 1);
-    }
-}
-
 void MyAvatar::updatePosition(float deltaTime) {
     if (_motionBehaviors & AVATAR_MOTION_ACTION_MOTOR_ENABLED) {
         updateActionMotor(deltaTime);
@@ -1896,7 +1886,6 @@ void MyAvatar::updatePosition(float deltaTime) {
             glm::quat liftRotation;
             swingTwistDecomposition(glmExtractRotation(_sensorToWorldMatrix * getHMDSensorMatrix()), _worldUpDirection, liftRotation, motorRotation);
             glm::vec3 worldVelocity = motorRotation * _actionMotorVelocity;
-            applyVelocityToSensorToWorldMatrix(worldVelocity, deltaTime);
 
             // Apply _scriptedMotorVelocity to the sensorToWorld matrix.
             if (_motionBehaviors & AVATAR_MOTION_SCRIPTED_MOTOR_ENABLED) {
@@ -1908,13 +1897,16 @@ void MyAvatar::updatePosition(float deltaTime) {
                     // world-frame
                     motorRotation = glm::quat();
                 }
-                worldVelocity = motorRotation * _scriptedMotorVelocity;
-                applyVelocityToSensorToWorldMatrix(worldVelocity, deltaTime);
+                worldVelocity += motorRotation * _scriptedMotorVelocity;
             }
 
             // OUTOFBODY_HACK: apply scaling factor to _thrust, to get the same behavior as an periodically applied motor.
             const float THRUST_DAMPING_FACTOR = 0.25f;
-            applyVelocityToSensorToWorldMatrix(THRUST_DAMPING_FACTOR * _thrust, deltaTime);
+            worldVelocity += THRUST_DAMPING_FACTOR * _thrust;
+
+            glm::vec3 position = extractTranslation(_sensorToWorldMatrix);
+            position = _characterController.computeNewHMDPosition(position, worldVelocity, deltaTime);
+            _sensorToWorldMatrix[3] = glm::vec4(position, 1.0f);
         }
     }
 

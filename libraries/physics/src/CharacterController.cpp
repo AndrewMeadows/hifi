@@ -61,7 +61,7 @@ CharacterController::CharacterMotor::CharacterMotor(const glm::vec3& vel, const 
     }
 }
 
-CharacterController::CharacterController() : _avatarMover(&_ghost) {
+CharacterController::CharacterController() : _avatarMover(&_ghost), _hmdMover(&_ghost) {
     _floorDistance = MAX_FALL_HEIGHT;
 
     _targetVelocity.setValue(0.0f, 0.0f, 0.0f);
@@ -129,6 +129,11 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
         _avatarMover.setMaxStepHeight(0.75f * (_radius + _halfHeight)); // HACK
         _avatarMover.setWorldTransform(_rigidBody->getWorldTransform());
         _avatarMover.setMotorOnly(!_moveKinematically);
+
+        _hmdMover.setMinWallAngle(PI / 4.0f); // HACK
+        _hmdMover.setMaxStepHeight(0.75f * (_radius + _halfHeight)); // HACK
+        _hmdMover.setWorldTransform(_rigidBody->getWorldTransform());
+        _hmdMover.setMotorOnly(!_moveKinematically);
     }
     if (_dynamicsWorld) {
         if (_pendingFlags & PENDING_FLAG_UPDATE_SHAPE) {
@@ -862,3 +867,8 @@ bool CharacterController::queryPenetration(const btTransform& transform) {
     const btScalar MIN_PENETRATION_SQUARED = 0.0016f; // 0.04^2
     return penetration.length2() < MIN_PENETRATION_SQUARED;
 }
+
+glm::vec3 CharacterController::computeNewHMDPosition(const glm::vec3& startPosition, const glm::vec3& velocity, float dt) {
+    return startPosition + dt * velocity;
+}
+

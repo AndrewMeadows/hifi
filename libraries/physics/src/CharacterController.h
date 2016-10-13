@@ -122,6 +122,8 @@ public:
 
     bool queryPenetration(const btTransform& transform);
 
+    glm::vec3 computeNewHMDPosition(const glm::vec3& startPosition, const glm::vec3& velocity, float dt);
+
 protected:
 #ifdef DEBUG_STATE_CHANGE
     void setState(State state, const char* reason);
@@ -145,18 +147,19 @@ protected:
     std::vector<CharacterMotor> _motors;
     CharacterGhostObject _ghost; // tracks overlap pairs for efficient sweep tests
     KinematicCharacterState _avatarMover;
+    KinematicCharacterState _hmdMover;
+    btTransform _followDesiredBodyTransform;
     btVector3 _currentUp;
     btVector3 _targetVelocity;
     btVector3 _parentVelocity;
     btVector3 _preSimulationVelocity;
-    glm::vec3 _preActionVelocity;
     btVector3 _velocityChange;
-    btTransform _followDesiredBodyTransform;
     btVector3 _followVelocity { 0.0f, 0.0f, 0.0f };
     btVector3 _previousFollowPosition { 0.0f, 0.0f, 0.0f };
     btVector3 _position;
     btQuaternion _rotation;
 
+    glm::vec3 _preActionVelocity;
     glm::vec3 _shapeLocalOffset;
 
     glm::vec3 _boxScale; // used to compute capsule shape
