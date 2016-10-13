@@ -61,7 +61,7 @@ CharacterController::CharacterMotor::CharacterMotor(const glm::vec3& vel, const 
     }
 }
 
-CharacterController::CharacterController() {
+CharacterController::CharacterController() : _avatarMover(&_ghost) {
     _floorDistance = MAX_FALL_HEIGHT;
 
     _targetVelocity.setValue(0.0f, 0.0f, 0.0f);
@@ -117,17 +117,18 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
             _rigidBody->setGravity(_gravity * _currentUp);
             btCollisionShape* shape = _rigidBody->getCollisionShape();
             assert(shape && shape->getShapeType() == CAPSULE_SHAPE_PROXYTYPE);
-            _ghost.setCharacterCapsule(static_cast<btCapsuleShape*>(shape)); // KINEMATIC_CONTROLLER_HACK
+            _ghost.setCharacterCapsule(static_cast<btCapsuleShape*>(shape));
         }
-        // KINEMATIC_CONTROLLER_HACK
         _ghost.setCollisionGroupAndMask(_collisionGroup, BULLET_COLLISION_MASK_MY_AVATAR & (~ _collisionGroup));
         _ghost.setCollisionWorld(_dynamicsWorld);
         _ghost.setRadiusAndHalfHeight(_radius, _halfHeight);
-        _ghost.setMaxStepHeight(0.75f * (_radius + _halfHeight)); // HACK
-        _ghost.setMinWallAngle(PI / 4.0f); // HACK
         _ghost.setUpDirection(_currentUp);
-        _ghost.setMotorOnly(!_moveKinematically);
         _ghost.setWorldTransform(_rigidBody->getWorldTransform());
+
+        _avatarMover.setMinWallAngle(PI / 4.0f); // HACK
+        _avatarMover.setMaxStepHeight(0.75f * (_radius + _halfHeight)); // HACK
+        _avatarMover.setWorldTransform(_rigidBody->getWorldTransform());
+        _avatarMover.setMotorOnly(!_moveKinematically);
     }
     if (_dynamicsWorld) {
         if (_pendingFlags & PENDING_FLAG_UPDATE_SHAPE) {
@@ -143,8 +144,9 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
 
 bool CharacterController::checkForSupport(btCollisionWorld* collisionWorld, btScalar dt) {
     if (_moveKinematically) {
-        // kinematic motion will move() the _ghost later
-        return _ghost.hasSupport();
+        // KINEMATIC_CONTROLLER_HACK
+        // kinematic motion will move() the character later
+        return _avatarMover.hasSupport();
     }
     btScalar minStepHeight = 0.041f; // HACK: hardcoded now but should be shape margin
     btScalar maxStepHeight = 0.75f * (_halfHeight + _radius);
@@ -153,14 +155,14 @@ bool CharacterController::checkForSupport(btCollisionWorld* collisionWorld, btSc
 
     btScalar targetSpeed = _targetVelocity.length();
     if (targetSpeed > FLT_EPSILON) {
-        // move the _ghost forward to test for step
+        // move forward to test for step
         btTransform transform = _rigidBody->getWorldTransform();
         transform.setOrigin(transform.getOrigin());
-        _ghost.setWorldTransform(transform);
-        _ghost.setMotorVelocity(_targetVelocity);
+        _avatarMover.setWorldTransform(transform);
+        _avatarMover.setMotorVelocity(_targetVelocity);
         float overshoot = _radius;
-        _ghost.setHovering(_state == State::Hover);
-        _ghost.move(dt, overshoot, _gravity);
+        _avatarMover.setHovering(_state == State::Hover);
+        _avatarMover.move(dt, overshoot, _gravity);
     }
 
     btDispatcher* dispatcher = collisionWorld->getDispatcher();
@@ -186,14 +188,14 @@ bool CharacterController::checkForSupport(btCollisionWorld* collisionWorld, btSc
                 btScalar hitHeight = _halfHeight + _radius + pointOnCharacter.dot(_currentUp);
                 if (hitHeight < maxStepHeight && normal.dot(_currentUp) > COS_PI_OVER_THREE) {
                     hasFloor = true;
-                    if (!_ghost.isSteppingUp()) {
+                    if (!_avatarMover.isSteppingUp()) {
                         // early exit since all we need to know is that we're on a floor
                         break;
                     }
                 }
                 // analysis of the step info using manifold data is unreliable, so we only proceed
-                // when the _ghost has detected a steppable obstacle
-                if (_ghost.isSteppingUp()) {
+                // when the KinematicCharacterState has detected a steppable obstacle
+                if (_avatarMover.isSteppingUp()) {
                     // remember highest step obstacle
                     if (hitHeight > maxStepHeight) {
                         // this manifold is invalidated by point that is too high
@@ -213,16 +215,16 @@ bool CharacterController::checkForSupport(btCollisionWorld* collisionWorld, btSc
                 stepHeight = highestStep;
                 stepNormal = normal;
             }
-            if (hasFloor && !_ghost.isSteppingUp()) {
+            if (hasFloor && !_avatarMover.isSteppingUp()) {
                 // early exit since all we need to know is that we're on a floor
                 break;
             }
         }
     }
-    if (_ghost.isSteppingUp() && stepHeight > minStepHeight && _targetVelocity.dot(stepNormal) < 0.0f) {
+    if (_avatarMover.isSteppingUp() && stepHeight > minStepHeight && _targetVelocity.dot(stepNormal) < 0.0f) {
         // move avatar up according to kinematic character logic
         btTransform transform = _rigidBody->getWorldTransform();
-        transform.setOrigin(_ghost.getWorldTransform().getOrigin());
+        transform.setOrigin(_avatarMover.getWorldTransform().getOrigin());
         _rigidBody->setWorldTransform(transform);
     }
     return hasFloor;
@@ -246,6 +248,7 @@ void CharacterController::preStep(btCollisionWorld* collisionWorld) {
     btScalar rayLength = _radius + FLOOR_PROXIMITY_THRESHOLD;
     btVector3 rayEnd = rayStart - rayLength * _currentUp;
 
+    // TODO: convert this rayCast to use the _ghost for efficiency
     // scan down for nearby floor
     ClosestNotMe rayCallback(_rigidBody);
     rayCallback.m_closestHitFraction = 1.0f;
@@ -327,17 +330,17 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
     if (_moveKinematically) {
         // KINEMATIC_CONTROLLER_HACK
         btTransform transform = _rigidBody->getWorldTransform();
-        transform.setOrigin(_ghost.getWorldTransform().getOrigin());
-        _ghost.setWorldTransform(transform);
-        _ghost.setMotorVelocity(_targetVelocity);
+        transform.setOrigin(_avatarMover.getWorldTransform().getOrigin());
+        _avatarMover.setWorldTransform(transform);
+        _avatarMover.setMotorVelocity(_targetVelocity);
         float overshoot = 1.0f * _radius;
-        _ghost.move(dt, overshoot, _gravity);
-        transform.setOrigin(_ghost.getWorldTransform().getOrigin());
+        _avatarMover.move(dt, overshoot, _gravity);
+        transform.setOrigin(_avatarMover.getWorldTransform().getOrigin());
         _rigidBody->setWorldTransform(transform);
-        _rigidBody->setLinearVelocity(_ghost.getLinearVelocity());
+        _rigidBody->setLinearVelocity(_avatarMover.getLinearVelocity());
     } else {
         _rigidBody->setLinearVelocity(velocity + _parentVelocity);
-        _ghost.setWorldTransform(_rigidBody->getWorldTransform());
+        _avatarMover.setWorldTransform(_rigidBody->getWorldTransform());
     }
 }
 
@@ -757,8 +760,8 @@ void CharacterController::updateState() {
             }
             break;
         }
-        if (_moveKinematically && _ghost.isHovering()) {
-            SET_STATE(State::Hover, "kinematic motion"); // HACK
+        if (_moveKinematically && _avatarMover.isHovering()) {
+            SET_STATE(State::Hover, "kinematic motion"); // KINEMATIC_CONTROLLER_HACK
         }
     } else {
         // OUTOFBODY_HACK -- in collisionless state switch only between Ground and Hover states
@@ -841,18 +844,19 @@ float CharacterController::measureMaxHipsOffsetRadius(const glm::vec3& currentHi
 }
 
 void CharacterController::setMoveKinematically(bool kinematic) {
+    // KINEMATIC_CONTROLLER_HACK
     if (kinematic != _moveKinematically) {
         _moveKinematically = kinematic;
         _pendingFlags |= PENDING_FLAG_UPDATE_SHAPE;
-        _ghost.setMotorOnly(!_moveKinematically);
+        _avatarMover.setMotorOnly(!_moveKinematically);
     }
 }
 
 bool CharacterController::queryPenetration(const btTransform& transform) {
     btVector3 minBox;
     btVector3 maxBox;
-    _ghost.setWorldTransform(transform);
-    _ghost.measurePenetration(minBox, maxBox);
+    _avatarMover.setWorldTransform(transform);
+    _avatarMover.measurePenetration(minBox, maxBox);
     btVector3 penetration = minBox;
     penetration.setMax(maxBox.absolute());
     const btScalar MIN_PENETRATION_SQUARED = 0.0016f; // 0.04^2

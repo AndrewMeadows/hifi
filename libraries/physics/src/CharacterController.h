@@ -23,6 +23,7 @@
 
 #include "BulletUtil.h"
 #include "CharacterGhostObject.h"
+#include "KinematicCharacterState.h"
 
 const uint32_t PENDING_FLAG_ADD_TO_SIMULATION = 1U << 0;
 const uint32_t PENDING_FLAG_REMOVE_FROM_SIMULATION = 1U << 1;
@@ -142,7 +143,8 @@ protected:
     };
 
     std::vector<CharacterMotor> _motors;
-    CharacterGhostObject _ghost; // KINEMATIC_CONTROLLER_HACK
+    CharacterGhostObject _ghost; // tracks overlap pairs for efficient sweep tests
+    KinematicCharacterState _avatarMover;
     btVector3 _currentUp;
     btVector3 _targetVelocity;
     btVector3 _parentVelocity;
