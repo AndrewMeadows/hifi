@@ -18,7 +18,7 @@
 #include "ThreadSafeDynamicsWorld.h"
 #include "PhysicsLogging.h"
 
-const uint8_t MAX_NUM_SETTLING_OBJECTS = 100;
+const uint8_t MAX_NUM_SETTLING_OBJECTS = 250;
 
 PhysicsEngine::PhysicsEngine(const glm::vec3& offset) :
         _settleAction(MAX_NUM_SETTLING_OBJECTS),
@@ -201,9 +201,10 @@ VectorOfMotionStates PhysicsEngine::changeObjects(const VectorOfMotionStates& ob
             } else {
                 stillNeedChange.push_back(object);
             }
+            std::cout << "adebug removeBody for hard flags  " << (void*)(object->getRigidBody()) << std::endl;  // adebug
             _settleAction.removeBody(object->getRigidBody());
         } else if (flags & EASY_DIRTY_PHYSICS_FLAGS) {
-            if (object->isSettlingDownInRemoteSimulation()) {
+            if (object->isSettlingDownInRemoteSimulation(flags)) {
                 btTransform transform;
                 object->getWorldTransform(transform);
                 _settleAction.addBody(object->getRigidBody(), transform, expiry);
@@ -212,6 +213,9 @@ VectorOfMotionStates PhysicsEngine::changeObjects(const VectorOfMotionStates& ob
                 // so we remove DIRTY_TRANSFORM flags
                 flags &= ~Simulation::DIRTY_TRANSFORM;
             } else {
+                if (object->getType() == MOTIONSTATE_TYPE_ENTITY) {
+                    std::cout << "adebug removeBody for not settling  " << (void*)(object->getRigidBody()) << std::endl;  // adebug
+                }
                 _settleAction.removeBody(object->getRigidBody());
             }
             object->handleEasyChanges(flags);

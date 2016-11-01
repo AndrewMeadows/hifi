@@ -146,7 +146,7 @@ public:
     void dirtyInternalKinematicChanges() { _hasInternalKinematicChanges = true; }
     void clearInternalKinematicChanges() { _hasInternalKinematicChanges = false; }
 
-    virtual bool isSettlingDownInRemoteSimulation() const { return false; }
+    virtual bool isSettlingDownInRemoteSimulation(uint32_t flags) const { return false; }
 
     friend class PhysicsEngine;
 

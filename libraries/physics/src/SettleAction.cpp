@@ -1,5 +1,5 @@
 //
-//  SettleAction.h
+//  SettleAction.cpp
 //  libraries/physcis/src
 //
 //  Created by Andrew Meadows 2016-10-06
@@ -11,6 +11,7 @@
 //  http://bulletphysics.org/Bullet/BulletFull/classbtActionInterface.html
 
 #include "SettleAction.h"
+#include <iostream> // adebug
 
 #include <PhysicsHelpers.h>
 #include <SharedUtil.h>
@@ -45,6 +46,7 @@ void slamBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
 
 // local helper function
 void slaveBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
+    return;
     btScalar timeRemaining = MAX_DEACTIVATION_TIME - body->getDeactivationTime();
     if (timeRemaining < 0.0f) {
         slamBodyToTarget(body, targetTransform);
@@ -87,14 +89,24 @@ void slaveBodyToTarget(btRigidBody* body, const btTransform& targetTransform) {
     body->setWorldTransform(currentTransform);
 }
 
+uint64_t appStart; // adebug
+
+// helper function
+float secondsSinceStart() {
+    uint32_t foo = uint32_t((usecTimestampNow() - appStart) / 1000);
+    return (float)(foo) / 1000.0f;
+}
+
 SettleAction::SettleAction(uint8_t maxNumBodies) {
     const uint8_t MAX_MAX_NUM_BODIES = 254;
     assert(maxNumBodies < MAX_MAX_NUM_BODIES);
     assert(maxNumBodies > 0);
+    _maxNumBodies = maxNumBodies;
     _body = new btRigidBody* [_maxNumBodies];
     _transform = new btTransform [_maxNumBodies];
     _expiry = new uint64_t [_maxNumBodies];
-    _maxNumBodies = maxNumBodies;
+
+    appStart = usecTimestampNow(); // adebug
 }
 
 SettleAction::~SettleAction() {
@@ -127,6 +139,7 @@ void SettleAction::addBody(btRigidBody* body, const btTransform& targetTransform
         // the body is not in the list but there is room --> add it
         ++_numBodies;
         _body[index] = body;
+        std::cout << "adebug " << secondsSinceStart() << "  SettleAction::addBody(" << (void*)body << ")  N = " << (int)_numBodies << std::endl;  // adebug
     }
     _transform[index] = targetTransform;
     _expiry[index] = expiry;
@@ -149,6 +162,7 @@ void SettleAction::removeBody(btRigidBody* body) {
                 _expiry[i] = _expiry[lastIndex];
             }
             --_numBodies;
+            std::cout << "adebug " << secondsSinceStart() << "  SettleAction::removeBody(" << (void*)body << ")  N = " << (int)_numBodies << std::endl;  // adebug
             break;
         }
     }
@@ -167,12 +181,13 @@ void SettleAction::updateAction(btCollisionWorld* collisionWorld, btScalar delta
 
             // remove this one
             uint8_t lastIndex = _numBodies - 1;
+            --_numBodies;
+            std::cout << "adebug " << secondsSinceStart() << "  SettleAction::expireBody(" << (void*)_body[i] << ")  N = " << (int)_numBodies << std::endl;  // adebug
             if (i < lastIndex) {
                 _body[i] = _body[lastIndex];
                 _transform[i] = _transform[lastIndex];
                 _expiry[i] = _expiry[lastIndex];
             }
-            --_numBodies;
         } else if (_body[i]->isActive()) {
             slaveBodyToTarget(_body[i], _transform[i]);
         }

@@ -78,7 +78,7 @@ public:
 
     void  computeCollisionGroupAndMask(int16_t& group, int16_t& mask) const override;
 
-    bool isSettlingDownInRemoteSimulation() const override;
+    bool isSettlingDownInRemoteSimulation(uint32_t flags) const override;
 
     friend class PhysicalEntitySimulation;
 

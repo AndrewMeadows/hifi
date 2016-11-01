@@ -762,15 +762,32 @@ void EntityMotionState::computeCollisionGroupAndMask(int16_t& group, int16_t& ma
     _entity->computeCollisionGroupAndFinalMask(group, mask);
 }
 
-bool EntityMotionState::isSettlingDownInRemoteSimulation() const {
+bool EntityMotionState::isSettlingDownInRemoteSimulation(uint32_t flags) const {
     assert(entityTreeIsLocked());
-    return
+    bool value =
         !_body->isStaticOrKinematicObject() && // is dynamic
         _entity->getSimulatorID() != Physics::getSessionUUID() && // we don't own the simulation
-        _entity->getSimulationPriority() <= _outgoingPriority && // we don't want to own the simulation
-        glm::length(_entity->getVelocity()) < DYNAMIC_LINEAR_SPEED_THRESHOLD && // moving slowly
-        glm::length(_entity->getAngularVelocity()) < DYNAMIC_ANGULAR_SPEED_THRESHOLD &&
+        !(_outgoingPriority > 0 && _outgoingPriority >= _entity->getSimulationPriority()) && // we don't want to own the simulation
+        glm::length(_entity->getVelocity()) < 2.0f * DYNAMIC_LINEAR_SPEED_THRESHOLD && // moving slowly
+        glm::length(_entity->getAngularVelocity()) < 2.0f * DYNAMIC_ANGULAR_SPEED_THRESHOLD &&
         !_entity->hasActions(); // doesn't have any custom actions
+    if (!value) {
+        bool isDynamic = !_body->isStaticOrKinematicObject();
+        bool weDontOwnIt = _entity->getSimulatorID() != Physics::getSessionUUID();
+        bool weDontWantToOwnIt = !(_outgoingPriority > 0 && _outgoingPriority >= _entity->getSimulationPriority());
+        float linearSpeed = glm::length(_entity->getVelocity()) / (2.0f * DYNAMIC_LINEAR_SPEED_THRESHOLD);
+        float angularSpeed = glm::length(_entity->getAngularVelocity()) / (2.0f * DYNAMIC_ANGULAR_SPEED_THRESHOLD);
+        bool hasNoActions = !_entity->hasActions(); // doesn't have any custom actions
+        std::cout << "adebug  " << (void*)_body << "  d = " << isDynamic
+            << "  nO = " << weDontOwnIt
+            << "  nW = " << weDontWantToOwnIt
+            << "  oP = " << (int)_outgoingPriority
+            << "  l = " << linearSpeed
+            << "  a = " << angularSpeed
+            << "  nA = " << hasNoActions
+            << std::endl;  // adebug
+    }
+    return value;
 }
 
 void EntityMotionState::upgradeOutgoingPriority(uint8_t priority) {
