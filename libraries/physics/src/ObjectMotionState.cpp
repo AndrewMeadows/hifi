@@ -9,13 +9,15 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+#include "ObjectMotionState.h"
+
 #include <math.h>
 
 #include "BulletUtil.h"
-#include "ObjectMotionState.h"
 #include "PhysicsEngine.h"
 #include "PhysicsHelpers.h"
 #include "PhysicsLogging.h"
+#include "ShapeFactory.h"
 
 // these thresholds determine what updates (object-->body) will activate the physical object
 const float ACTIVATION_POSITION_DELTA = 0.005f;
@@ -65,8 +67,6 @@ ShapeManager* ObjectMotionState::getShapeManager() {
 ObjectMotionState::ObjectMotionState(const btCollisionShape* shape) :
     _motionType(MOTION_TYPE_STATIC),
     _shape(shape),
-    _body(nullptr),
-    _mass(0.0f),
     _lastKinematicStep(worldSimulationStep)
 {
 }
@@ -165,6 +165,50 @@ void ObjectMotionState::setShape(const btCollisionShape* shape) {
             getShapeManager()->releaseShape(_shape);
         }
         _shape = shape;
+        computeShapeComplexity();
+    }
+}
+
+void ObjectMotionState::computeShapeComplexity() {
+    // store a measure of the shape's complexity
+    if (_shape) {
+        int32_t type = _shape->getShapeType();
+        switch (type) {
+            case (int32_t)BOX_SHAPE_PROXYTYPE: {
+                    // a box has six planes
+                    _shapeComplexity = 6U;
+                }
+                break;
+            case (int32_t)SPHERE_SHAPE_PROXYTYPE: {
+                    // spheres are simplest shape
+                    _shapeComplexity = 1U;
+                }
+                break;
+            case (int32_t)CONVEX_HULL_SHAPE_PROXYTYPE: {
+                    // count the hull's planes
+                    const btConvexHullShape* convexHull = static_cast<const btConvexHullShape*>(_shape);
+                    _shapeComplexity = (uint32_t)convexHull->getNumPlanes();
+                }
+                break;
+            case (int32_t)COMPOUND_SHAPE_PROXYTYPE: {
+                    // HACK: estimate sum of all chile planes assuming an average of 14 planes per child
+                    const btCompoundShape* compound = static_cast<const btCompoundShape*>(_shape);
+                    _shapeComplexity = 14U * (uint32_t)compound->getNumChildShapes();
+                }
+                break;
+            case (int32_t) TRIANGLE_MESH_SHAPE_PROXYTYPE: {
+                    // mesh shapes use the triangle count
+                    const ShapeFactory::StaticMeshShape* meshShape = static_cast<const ShapeFactory::StaticMeshShape*>(_shape);
+                    _shapeComplexity = (int32_t)meshShape->getNumTriangles();
+                }
+                break;
+            default:
+                // default complexity for misc shape types we don't track
+                _shapeComplexity = 2U;
+                break;
+        }
+    } else {
+        _shapeComplexity = 0;
     }
 }
 

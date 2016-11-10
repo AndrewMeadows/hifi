@@ -407,6 +407,7 @@ void ShapeFactory::deleteShape(const btCollisionShape* shape) {
 ShapeFactory::StaticMeshShape::StaticMeshShape(btTriangleIndexVertexArray* dataArray)
 :   btBvhTriangleMeshShape(dataArray, true), _dataArray(dataArray) {
     assert(dataArray);
+    _numTriangles = dataArray[0].getIndexedMeshArray()[0].m_numTriangles;
 }
 
 ShapeFactory::StaticMeshShape::~StaticMeshShape() {

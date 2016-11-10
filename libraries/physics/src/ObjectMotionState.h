@@ -146,6 +146,8 @@ public:
     void dirtyInternalKinematicChanges() { _hasInternalKinematicChanges = true; }
     void clearInternalKinematicChanges() { _hasInternalKinematicChanges = false; }
 
+    uint32_t getShapeComplexity() const { return _shapeComplexity; }
+
     friend class PhysicsEngine;
 
 protected:
@@ -156,13 +158,15 @@ protected:
 
     void setRigidBody(btRigidBody* body);
     virtual void setShape(const btCollisionShape* shape);
+    void computeShapeComplexity();
 
     MotionStateType _type = MOTIONSTATE_TYPE_INVALID; // type of MotionState
     PhysicsMotionType _motionType; // type of motion: KINEMATIC, DYNAMIC, or STATIC
 
     const btCollisionShape* _shape;
-    btRigidBody* _body;
-    float _mass;
+    btRigidBody* _body { nullptr };
+    float _mass { 1.0f };
+    uint32_t _shapeComplexity { 0 };
 
     uint32_t _lastKinematicStep;
     bool _hasInternalKinematicChanges { false };

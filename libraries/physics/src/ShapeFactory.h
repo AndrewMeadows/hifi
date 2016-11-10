@@ -32,9 +32,12 @@ namespace ShapeFactory {
         StaticMeshShape(btTriangleIndexVertexArray* dataArray);
         ~StaticMeshShape();
 
+        uint32_t getNumTriangles() const { return _numTriangles; };
+
     private:
         // the StaticMeshShape owns its vertex/index data
         btTriangleIndexVertexArray* _dataArray;
+        uint32_t _numTriangles { 0 };
     };
 };
 
