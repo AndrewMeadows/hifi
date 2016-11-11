@@ -20,6 +20,7 @@
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 #include "BulletUtil.h"
+#include "ComplexityTracker.h"
 #include "ContactInfo.h"
 #include "ObjectMotionState.h"
 #include "ThreadSafeDynamicsWorld.h"
@@ -99,6 +100,9 @@ private:
 
     void doOwnershipInfection(const btCollisionObject* objectA, const btCollisionObject* objectB);
 
+    void incrementEmergencyMeasures();
+    void decrementEmergencyMeasures();
+
     btClock _clock;
     btDefaultCollisionConfiguration* _collisionConfig = NULL;
     btCollisionDispatcher* _collisionDispatcher = NULL;
@@ -111,13 +115,15 @@ private:
     CollisionEvents _collisionEvents;
     QHash<QUuid, EntityActionPointer> _objectActions;
     std::vector<btRigidBody*> _activeStaticBodies;
+    ComplexityTracker _complexityTracker;
 
     glm::vec3 _originOffset;
 
     CharacterController* _myAvatarController;
 
-    uint32_t _numContactFrames = 0;
+    uint32_t _numContactFrames { 0 };
     uint32_t _numSubsteps;
+    uint32_t _numSlowSteps { 0 };
 
     bool _dumpNextStats = false;
     bool _hasOutgoingChanges = false;

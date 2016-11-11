@@ -237,7 +237,6 @@ void PhysicsEngine::removeContacts(ObjectMotionState* motionState) {
 
 void PhysicsEngine::stepSimulation() {
     CProfileManager::Reset();
-    BT_PROFILE("stepSimulation");
     // NOTE: the grand order of operations is:
     // (1) pull incoming changes
     // (2) step simulation
@@ -273,9 +272,30 @@ void PhysicsEngine::stepSimulation() {
         updateContactMap();
     };
 
+    uint64_t startTime = usecTimestampNow();
+    BT_PROFILE("stepSimulation");
     int numSubsteps = _dynamicsWorld->stepSimulationWithSubstepCallback(timeStep, PHYSICS_ENGINE_MAX_NUM_SUBSTEPS,
                                                                         PHYSICS_ENGINE_FIXED_SUBSTEP, onSubStep);
     if (numSubsteps > 0) {
+        const uint32_t MIN_NUM_SLOW_STEPS = 4;
+        const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
+
+        float computeTime = (float)(usecTimestampNow() - startTime) / (float)USECS_PER_SECOND;
+        const float MAX_FRACTION_REAL_TIME = 0.25f;
+        if (computeTime / dt > MAX_FRACTION_REAL_TIME) {
+            ++_numSlowSteps;
+            if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
+                incrementEmergencyMeasures();
+            }
+        } else if (_numSlowSteps > 0) {
+            if (_numSlowSteps > MAX_NUM_SLOW_STEPS) {
+                _numSlowSteps = MAX_NUM_SLOW_STEPS;
+            }
+            --_numSlowSteps;
+        } else {
+            decrementEmergencyMeasures();
+        }
+
         BT_PROFILE("postSimulation");
         _numSubsteps += (uint32_t)numSubsteps;
         ObjectMotionState::setWorldSimulationStep(_numSubsteps);
@@ -358,6 +378,14 @@ void PhysicsEngine::doOwnershipInfection(const btCollisionObject* objectA, const
     }
 }
 
+void PhysicsEngine::incrementEmergencyMeasures() {
+    // TODO: implement this
+}
+
+void PhysicsEngine::decrementEmergencyMeasures() {
+    // TODO: implement this
+}
+
 void PhysicsEngine::updateContactMap() {
     BT_PROFILE("updateContactMap");
     ++_numContactFrames;
@@ -424,6 +452,17 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
                 // hence we must negate the penetration.
                 glm::vec3 penetration = - bulletToGLM(contact.distance * contact.normalWorldOnB);
                 _collisionEvents.push_back(Collision(type, idB, QUuid(), position, penetration, velocityChange));
+            }
+            if(motionStateA && motionStateB) {
+                if (type == CONTACT_EVENT_TYPE_START) {
+                    int32_t complexity = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
+                    _complexityTracker.addComplexity(motionStateA, complexity);
+                    _complexityTracker.addComplexity(motionStateB, complexity);
+                } else if (type == CONTACT_EVENT_TYPE_END) {
+                    int32_t complexity = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
+                    _complexityTracker.removeComplexity(motionStateA, complexity);
+                    _complexityTracker.removeComplexity(motionStateB, complexity);
+                }
             }
         }
 

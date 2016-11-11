@@ -176,35 +176,35 @@ void ObjectMotionState::computeShapeComplexity() {
         switch (type) {
             case (int32_t)BOX_SHAPE_PROXYTYPE: {
                     // a box has six planes
-                    _shapeComplexity = 6U;
+                    _shapeComplexity = 6;
                 }
                 break;
             case (int32_t)SPHERE_SHAPE_PROXYTYPE: {
                     // spheres are simplest shape
-                    _shapeComplexity = 1U;
+                    _shapeComplexity = 1;
                 }
                 break;
             case (int32_t)CONVEX_HULL_SHAPE_PROXYTYPE: {
                     // count the hull's planes
                     const btConvexHullShape* convexHull = static_cast<const btConvexHullShape*>(_shape);
-                    _shapeComplexity = (uint32_t)convexHull->getNumPlanes();
+                    _shapeComplexity = convexHull->getNumPlanes();
                 }
                 break;
             case (int32_t)COMPOUND_SHAPE_PROXYTYPE: {
                     // HACK: estimate sum of all chile planes assuming an average of 14 planes per child
                     const btCompoundShape* compound = static_cast<const btCompoundShape*>(_shape);
-                    _shapeComplexity = 14U * (uint32_t)compound->getNumChildShapes();
+                    _shapeComplexity = 14 * compound->getNumChildShapes();
                 }
                 break;
             case (int32_t) TRIANGLE_MESH_SHAPE_PROXYTYPE: {
                     // mesh shapes use the triangle count
                     const ShapeFactory::StaticMeshShape* meshShape = static_cast<const ShapeFactory::StaticMeshShape*>(_shape);
-                    _shapeComplexity = (int32_t)meshShape->getNumTriangles();
+                    _shapeComplexity = meshShape->getNumTriangles();
                 }
                 break;
             default:
                 // default complexity for misc shape types we don't track
-                _shapeComplexity = 2U;
+                _shapeComplexity = 2;
                 break;
         }
     } else {
