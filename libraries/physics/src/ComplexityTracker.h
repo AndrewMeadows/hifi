@@ -24,10 +24,8 @@ public:
 
     void clear();
 
-    void addComplexity(ObjectMotionState* state, int32_t complexity);
-    void removeComplexity(ObjectMotionState* state, int32_t complexity);
-
-    void remove(ObjectMotionState* state);
+    void remember(ObjectMotionState* state, int32_t complexity);
+    void forget(ObjectMotionState* state);
 
     void dump();
 

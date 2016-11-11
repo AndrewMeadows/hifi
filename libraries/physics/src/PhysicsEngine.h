@@ -23,6 +23,7 @@
 #include "ComplexityTracker.h"
 #include "ContactInfo.h"
 #include "ObjectMotionState.h"
+#include "Quarantine.h"
 #include "ThreadSafeDynamicsWorld.h"
 #include "ObjectAction.h"
 
@@ -116,6 +117,7 @@ private:
     QHash<QUuid, EntityActionPointer> _objectActions;
     std::vector<btRigidBody*> _activeStaticBodies;
     ComplexityTracker _complexityTracker;
+    Quarantine _quarantine;
 
     glm::vec3 _originOffset;
 
@@ -124,9 +126,10 @@ private:
     uint32_t _numContactFrames { 0 };
     uint32_t _numSubsteps;
     uint32_t _numSlowSteps { 0 };
+    bool _trackComplexity { false };
 
-    bool _dumpNextStats = false;
-    bool _hasOutgoingChanges = false;
+    bool _dumpNextStats { false };
+    bool _hasOutgoingChanges { false };
 };
 
 typedef std::shared_ptr<PhysicsEngine> PhysicsEnginePointer;

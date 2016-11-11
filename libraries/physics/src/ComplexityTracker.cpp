@@ -26,7 +26,7 @@ void ComplexityTracker::clear() {
     _totalComplexity = 0;
 }
 
-void ComplexityTracker::addComplexity(ObjectMotionState* state, int32_t complexity) {
+void ComplexityTracker::remember(ObjectMotionState* state, int32_t complexity) {
     if (state->getMotionType() != MOTION_TYPE_STATIC) {
         ComplexityMap::iterator itr = _map.find(state);
         if (itr == _map.end()) {
@@ -38,23 +38,7 @@ void ComplexityTracker::addComplexity(ObjectMotionState* state, int32_t complexi
     }
 }
 
-void ComplexityTracker::removeComplexity(ObjectMotionState* state, int32_t complexity) {
-    ComplexityMap::iterator itr = _map.find(state);
-    if (itr != _map.end()) {
-        if (itr->second > complexity) {
-            itr->second -= complexity;
-            _totalComplexity -= complexity;
-        } else {
-            _totalComplexity -= itr->second;
-            _map.erase(itr);
-            if (_map.empty()) {
-                _totalComplexity = 0;
-            }
-        }
-    }
-}
-
-void ComplexityTracker::remove(ObjectMotionState* state) {
+void ComplexityTracker::forget(ObjectMotionState* state) {
     ComplexityMap::iterator itr = _map.find(state);
     if (itr != _map.end()) {
         _totalComplexity -= itr->second;

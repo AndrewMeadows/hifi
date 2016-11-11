@@ -159,6 +159,8 @@ void PhysicsEngine::removeObjects(const VectorOfMotionStates& objects) {
             body->setMotionState(nullptr);
             delete body;
         }
+        _complexityTracker.forget(object);
+        _quarantine.release(object);
     }
 }
 
@@ -175,6 +177,8 @@ void PhysicsEngine::removeObjects(const SetOfMotionStates& objects) {
             body->setMotionState(nullptr);
             delete body;
         }
+        _complexityTracker.forget(object);
+        _quarantine.release(object);
     }
 }
 
@@ -280,20 +284,23 @@ void PhysicsEngine::stepSimulation() {
         const uint32_t MIN_NUM_SLOW_STEPS = 4;
         const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
 
-        float computeTime = (float)(usecTimestampNow() - startTime) / (float)USECS_PER_SECOND;
-        const float MAX_FRACTION_REAL_TIME = 0.25f;
-        if (computeTime / dt > MAX_FRACTION_REAL_TIME) {
+        float computeTimeFraction = (float)(usecTimestampNow() - startTime) / (float)USECS_PER_SECOND / dt;
+        const float SLOW_FRACTION = 0.25f;
+        const float FAST_FRACTION = 0.10f;
+        if (computeTimeFraction > SLOW_FRACTION) {
             ++_numSlowSteps;
             if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
                 incrementEmergencyMeasures();
             }
-        } else if (_numSlowSteps > 0) {
-            if (_numSlowSteps > MAX_NUM_SLOW_STEPS) {
-                _numSlowSteps = MAX_NUM_SLOW_STEPS;
+        } else if (computeTimeFraction < FAST_FRACTION) {
+            if (_numSlowSteps > 0) {
+                if (_numSlowSteps > MAX_NUM_SLOW_STEPS) {
+                    _numSlowSteps = MAX_NUM_SLOW_STEPS;
+                }
+                --_numSlowSteps;
+            } else {
+                decrementEmergencyMeasures();
             }
-            --_numSlowSteps;
-        } else {
-            decrementEmergencyMeasures();
         }
 
         BT_PROFILE("postSimulation");
@@ -379,11 +386,21 @@ void PhysicsEngine::doOwnershipInfection(const btCollisionObject* objectA, const
 }
 
 void PhysicsEngine::incrementEmergencyMeasures() {
-    // TODO: implement this
+    if (!_trackComplexity) {
+        _trackComplexity = true;
+    } else {
+        _quarantine.isolate(_complexityTracker, 0.11f);
+    }
 }
 
 void PhysicsEngine::decrementEmergencyMeasures() {
-    // TODO: implement this
+    if (_trackComplexity) {
+        if (_quarantine.isEmpty()) {
+            _trackComplexity = false;
+        } else {
+            _quarantine.release(0.09f);
+        }
+    }
 }
 
 void PhysicsEngine::updateContactMap() {
@@ -456,12 +473,11 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
             if(motionStateA && motionStateB) {
                 if (type == CONTACT_EVENT_TYPE_START) {
                     int32_t complexity = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
-                    _complexityTracker.addComplexity(motionStateA, complexity);
-                    _complexityTracker.addComplexity(motionStateB, complexity);
+                    _complexityTracker.remember(motionStateA, complexity);
+                    _complexityTracker.remember(motionStateB, complexity);
                 } else if (type == CONTACT_EVENT_TYPE_END) {
-                    int32_t complexity = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
-                    _complexityTracker.removeComplexity(motionStateA, complexity);
-                    _complexityTracker.removeComplexity(motionStateB, complexity);
+                    _complexityTracker.forget(motionStateA);
+                    _complexityTracker.forget(motionStateB);
                 }
             }
         }
