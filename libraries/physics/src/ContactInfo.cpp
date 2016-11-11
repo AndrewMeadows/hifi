@@ -12,16 +12,21 @@
 #include "ContactInfo.h"
 
 void ContactInfo::update(uint32_t currentStep, const btManifoldPoint& p) {
-    _lastStep = currentStep;
-    ++_numSteps;
-    positionWorldOnB = p.m_positionWorldOnB;
-    normalWorldOnB = p.m_normalWorldOnB;
-    distance = p.m_distance1;
-}   
+    if (_lastStep != currentStep) {
+        _lastStep = currentStep;
+        positionWorldOnB = p.m_positionWorldOnB;
+        normalWorldOnB = p.m_normalWorldOnB;
+        distance = p.m_distance1;
+    }
+}
 
 ContactEventType ContactInfo::computeType(uint32_t thisStep) {
     if (_lastStep != thisStep) {
         return CONTACT_EVENT_TYPE_END;
     }
-    return (_numSteps == 1) ? CONTACT_EVENT_TYPE_START : CONTACT_EVENT_TYPE_CONTINUE;
+    if (_type == CONTACT_EVENT_TYPE_START) {
+        _type = CONTACT_EVENT_TYPE_CONTINUE;
+        return CONTACT_EVENT_TYPE_START;
+    }
+    return CONTACT_EVENT_TYPE_CONTINUE;
 }
