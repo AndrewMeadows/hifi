@@ -14,24 +14,36 @@
 
 #include <unordered_map>
 
-class ObjectMotionState;
+#include "ComplexityQueue.h"
+
 using ComplexityMap = std::unordered_map<ObjectMotionState*, int32_t>;
 
 class ComplexityTracker {
 public:
+
     ComplexityTracker();
     ~ComplexityTracker();
 
     void clear();
+    bool isEmpty() const { return _map.empty(); }
 
     void remember(ObjectMotionState* state, int32_t complexity);
     void forget(ObjectMotionState* state);
 
+    int32_t getTotalComplexity() const { return _totalComplexity; }
+
+    Complexity popTop();
+
     void dump();
+
+protected:
+    void clearQueue();
 
 private:
     ComplexityMap _map;
+    ComplexityQueueHighToLow _queue;
     int32_t _totalComplexity { 0 };
+    bool _queueIsDirty { true };
 };
 
 #endif // hifi_ComplexityTracker_h

@@ -33,12 +33,13 @@ public:
     void dump() const;
 
 private:
-    void isolateObject(ObjectMotionState* object);
-    void releaseObject(ObjectMotionState* object);
+    void clearQueue();
 
 private:
     ComplexityMap _map;
+    ComplexityQueueLowToHigh _queue;
     int32_t _totalComplexity;
+    bool _queueIsDirty { false };
 };
 
 #endif // hifi_Quarantine_h
