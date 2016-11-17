@@ -14,6 +14,8 @@
 
 #include "ComplexityTracker.h"
 
+const int CF_QUARANTINE = 0x01 << 30; // unused by Bullet
+
 class ObjectMotionState;
 
 class Quarantine {
@@ -26,9 +28,11 @@ public:
 
     bool contains(ObjectMotionState* object) const;
 
-    void isolate(ComplexityTracker& complexityTracker, float percent);
-    void release(float percent);
+    Complexity popBottom();
+    void insert(const Complexity& complexity);
     void release(ObjectMotionState* object);
+
+    int32_t getTotalComplexity() const { return _totalComplexity; }
 
     void dump() const;
 

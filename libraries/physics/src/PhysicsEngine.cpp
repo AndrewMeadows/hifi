@@ -74,6 +74,11 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     // NOTE: the body may or may not already exist, depending on whether this corresponds to a reinsertion, or a new insertion.
     btRigidBody* body = motionState->getRigidBody();
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
+    /* adebug TODO: come up with some fallback response here
+    if (body->getCollisionFlags() & CF_QUARANTINE) {
+        motionType = MOTION_TYPE_STATIC;
+    }
+    */
     motionState->setMotionType(motionType);
     switch(motionType) {
         case MOTION_TYPE_KINEMATIC: {
@@ -136,7 +141,14 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     motionState->updateBodyMaterialProperties();
 
     int16_t group, mask;
-    motionState->computeCollisionGroupAndMask(group, mask);
+    /* adebug TODO: come up with some fallback response here
+    if (body && body->getCollisionFlags() & CF_QUARANTINE) {
+        // HACK: spare the physics simulation: make this object collisionless
+        group = BULLET_COLLISION_GROUP_COLLISIONLESS;
+        mask = 0;
+    } else */{
+        motionState->computeCollisionGroupAndMask(group, mask);
+    }
     _dynamicsWorld->addRigidBody(body, group, mask);
 
     motionState->clearIncomingDirtyFlags();
@@ -281,27 +293,7 @@ void PhysicsEngine::stepSimulation() {
     int numSubsteps = _dynamicsWorld->stepSimulationWithSubstepCallback(timeStep, PHYSICS_ENGINE_MAX_NUM_SUBSTEPS,
                                                                         PHYSICS_ENGINE_FIXED_SUBSTEP, onSubStep);
     if (numSubsteps > 0) {
-        const uint32_t MIN_NUM_SLOW_STEPS = 4;
-        const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
-
-        float computeTimeFraction = (float)(usecTimestampNow() - startTime) / (float)USECS_PER_SECOND / dt;
-        const float SLOW_FRACTION = 0.25f;
-        const float FAST_FRACTION = 0.10f;
-        if (computeTimeFraction > SLOW_FRACTION) {
-            ++_numSlowSteps;
-            if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
-                incrementEmergencyMeasures();
-            }
-        } else if (computeTimeFraction < FAST_FRACTION) {
-            if (_numSlowSteps > 0) {
-                if (_numSlowSteps > MAX_NUM_SLOW_STEPS) {
-                    _numSlowSteps = MAX_NUM_SLOW_STEPS;
-                }
-                --_numSlowSteps;
-            } else {
-                decrementEmergencyMeasures();
-            }
-        }
+        _lastSimulationStepRatio = (float)(usecTimestampNow() - startTime) / ((float)USECS_PER_SECOND * dt);
 
         BT_PROFILE("postSimulation");
         _numSubsteps += (uint32_t)numSubsteps;
@@ -312,6 +304,29 @@ void PhysicsEngine::stepSimulation() {
         }
 
         _hasOutgoingChanges = true;
+    }
+}
+
+void PhysicsEngine::updateQuarantine() {
+    const uint32_t MIN_NUM_SLOW_STEPS = 4;
+    const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
+    const float SLOW_FRACTION = 0.25f;
+    const float FAST_FRACTION = 0.10f;
+
+    if (_lastSimulationStepRatio > SLOW_FRACTION) {
+        ++_numSlowSteps;
+        if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
+            incrementEmergencyMeasures();
+        }
+    } else if (_lastSimulationStepRatio < FAST_FRACTION) {
+        if (_numSlowSteps > 0) {
+            if (_numSlowSteps > MAX_NUM_SLOW_STEPS) {
+                _numSlowSteps = MAX_NUM_SLOW_STEPS;
+            }
+            --_numSlowSteps;
+        } else {
+            decrementEmergencyMeasures();
+        }
     }
 }
 
@@ -385,11 +400,33 @@ void PhysicsEngine::doOwnershipInfection(const btCollisionObject* objectA, const
     }
 }
 
+// stubs to help compile
+// helper function
+void isolateObjectHelper(ObjectMotionState* object) {
+    // BOOKMARK
+    // TODO: implement this
+}
+
+// helper function
+void releaseObjectHelper(ObjectMotionState* object) {
+    // BOOKMARK
+    // TODO: implement this
+}
+
 void PhysicsEngine::incrementEmergencyMeasures() {
     if (!_trackComplexity) {
         _trackComplexity = true;
     } else {
-        _quarantine.isolate(_complexityTracker, 0.11f);
+    	// add objects to quarantine until we have enough
+		const float INCREMENT_QUARANTINE_PERCENT = 0.11f;
+    	int32_t isolatedComplexity = 0;
+    	int32_t enoughComplexity = (int32_t)(INCREMENT_QUARANTINE_PERCENT * (float)_complexityTracker.getTotalComplexity());
+    	while(isolatedComplexity < enoughComplexity && !_complexityTracker.isEmpty()) {
+        	Complexity complexity = _complexityTracker.popTop();
+			_quarantine.insert(complexity);
+            isolateObjectHelper(complexity.key);
+            isolatedComplexity += complexity.value;
+    	}
     }
 }
 
@@ -398,7 +435,15 @@ void PhysicsEngine::decrementEmergencyMeasures() {
         if (_quarantine.isEmpty()) {
             _trackComplexity = false;
         } else {
-            _quarantine.release(0.09f);
+            // release objects from quarantine until we have enough
+			const float DECREMENT_QUARANTINE_PERCENT = 0.09f;
+    		int32_t releasedComplexity = 0;
+    		int32_t enoughComplexity = (int32_t)(DECREMENT_QUARANTINE_PERCENT * (float)_quarantine.getTotalComplexity());
+    		while(releasedComplexity < enoughComplexity && !_quarantine.isEmpty()) {
+        	    Complexity complexity = _quarantine.popBottom();
+            	releaseObjectHelper(complexity.key);
+            	releasedComplexity += complexity.value;
+        	}
         }
     }
 }
@@ -470,7 +515,7 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
                 glm::vec3 penetration = - bulletToGLM(contact.distance * contact.normalWorldOnB);
                 _collisionEvents.push_back(Collision(type, idB, QUuid(), position, penetration, velocityChange));
             }
-            if(motionStateA && motionStateB) {
+            if (_trackComplexity && motionStateA && motionStateB) {
                 if (type == CONTACT_EVENT_TYPE_START) {
                     int32_t complexity = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
                     _complexityTracker.remember(motionStateA, complexity);

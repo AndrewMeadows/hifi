@@ -61,6 +61,7 @@ public:
     void reinsertObject(ObjectMotionState* object);
 
     void stepSimulation();
+    void updateQuarantine();
     void harvestPerformanceStats();
     void updateContactMap();
 
@@ -123,8 +124,10 @@ private:
 
     CharacterController* _myAvatarController;
 
+    float _lastSimulationStepRatio { 0.0f }; // timeToComputeStep / stepDt
+
     uint32_t _numContactFrames { 0 };
-    uint32_t _numSubsteps;
+    uint32_t _numSubsteps { 0 };
     uint32_t _numSlowSteps { 0 };
     bool _trackComplexity { false };
 

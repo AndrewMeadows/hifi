@@ -18,9 +18,6 @@ class ObjectMotionState;
 
 class Complexity {
 public:
-    ObjectMotionState* key;
-    int32_t value;
-
     class GreaterThan {
     public:
         bool operator() (const Complexity& A, const Complexity& B) { return A.value > B.value; }
@@ -30,6 +27,9 @@ public:
     public:
         bool operator() (const Complexity& A, const Complexity& B) { return A.value < B.value; }
     };
+
+    ObjectMotionState* key;
+    int32_t value;
 };
 
 using ComplexityQueueHighToLow = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::GreaterThan>;

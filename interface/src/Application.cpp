@@ -4006,6 +4006,9 @@ void Application::update(float deltaTime) {
                 _physicsEngine->addObjects(motionStates);
 
             });
+
+            _physicsEngine->updateQuarantine();
+
             getEntities()->getTree()->withReadLock([&] {
                 _entitySimulation->getObjectsToChange(motionStates);
                 VectorOfMotionStates stillNeedChange = _physicsEngine->changeObjects(motionStates);
