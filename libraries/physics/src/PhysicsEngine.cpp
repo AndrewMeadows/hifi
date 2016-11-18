@@ -307,7 +307,7 @@ void PhysicsEngine::stepSimulation() {
     }
 }
 
-void PhysicsEngine::updateQuarantine() {
+void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
     const uint32_t MIN_NUM_SLOW_STEPS = 4;
     const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
     const float SLOW_FRACTION = 0.25f;
@@ -316,7 +316,25 @@ void PhysicsEngine::updateQuarantine() {
     if (_lastSimulationStepRatio > SLOW_FRACTION) {
         ++_numSlowSteps;
         if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
-            incrementEmergencyMeasures();
+            if (!_trackComplexity) {
+                // start quarantine
+                _trackComplexity = true;
+            } else {
+                // expand quarantine
+                const float INCREMENT_QUARANTINE_PERCENT = 0.11f;
+                int32_t isolatedComplexity = 0;
+                int32_t enoughComplexity = (int32_t)(INCREMENT_QUARANTINE_PERCENT * (float)_complexityTracker.getTotalComplexity());
+                while(isolatedComplexity < enoughComplexity && !_complexityTracker.isEmpty()) {
+                    Complexity complexity = _complexityTracker.popTop();
+                    _quarantine.insert(complexity);
+                    btRigidBody* body = complexity.key->getRigidBody();
+                    body->setCollisionFlags(body->getCollisionFlags() | CF_QUARANTINE);
+                    quarantineChanges.push_back(complexity.key);
+
+                    // TODO: update physics of quarantined body
+                    isolatedComplexity += complexity.value;
+                }
+            }
         }
     } else if (_lastSimulationStepRatio < FAST_FRACTION) {
         if (_numSlowSteps > 0) {
@@ -324,8 +342,23 @@ void PhysicsEngine::updateQuarantine() {
                 _numSlowSteps = MAX_NUM_SLOW_STEPS;
             }
             --_numSlowSteps;
-        } else {
-            decrementEmergencyMeasures();
+        } else if (_trackComplexity) {
+            if (_quarantine.isEmpty()) {
+                // stop quarantine
+                _trackComplexity = false;
+            } else {
+                // reduce quarantine
+                const float DECREMENT_QUARANTINE_PERCENT = 0.09f;
+                int32_t releasedComplexity = 0;
+                int32_t enoughComplexity = (int32_t)(DECREMENT_QUARANTINE_PERCENT * (float)_quarantine.getTotalComplexity());
+                while(releasedComplexity < enoughComplexity && !_quarantine.isEmpty()) {
+                    Complexity complexity = _quarantine.popBottom();
+                    btRigidBody* body = complexity.key->getRigidBody();
+                    body->setCollisionFlags(body->getCollisionFlags() & ~CF_QUARANTINE);
+                    quarantineChanges.push_back(complexity.key);
+                    releasedComplexity += complexity.value;
+                }
+            }
         }
     }
 }
@@ -396,41 +429,6 @@ void PhysicsEngine::doOwnershipInfection(const btCollisionObject* objectA, const
         if (!objectA->isStaticOrKinematicObject() && motionStateA->getSimulatorID() != Physics::getSessionUUID()) {
             quint8 priorityB = motionStateB ? motionStateB->getSimulationPriority() : PERSONAL_SIMULATION_PRIORITY;
             motionStateA->bump(priorityB);
-        }
-    }
-}
-
-void PhysicsEngine::incrementEmergencyMeasures() {
-    if (!_trackComplexity) {
-        _trackComplexity = true;
-    } else {
-    	// add objects to quarantine until we have enough
-		const float INCREMENT_QUARANTINE_PERCENT = 0.11f;
-    	int32_t isolatedComplexity = 0;
-    	int32_t enoughComplexity = (int32_t)(INCREMENT_QUARANTINE_PERCENT * (float)_complexityTracker.getTotalComplexity());
-    	while(isolatedComplexity < enoughComplexity && !_complexityTracker.isEmpty()) {
-        	Complexity complexity = _complexityTracker.popTop();
-			_quarantine.insert(complexity);
-            // TODO: update physics of quarantined body
-            isolatedComplexity += complexity.value;
-    	}
-    }
-}
-
-void PhysicsEngine::decrementEmergencyMeasures() {
-    if (_trackComplexity) {
-        if (_quarantine.isEmpty()) {
-            _trackComplexity = false;
-        } else {
-            // release objects from quarantine until we have enough
-			const float DECREMENT_QUARANTINE_PERCENT = 0.09f;
-    		int32_t releasedComplexity = 0;
-    		int32_t enoughComplexity = (int32_t)(DECREMENT_QUARANTINE_PERCENT * (float)_quarantine.getTotalComplexity());
-    		while(releasedComplexity < enoughComplexity && !_quarantine.isEmpty()) {
-        	    Complexity complexity = _quarantine.popBottom();
-                // TODO: update physics of dequarantined body
-            	releasedComplexity += complexity.value;
-        	}
         }
     }
 }

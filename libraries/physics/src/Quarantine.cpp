@@ -127,7 +127,8 @@ void Quarantine::insert(const Complexity& complexity) {
     if (itr == _map.end()) {
         _map.insert({complexity.key, complexity.value});
         _totalComplexity += complexity.value;
-    } else {
+    } else if (complexity.value != itr->second) {
+        _totalComplexity += complexity.value - itr->second;
         itr->second = complexity.value;
     }
     _queueIsDirty = true;

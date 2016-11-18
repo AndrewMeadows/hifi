@@ -4007,10 +4007,23 @@ void Application::update(float deltaTime) {
 
             });
 
-            _physicsEngine->updateQuarantine();
+            VectorOfMotionStates statesWithQuarantineChanges;
+            _physicsEngine->updateQuarantine(statesWithQuarantineChanges);
 
             getEntities()->getTree()->withReadLock([&] {
                 _entitySimulation->getObjectsToChange(motionStates);
+                for (auto state : statesWithQuarantineChanges) {
+                    bool notYetInList = true;
+                    for (auto otherState : motionStates) {
+                        if (otherState == state) {
+                            notYetInList = false;
+                            break;
+                        }
+                    }
+                    if (notYetInList) {
+                        motionStates.push_back(state);
+                    }
+                }
                 VectorOfMotionStates stillNeedChange = _physicsEngine->changeObjects(motionStates);
                 _entitySimulation->setObjectsToChange(stillNeedChange);
             });

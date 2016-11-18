@@ -61,7 +61,7 @@ public:
     void reinsertObject(ObjectMotionState* object);
 
     void stepSimulation();
-    void updateQuarantine();
+    void updateQuarantine(VectorOfMotionStates& quarantineChanges);
     void harvestPerformanceStats();
     void updateContactMap();
 
@@ -101,9 +101,6 @@ private:
     void removeContacts(ObjectMotionState* motionState);
 
     void doOwnershipInfection(const btCollisionObject* objectA, const btCollisionObject* objectB);
-
-    void incrementEmergencyMeasures();
-    void decrementEmergencyMeasures();
 
     btClock _clock;
     btDefaultCollisionConfiguration* _collisionConfig = NULL;
