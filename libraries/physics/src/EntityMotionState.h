@@ -32,6 +32,8 @@ public:
     virtual void handleEasyChanges(uint32_t& flags) override;
     virtual bool handleHardAndEasyChanges(uint32_t& flags, PhysicsEngine* engine) override;
 
+    float getMass() override;
+
     /// \return PhysicsMotionType based on params set in EntityItem
     virtual PhysicsMotionType computePhysicsMotionType() const override;
 

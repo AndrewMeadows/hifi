@@ -42,7 +42,7 @@ private:
 private:
     ComplexityMap _map;
     ComplexityQueueLowToHigh _queue;
-    int32_t _totalComplexity;
+    int32_t _totalComplexity { 0 };
     bool _queueIsDirty { false };
 };
 

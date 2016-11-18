@@ -71,7 +71,6 @@ EntityMotionState::EntityMotionState(btCollisionShape* shape, EntityItemPointer 
     _type = MOTIONSTATE_TYPE_ENTITY;
     assert(_entity);
     assert(entityTreeIsLocked());
-    setMass(_entity->computeMass());
     // we need the side-effects of EntityMotionState::setShape() so we call it explicitly here
     // rather than pass the legit shape pointer to the ObjectMotionState ctor above.
     setShape(shape);
@@ -155,6 +154,11 @@ void EntityMotionState::handleEasyChanges(uint32_t& flags) {
 bool EntityMotionState::handleHardAndEasyChanges(uint32_t& flags, PhysicsEngine* engine) {
     updateServerPhysicsVariables();
     return ObjectMotionState::handleHardAndEasyChanges(flags, engine);
+}
+
+float EntityMotionState::getMass() {
+    assert(_entity);
+    return _entity->computeMass();
 }
 
 PhysicsMotionType EntityMotionState::computePhysicsMotionType() const {

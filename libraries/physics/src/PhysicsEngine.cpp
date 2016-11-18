@@ -400,19 +400,6 @@ void PhysicsEngine::doOwnershipInfection(const btCollisionObject* objectA, const
     }
 }
 
-// stubs to help compile
-// helper function
-void isolateObjectHelper(ObjectMotionState* object) {
-    // BOOKMARK
-    // TODO: implement this
-}
-
-// helper function
-void releaseObjectHelper(ObjectMotionState* object) {
-    // BOOKMARK
-    // TODO: implement this
-}
-
 void PhysicsEngine::incrementEmergencyMeasures() {
     if (!_trackComplexity) {
         _trackComplexity = true;
@@ -424,7 +411,7 @@ void PhysicsEngine::incrementEmergencyMeasures() {
     	while(isolatedComplexity < enoughComplexity && !_complexityTracker.isEmpty()) {
         	Complexity complexity = _complexityTracker.popTop();
 			_quarantine.insert(complexity);
-            isolateObjectHelper(complexity.key);
+            // TODO: update physics of quarantined body
             isolatedComplexity += complexity.value;
     	}
     }
@@ -441,7 +428,7 @@ void PhysicsEngine::decrementEmergencyMeasures() {
     		int32_t enoughComplexity = (int32_t)(DECREMENT_QUARANTINE_PERCENT * (float)_quarantine.getTotalComplexity());
     		while(releasedComplexity < enoughComplexity && !_quarantine.isEmpty()) {
         	    Complexity complexity = _quarantine.popBottom();
-            	releaseObjectHelper(complexity.key);
+                // TODO: update physics of dequarantined body
             	releasedComplexity += complexity.value;
         	}
         }

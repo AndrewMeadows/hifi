@@ -93,8 +93,7 @@ public:
     MotionStateType getType() const { return _type; }
     virtual PhysicsMotionType getMotionType() const { return _motionType; }
 
-    void setMass(float mass) { _mass = fabsf(mass); }
-    float getMass() { return _mass; }
+    virtual float getMass() = 0;
 
     void setBodyLinearVelocity(const glm::vec3& velocity) const;
     void setBodyAngularVelocity(const glm::vec3& velocity) const;
@@ -165,7 +164,6 @@ protected:
 
     const btCollisionShape* _shape;
     btRigidBody* _body { nullptr };
-    float _mass { 1.0f };
     int32_t _shapeComplexity { 0 };
 
     uint32_t _lastKinematicStep;

@@ -20,9 +20,6 @@
 AvatarMotionState::AvatarMotionState(Avatar* avatar, const btCollisionShape* shape) : ObjectMotionState(shape), _avatar(avatar) {
     assert(_avatar);
     _type = MOTIONSTATE_TYPE_AVATAR;
-    if (_shape) {
-        _mass = 100.0f; // HACK
-    }
 }
 
 AvatarMotionState::~AvatarMotionState() {
@@ -83,6 +80,14 @@ void AvatarMotionState::setWorldTransform(const btTransform& worldTrans) {
     _body->setWorldTransform(newTransform);
     _body->setLinearVelocity(glmToBullet(getObjectLinearVelocity()));
     _body->setAngularVelocity(glmToBullet(getObjectLinearVelocity()));
+}
+
+float AvatarMotionState::getMass() {
+    assert(_avatar);
+    AABox bounds = _avatar->getBounds();
+    glm::vec3 extents = bounds.getMaximum() - bounds.getMinimum();
+    const float DENSITY_OF_WATER = 1000.0f;
+    return glm::max(extents.x * extents.y * extents.z * DENSITY_OF_WATER, 1.0f);
 }
 
 // These pure virtual methods must be implemented for each MotionState type

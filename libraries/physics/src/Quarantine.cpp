@@ -123,12 +123,12 @@ Complexity Quarantine::popBottom() {
 
 void Quarantine::insert(const Complexity& complexity) {
     assert(complexity.key);
-    ComplexityMap::const_iterator itr = _map.find(complexity.key);
+    ComplexityMap::iterator itr = _map.find(complexity.key);
     if (itr == _map.end()) {
         _map.insert({complexity.key, complexity.value});
         _totalComplexity += complexity.value;
     } else {
-        itr.second = complexity.value;
+        itr->second = complexity.value;
     }
     _queueIsDirty = true;
 }
