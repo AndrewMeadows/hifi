@@ -74,11 +74,10 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     // NOTE: the body may or may not already exist, depending on whether this corresponds to a reinsertion, or a new insertion.
     btRigidBody* body = motionState->getRigidBody();
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
-    /* adebug TODO: come up with some fallback response here
     if (body->getCollisionFlags() & CF_QUARANTINE) {
+        // quarantined objects are overriddedn to be STATIC
         motionType = MOTION_TYPE_STATIC;
     }
-    */
     motionState->setMotionType(motionType);
     switch(motionType) {
         case MOTION_TYPE_KINEMATIC: {
@@ -363,6 +362,39 @@ void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
     }
 }
 
+// static helper
+void PhysicsEngine::addSecondSetToFirst(VectorOfMotionStates& A, const VectorOfMotionStates& B) {
+    // NOTE: usually these lists are very short, so we don't bother to sort and use std::set_union
+    // for each element in B not in A: add to A
+    for (auto b : B) {
+        bool add = true;
+        for (auto a : A) {
+            if (a == b) {
+                add = false;
+                break;
+            }
+        }
+        if (add) {
+            A.push_back(b);
+        }
+    }
+}
+
+// static helper
+void PhysicsEngine::removeQuarantinedObjects(VectorOfMotionStates& objects) {
+    int32_t numObjects = objects.size();
+    int32_t j = 0;
+    for (int32_t i = 0; i < numObjects; ++i) {
+        if (objects[i]->getRigidBody()->getCollisionFlags() & CF_QUARANTINE) {
+            if (j < i) {
+                objects[j] = objects[i];
+            }
+            ++j;
+        }
+    }
+    objects.resize(j);
+}
+
 void PhysicsEngine::harvestPerformanceStats() {
     // unfortunately the full context names get too long for our stats presentation format
     //QString contextName = PerformanceTimer::getContextName(); // TODO: how to show full context name?
@@ -521,7 +553,7 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
     return _collisionEvents;
 }
 
-const VectorOfMotionStates& PhysicsEngine::getOutgoingChanges() {
+VectorOfMotionStates& PhysicsEngine::getOutgoingChanges() {
     BT_PROFILE("copyOutgoingChanges");
     // Bullet will not deactivate static objects (it doesn't expect them to be active)
     // so we must deactivate them ourselves

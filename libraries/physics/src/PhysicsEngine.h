@@ -62,13 +62,17 @@ public:
 
     void stepSimulation();
     void updateQuarantine(VectorOfMotionStates& quarantineChanges);
+
+    static void addSecondSetToFirst(VectorOfMotionStates& A, const VectorOfMotionStates& B);
+    static void removeQuarantinedObjects(VectorOfMotionStates& objects);
+
     void harvestPerformanceStats();
     void updateContactMap();
 
     bool hasOutgoingChanges() const { return _hasOutgoingChanges; }
 
     /// \return reference to list of changed MotionStates.  The list is only valid until beginning of next simulation loop.
-    const VectorOfMotionStates& getOutgoingChanges();
+    VectorOfMotionStates& getOutgoingChanges();
 
     /// \return reference to list of Collision events.  The list is only valid until beginning of next simulation loop.
     const CollisionEvents& getCollisionEvents();

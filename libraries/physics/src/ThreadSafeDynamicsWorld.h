@@ -48,7 +48,7 @@ public:
     // smoother rendering of objects when the physics simulation loop is ansynchronous to the render loop).
     float getLocalTimeAccumulation() const { return m_localTime; }
 
-    const VectorOfMotionStates& getChangedMotionStates() const { return _changedMotionStates; }
+    VectorOfMotionStates& getChangedMotionStates() { return _changedMotionStates; }
 
 private:
     // call this instead of non-virtual btDiscreteDynamicsWorld::synchronizeSingleMotionState()

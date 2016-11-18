@@ -3992,6 +3992,7 @@ void Application::update(float deltaTime) {
 
         PerformanceTimer perfTimer("physics");
 
+        VectorOfMotionStates quarantineChanges;
         {
             PROFILE_RANGE_EX("UpdateStats", 0xffffff00, (uint64_t)getActiveDisplayPlugin()->presentCount());
 
@@ -4007,23 +4008,12 @@ void Application::update(float deltaTime) {
 
             });
 
-            VectorOfMotionStates statesWithQuarantineChanges;
-            _physicsEngine->updateQuarantine(statesWithQuarantineChanges);
+            // TODO: make sure we only quarantine entities (not avatars)
+            _physicsEngine->updateQuarantine(quarantineChanges);
 
             getEntities()->getTree()->withReadLock([&] {
                 _entitySimulation->getObjectsToChange(motionStates);
-                for (auto state : statesWithQuarantineChanges) {
-                    bool notYetInList = true;
-                    for (auto otherState : motionStates) {
-                        if (otherState == state) {
-                            notYetInList = false;
-                            break;
-                        }
-                    }
-                    if (notYetInList) {
-                        motionStates.push_back(state);
-                    }
-                }
+                PhysicsEngine::addSecondSetToFirst(motionStates, quarantineChanges);
                 VectorOfMotionStates stillNeedChange = _physicsEngine->changeObjects(motionStates);
                 _entitySimulation->setObjectsToChange(stillNeedChange);
             });
@@ -4050,12 +4040,15 @@ void Application::update(float deltaTime) {
             });
         }
         {
+            PhysicsEngine::removeQuarantinedObjects(quarantineChanges);
+
             PROFILE_RANGE_EX("HarvestChanges", 0xffffff00, (uint64_t)getActiveDisplayPlugin()->presentCount());
             PerformanceTimer perfTimer("harvestChanges");
             if (_physicsEngine->hasOutgoingChanges()) {
                 getEntities()->getTree()->withWriteLock([&] {
                     PerformanceTimer perfTimer("handleOutgoingChanges");
-                    const VectorOfMotionStates& outgoingChanges = _physicsEngine->getOutgoingChanges();
+                    VectorOfMotionStates& outgoingChanges = _physicsEngine->getOutgoingChanges();
+                    PhysicsEngine::addSecondSetToFirst(outgoingChanges, quarantineChanges);
                     _entitySimulation->handleOutgoingChanges(outgoingChanges);
                     avatarManager->handleOutgoingChanges(outgoingChanges);
                 });
