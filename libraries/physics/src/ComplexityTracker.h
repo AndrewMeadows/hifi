@@ -27,10 +27,17 @@ public:
     void clear();
     bool isEmpty() const { return _map.empty(); }
 
-    void remember(ObjectMotionState* state, int32_t complexity);
-    void forget(ObjectMotionState* state);
+    void enable();
+    void disable();
+    bool isEnabled() const { return _enabled; }
+    bool needsInitialization() const;
+    void setInitialized();
 
-    int32_t getTotalComplexity() const { return _totalComplexity; }
+    void remember(ObjectMotionState* key, int32_t value);
+    void forget(ObjectMotionState* key, int32_t value);
+    void remove(ObjectMotionState* key);
+
+    int32_t getTotalComplexity() const { return _totalQueueComplexity; }
 
     Complexity popTop();
 
@@ -42,8 +49,11 @@ protected:
 private:
     ComplexityMap _map;
     ComplexityQueueHighToLow _queue;
+    int32_t _totalQueueComplexity { 0 };
     int32_t _totalComplexity { 0 };
     bool _queueIsDirty { true };
+    bool _enabled { false };
+    bool _initialized { false };
 };
 
 #endif // hifi_ComplexityTracker_h

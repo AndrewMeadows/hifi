@@ -24,6 +24,8 @@ public:
     ~Quarantine();
 
     void clear();
+
+    int32_t size() const;
     bool isEmpty() const;
 
     bool contains(ObjectMotionState* object) const;

@@ -27,6 +27,10 @@ void Quarantine::clear() {
     _queueIsDirty = true;
 }
 
+int32_t Quarantine::size() const {
+    return _map.size();
+}
+
 bool Quarantine::isEmpty() const {
     return _map.empty();
 }
@@ -34,71 +38,6 @@ bool Quarantine::isEmpty() const {
 bool Quarantine::contains(ObjectMotionState* object) const {
     return _map.find(object) != _map.end();
 }
-
-/*
-// helper function
-void isolateObjectHelper(ObjectMotionState* object) {
-    // BOOKMARK
-    // TODO: implement this
-}
-
-// helper function
-void releaseObjectHelper(ObjectMotionState* object) {
-    // BOOKMARK
-    // TODO: implement this
-}
-
-void Quarantine::isolate(ComplexityTracker& tracker, float percent) {
-    int32_t totalComplexity = tracker.getTotalComplexity();
-    if (totalComplexity == 0) {
-        return;
-    }
-    // quarantine new objects until we have enough
-    int32_t isolatedComplexity = 0;
-    int32_t enoughComplexity = (int32_t)(percent * (float)totalComplexity);
-    while(isolatedComplexity < enoughComplexity && !tracker.isEmpty()) {
-        Complexity complexity = tracker.popTop();
-        ComplexityMap::const_iterator itr = _map.find(complexity.key);
-        if (itr == _map.end()) {
-            _map.insert({ complexity.key, complexity.value});
-            isolateObjectHelper(complexity.key);
-            isolatedComplexity += complexity.value;
-        }
-    }
-    _totalComplexity += isolatedComplexity;
-    _queueIsDirty = true;
-}
-
-void Quarantine::release(float percent) {
-    if (_queueIsDirty) {
-        // rebuild the release queue
-        clearQueue();
-        ComplexityMap::const_iterator itr = _map.begin();
-        while (itr != _map.end()) {
-            _queue.push(Complexity({itr->first, itr->second}));
-            ++itr;
-        }
-        _queueIsDirty = false;
-    }
-
-    // release objects from quarantine until we have enough
-    int32_t releasedComplexity = 0;
-    int32_t enoughComplexity = (int32_t)(percent * (float)_totalComplexity);
-    while(releasedComplexity < enoughComplexity && !_map.empty()) {
-        const Complexity& complexity = _queue.top();
-        releasedComplexity += complexity.value;
-        release(complexity.key);
-        _queue.pop();
-	}
-    _totalComplexity -= releasedComplexity;
-
-    #ifdef DEBUG
-    if (_map.empty()) {
-        assert(_totalComplexity == 0);
-    }
-    #endif // DEBUG
-}
-*/
 
 Complexity Quarantine::popBottom() {
     assert(!_map.empty());
@@ -142,11 +81,13 @@ void Quarantine::release(ObjectMotionState* object) {
         _map.erase(itr);
     	_queueIsDirty = true;
 
-        #ifdef DEBUG
         if (_map.empty()) {
+            #ifdef DEBUG
             assert(_totalComplexity == 0);
+            #else // DEBUG
+            _totalComplexity = 0;
+            #endif // DEBUG
         }
-        #endif // DEBUG
     }
 }
 

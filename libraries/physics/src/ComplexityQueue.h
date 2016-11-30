@@ -32,7 +32,7 @@ public:
     int32_t value;
 };
 
-using ComplexityQueueHighToLow = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::GreaterThan>;
-using ComplexityQueueLowToHigh = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::LessThan>;
+using ComplexityQueueHighToLow = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::LessThan>;
+using ComplexityQueueLowToHigh = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::GreaterThan>;
 
 #endif // hifi_ComplexityQueue_h

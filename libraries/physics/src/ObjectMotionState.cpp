@@ -154,6 +154,7 @@ void ObjectMotionState::setRigidBody(btRigidBody* body) {
         if (_body) {
             _body->setUserPointer(this);
             assert(_body->getCollisionShape() == _shape);
+            setShape(_body->getCollisionShape());
         }
         updateCCDConfiguration();
     }
@@ -187,19 +188,19 @@ void ObjectMotionState::computeShapeComplexity() {
             case (int32_t)CONVEX_HULL_SHAPE_PROXYTYPE: {
                     // count the hull's planes
                     const btConvexHullShape* convexHull = static_cast<const btConvexHullShape*>(_shape);
-                    _shapeComplexity = convexHull->getNumPlanes();
+                    _shapeComplexity = 2 + convexHull->getNumPlanes();
                 }
                 break;
             case (int32_t)COMPOUND_SHAPE_PROXYTYPE: {
                     // HACK: estimate sum of all chile planes assuming an average of 14 planes per child
                     const btCompoundShape* compound = static_cast<const btCompoundShape*>(_shape);
-                    _shapeComplexity = 14 * compound->getNumChildShapes();
+                    _shapeComplexity = 2 + 14 * compound->getNumChildShapes();
                 }
                 break;
             case (int32_t) TRIANGLE_MESH_SHAPE_PROXYTYPE: {
                     // mesh shapes use the triangle count
                     const ShapeFactory::StaticMeshShape* meshShape = static_cast<const ShapeFactory::StaticMeshShape*>(_shape);
-                    _shapeComplexity = meshShape->getNumTriangles();
+                    _shapeComplexity = 2 + meshShape->getNumTriangles();
                 }
                 break;
             default:

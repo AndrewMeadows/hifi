@@ -15,6 +15,7 @@
 #include <iostream> // adebug
 
 #include "ObjectMotionState.h"
+#include "Quarantine.h"
 
 ComplexityTracker::ComplexityTracker() {
 }
@@ -29,33 +30,84 @@ void ComplexityTracker::clear() {
     _totalComplexity = 0;
 }
 
-void ComplexityTracker::remember(ObjectMotionState* state, int32_t complexity) {
-    if (state->getMotionType() != MOTION_TYPE_STATIC) {
-        // add this one to the map
-        ComplexityMap::iterator itr = _map.find(state);
-        if (itr == _map.end()) {
-            _map.insert({state, complexity});
-        } else {
-            itr->second += complexity;
-        }
-        _totalComplexity += complexity;
-        _queueIsDirty = true;
+void ComplexityTracker::enable() {
+    if (!_enabled) {
+        _enabled = true;
+        _initialized = false;
     }
 }
 
-void ComplexityTracker::forget(ObjectMotionState* state) {
-    // remove this one from the map
-    ComplexityMap::iterator itr = _map.find(state);
+void ComplexityTracker::disable() {
+    if (_enabled) {
+        _enabled = false;
+        clear();
+    }
+}
+
+bool ComplexityTracker::needsInitialization() const {
+    return _enabled && !_initialized;
+}
+
+void ComplexityTracker::setInitialized() {
+    _initialized = true;
+}
+
+void ComplexityTracker::remember(ObjectMotionState* key, int32_t value) {
+    assert(_enabled);
+    ComplexityMap::iterator itr = _map.find(key);
+    _totalComplexity += value;
+    if (itr == _map.end()) {
+        _map.insert({key, value});
+    } else {
+        itr->second += value;
+    }
+    if (! (key->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+        _queueIsDirty = true;
+        _totalQueueComplexity += value;
+    }
+}
+
+void ComplexityTracker::forget(ObjectMotionState* key, int32_t value) {
+    assert(_enabled && _initialized);
+    ComplexityMap::iterator itr = _map.find(key);
+    if (itr != _map.end()) {
+        _totalComplexity -= value;
+        if (itr->second > value) {
+            itr->second -= value;
+        } else {
+            _map.erase(itr);
+        }
+        if (! (key->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+            _queueIsDirty = true;
+            _totalQueueComplexity -= value;
+        }
+
+        if (_map.empty()) {
+            #ifdef DEBUG
+            assert(_totalComplexity == 0);
+            #else // DEBUG
+            _totalComplexity = 0;
+            #endif // DEBUG
+        }
+    }
+}
+
+void ComplexityTracker::remove(ObjectMotionState* key) {
+    ComplexityMap::iterator itr = _map.find(key);
     if (itr != _map.end()) {
         _totalComplexity -= itr->second;
-        _map.erase(itr);
-        _queueIsDirty = true;
-
-        #ifdef DEBUG
-        if (_map.empty()) {
-            assert(_totalComplexity == 0);
+        if (! (itr->first->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+            _queueIsDirty = true;
         }
-        #endif // DEBUG
+        _map.erase(itr);
+
+        if (_map.empty()) {
+            #ifdef DEBUG
+            assert(_totalComplexity == 0);
+            #else // DEBUG
+            _totalComplexity = 0;
+            #endif // DEBUG
+        }
     }
 }
 
@@ -65,27 +117,24 @@ Complexity ComplexityTracker::popTop() {
     }
 
     if (_queueIsDirty) {
-        // rebuild the release queue
+        // rebuild the queue of non-static, non-quarantined objects
         clearQueue();
         ComplexityMap::const_iterator itr = _map.begin();
         while (itr != _map.end()) {
-            _queue.push(Complexity({itr->first, itr->second}));
+            btRigidBody* body = itr->first->getRigidBody();
+            if (! (body->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+                _queue.push(Complexity({itr->first, itr->second}));
+                _totalQueueComplexity += itr->second;
+            }
             ++itr;
         }
         _queueIsDirty = false;
     }
 
-    // pop from _queue and remove from _map
+    // pop from _queue
     Complexity complexity = _queue.top();
+    _totalQueueComplexity -= complexity.value;
     _queue.pop();
-    _map.erase(complexity.key);
-    _totalComplexity -= complexity.value;
-
-    #ifdef DEBUG
-    if (_map.empty()) {
-        assert(_totalComplexity == 0);
-    }
-    #endif // DEBUG
     return complexity;
 }
 
@@ -103,5 +152,6 @@ void ComplexityTracker::clearQueue() {
         _queue.pop();
     }
     _queueIsDirty = true;
+    _totalQueueComplexity = 0;
 }
 

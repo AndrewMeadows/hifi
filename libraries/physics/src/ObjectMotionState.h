@@ -145,7 +145,7 @@ public:
     void dirtyInternalKinematicChanges() { _hasInternalKinematicChanges = true; }
     void clearInternalKinematicChanges() { _hasInternalKinematicChanges = false; }
 
-    int32_t getShapeComplexity() const { return _shapeComplexity; }
+    virtual int32_t getShapeComplexity() const { return _shapeComplexity; }
 
     friend class PhysicsEngine;
 

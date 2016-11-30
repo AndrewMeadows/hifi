@@ -21,12 +21,9 @@ void ContactInfo::update(uint32_t currentStep, const btManifoldPoint& p) {
 }
 
 ContactEventType ContactInfo::computeType(uint32_t thisStep) {
-    if (_lastStep != thisStep) {
-        return CONTACT_EVENT_TYPE_END;
-    }
     if (_type == CONTACT_EVENT_TYPE_START) {
         _type = CONTACT_EVENT_TYPE_CONTINUE;
         return CONTACT_EVENT_TYPE_START;
     }
-    return CONTACT_EVENT_TYPE_CONTINUE;
+    return _lastStep == thisStep ? CONTACT_EVENT_TYPE_CONTINUE : CONTACT_EVENT_TYPE_END;
 }

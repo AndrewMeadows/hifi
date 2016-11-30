@@ -10,6 +10,7 @@
 //
 
 #include <PhysicsCollisionGroups.h>
+#include <iostream> // adebug
 
 #include <PerfStat.h>
 
@@ -74,7 +75,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     // NOTE: the body may or may not already exist, depending on whether this corresponds to a reinsertion, or a new insertion.
     btRigidBody* body = motionState->getRigidBody();
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
-    if (body->getCollisionFlags() & CF_QUARANTINE) {
+    if (body && body->getCollisionFlags() & CF_QUARANTINE) {
         // quarantined objects are overriddedn to be STATIC
         motionType = MOTION_TYPE_STATIC;
     }
@@ -140,14 +141,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     motionState->updateBodyMaterialProperties();
 
     int16_t group, mask;
-    /* adebug TODO: come up with some fallback response here
-    if (body && body->getCollisionFlags() & CF_QUARANTINE) {
-        // HACK: spare the physics simulation: make this object collisionless
-        group = BULLET_COLLISION_GROUP_COLLISIONLESS;
-        mask = 0;
-    } else */{
-        motionState->computeCollisionGroupAndMask(group, mask);
-    }
+    motionState->computeCollisionGroupAndMask(group, mask);
     _dynamicsWorld->addRigidBody(body, group, mask);
 
     motionState->clearIncomingDirtyFlags();
@@ -161,6 +155,9 @@ void PhysicsEngine::removeObjects(const VectorOfMotionStates& objects) {
 
     // then remove them
     for (auto object : objects) {
+        _complexityTracker.remove(object);
+        _quarantine.release(object);
+
         btRigidBody* body = object->getRigidBody();
         if (body) {
             _dynamicsWorld->removeRigidBody(body);
@@ -170,8 +167,6 @@ void PhysicsEngine::removeObjects(const VectorOfMotionStates& objects) {
             body->setMotionState(nullptr);
             delete body;
         }
-        _complexityTracker.forget(object);
-        _quarantine.release(object);
     }
 }
 
@@ -179,6 +174,9 @@ void PhysicsEngine::removeObjects(const VectorOfMotionStates& objects) {
 void PhysicsEngine::removeObjects(const SetOfMotionStates& objects) {
     _contactMap.clear();
     for (auto object : objects) {
+        _complexityTracker.remove(object);
+        _quarantine.release(object);
+
         btRigidBody* body = object->getRigidBody();
         if (body) {
             _dynamicsWorld->removeRigidBody(body);
@@ -188,8 +186,6 @@ void PhysicsEngine::removeObjects(const SetOfMotionStates& objects) {
             body->setMotionState(nullptr);
             delete body;
         }
-        _complexityTracker.forget(object);
-        _quarantine.release(object);
     }
 }
 
@@ -292,7 +288,7 @@ void PhysicsEngine::stepSimulation() {
     int numSubsteps = _dynamicsWorld->stepSimulationWithSubstepCallback(timeStep, PHYSICS_ENGINE_MAX_NUM_SUBSTEPS,
                                                                         PHYSICS_ENGINE_FIXED_SUBSTEP, onSubStep);
     if (numSubsteps > 0) {
-        _lastSimulationStepRatio = (float)(usecTimestampNow() - startTime) / ((float)USECS_PER_SECOND * dt);
+        _lastSimulationStepRatio = (float)(usecTimestampNow() - startTime) / ((float)(USECS_PER_SECOND * numSubsteps) * PHYSICS_ENGINE_FIXED_SUBSTEP);
 
         BT_PROFILE("postSimulation");
         _numSubsteps += (uint32_t)numSubsteps;
@@ -307,6 +303,7 @@ void PhysicsEngine::stepSimulation() {
 }
 
 void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
+    static int foo = 0;
     const uint32_t MIN_NUM_SLOW_STEPS = 4;
     const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
     const float SLOW_FRACTION = 0.25f;
@@ -315,10 +312,14 @@ void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
     if (_lastSimulationStepRatio > SLOW_FRACTION) {
         ++_numSlowSteps;
         if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
-            if (!_trackComplexity) {
+            if (!_complexityTracker.isEnabled()) {
                 // start quarantine
-                _trackComplexity = true;
+                std::cout << "adebug START complexity analysis  frame = 0" << std::endl;  // adebug
+                _complexityTracker.enable();
+                foo = 0;
             } else {
+                ++foo;
+                _complexityTracker.setInitialized();
                 // expand quarantine
                 const float INCREMENT_QUARANTINE_PERCENT = 0.11f;
                 int32_t isolatedComplexity = 0;
@@ -329,11 +330,20 @@ void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
                     btRigidBody* body = complexity.key->getRigidBody();
                     body->setCollisionFlags(body->getCollisionFlags() | CF_QUARANTINE);
                     quarantineChanges.push_back(complexity.key);
-
-                    // TODO: update physics of quarantined body
                     isolatedComplexity += complexity.value;
+                    std::cout << "adebug + + " << complexity.value << "  frame = " << foo  << std::endl;  // adebug
                 }
             }
+        }
+    } else if (_lastSimulationStepRatio > FAST_FRACTION && _complexityTracker.isEnabled()) {
+        ++foo;
+        if (!_complexityTracker.isEmpty()) {
+            Complexity complexity = _complexityTracker.popTop();
+            _quarantine.insert(complexity);
+            btRigidBody* body = complexity.key->getRigidBody();
+            body->setCollisionFlags(body->getCollisionFlags() | CF_QUARANTINE);
+            quarantineChanges.push_back(complexity.key);
+            std::cout << "adebug +++ " << complexity.value << "  frame = " << foo  << std::endl;  // adebug
         }
     } else if (_lastSimulationStepRatio < FAST_FRACTION) {
         if (_numSlowSteps > 0) {
@@ -341,10 +351,13 @@ void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
                 _numSlowSteps = MAX_NUM_SLOW_STEPS;
             }
             --_numSlowSteps;
-        } else if (_trackComplexity) {
+            ++foo;
+        } else if (_complexityTracker.isEnabled()) {
+            ++foo;
             if (_quarantine.isEmpty()) {
                 // stop quarantine
-                _trackComplexity = false;
+                _complexityTracker.disable();
+                std::cout << "adebug STOP complexity analysis  frame = " << foo << std::endl;  // adebug
             } else {
                 // reduce quarantine
                 const float DECREMENT_QUARANTINE_PERCENT = 0.09f;
@@ -356,6 +369,7 @@ void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
                     body->setCollisionFlags(body->getCollisionFlags() & ~CF_QUARANTINE);
                     quarantineChanges.push_back(complexity.key);
                     releasedComplexity += complexity.value;
+                    std::cout << "adebug --- " << complexity.value << "  frame = " << foo  << std::endl;  // adebug
                 }
             }
         }
@@ -473,6 +487,7 @@ void PhysicsEngine::updateContactMap() {
     int numManifolds = _collisionDispatcher->getNumManifolds();
     for (int i = 0; i < numManifolds; ++i) {
         btPersistentManifold* contactManifold =  _collisionDispatcher->getManifoldByIndexInternal(i);
+        // adebug TODO: also want to track pairs that have zero contacts
         if (contactManifold->getNumContacts() > 0) {
             // TODO: require scripts to register interest in callbacks for specific objects
             // so we can filter out most collision events right here.
@@ -506,40 +521,48 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
     // scan known contacts and trigger events
     ContactMap::iterator contactItr = _contactMap.begin();
 
+    bool initializeTracker = _complexityTracker.needsInitialization();
     while (contactItr != _contactMap.end()) {
         ContactInfo& contact = contactItr->second;
         ContactEventType type = contact.computeType(_numContactFrames);
-        if(type != CONTACT_EVENT_TYPE_CONTINUE || _numSubsteps % CONTINUE_EVENT_FILTER_FREQUENCY == 0) {
+        bool eventShouldFire = type != CONTACT_EVENT_TYPE_CONTINUE || _numSubsteps % CONTINUE_EVENT_FILTER_FREQUENCY == 0;
+        if (eventShouldFire || initializeTracker) {
             ObjectMotionState* motionStateA = static_cast<ObjectMotionState*>(contactItr->first._a);
             ObjectMotionState* motionStateB = static_cast<ObjectMotionState*>(contactItr->first._b);
             glm::vec3 velocityChange = (motionStateA ? motionStateA->getObjectLinearVelocityChange() : glm::vec3(0.0f)) +
                 (motionStateB ? motionStateB->getObjectLinearVelocityChange() : glm::vec3(0.0f));
 
-            if (motionStateA) {
-                QUuid idA = motionStateA->getObjectID();
-                QUuid idB;
-                if (motionStateB) {
-                    idB = motionStateB->getObjectID();
+            if (eventShouldFire) {
+                if (motionStateA) {
+                    QUuid idA = motionStateA->getObjectID();
+                    QUuid idB;
+                    if (motionStateB) {
+                        idB = motionStateB->getObjectID();
+                    }
+                    glm::vec3 position = bulletToGLM(contact.getPositionWorldOnB()) + _originOffset;
+                    glm::vec3 penetration = bulletToGLM(contact.distance * contact.normalWorldOnB);
+                    _collisionEvents.push_back(Collision(type, idA, idB, position, penetration, velocityChange));
+                } else if (motionStateB) {
+                    QUuid idB = motionStateB->getObjectID();
+                    glm::vec3 position = bulletToGLM(contact.getPositionWorldOnA()) + _originOffset;
+                    // NOTE: we're flipping the order of A and B (so that the first objectID is never NULL)
+                    // hence we must negate the penetration.
+                    glm::vec3 penetration = - bulletToGLM(contact.distance * contact.normalWorldOnB);
+                    _collisionEvents.push_back(Collision(type, idB, QUuid(), position, penetration, velocityChange));
                 }
-                glm::vec3 position = bulletToGLM(contact.getPositionWorldOnB()) + _originOffset;
-                glm::vec3 penetration = bulletToGLM(contact.distance * contact.normalWorldOnB);
-                _collisionEvents.push_back(Collision(type, idA, idB, position, penetration, velocityChange));
-            } else if (motionStateB) {
-                QUuid idB = motionStateB->getObjectID();
-                glm::vec3 position = bulletToGLM(contact.getPositionWorldOnA()) + _originOffset;
-                // NOTE: we're flipping the order of A and B (so that the first objectID is never NULL)
-                // hence we must negate the penetration.
-                glm::vec3 penetration = - bulletToGLM(contact.distance * contact.normalWorldOnB);
-                _collisionEvents.push_back(Collision(type, idB, QUuid(), position, penetration, velocityChange));
             }
-            if (_trackComplexity && motionStateA && motionStateB) {
-                if (type == CONTACT_EVENT_TYPE_START) {
-                    int32_t complexity = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
-                    _complexityTracker.remember(motionStateA, complexity);
-                    _complexityTracker.remember(motionStateB, complexity);
-                } else if (type == CONTACT_EVENT_TYPE_END) {
-                    _complexityTracker.forget(motionStateA);
-                    _complexityTracker.forget(motionStateB);
+            if (_complexityTracker.isEnabled() && motionStateA && motionStateB) {
+                if (motionStateA > motionStateB) {
+                    std::swap(motionStateA, motionStateB);
+                }
+                if (type == CONTACT_EVENT_TYPE_START || (type == CONTACT_EVENT_TYPE_CONTINUE && initializeTracker)) {
+                    int32_t value = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
+                    _complexityTracker.remember(motionStateA, value);
+                    _complexityTracker.remember(motionStateB, value);
+                } else if (type == CONTACT_EVENT_TYPE_END && !initializeTracker) {
+                    int32_t value = motionStateA->getShapeComplexity() * motionStateB->getShapeComplexity();
+                    _complexityTracker.forget(motionStateA, value);
+                    _complexityTracker.forget(motionStateB, value);
                 }
             }
         }
