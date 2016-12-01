@@ -52,7 +52,7 @@ AvatarInputs::AvatarInputs(QQuickItem* parent) :  QQuickItem(parent) {
 #define AI_UPDATE_FLOAT(name, src, epsilon) \
     { \
         float val = src; \
-        if (fabs(_##name - val) >= epsilon) { \
+        if (fabsf(_##name - val) >= epsilon) { \
             _##name = val; \
             emit name##Changed(); \
         } \
@@ -70,7 +70,7 @@ void AvatarInputs::update() {
     AI_UPDATE(showAudioTools, Menu::getInstance()->isOptionChecked(MenuOption::AudioTools));
 
     auto audioIO = DependencyManager::get<AudioClient>();
-    const float AUDIO_METER_AVERAGING = 0.5;
+    const float AUDIO_METER_AVERAGING = 0.5f;
     const float LOG2 = log(2.0f);
     const float METER_LOUDNESS_SCALE = 2.8f / 5.0f;
     const float LOG2_LOUDNESS_FLOOR = 11.0f;
@@ -88,9 +88,9 @@ void AvatarInputs::update() {
         audioLevel = (log2loudness - (LOG2_LOUDNESS_FLOOR - 1.0f)) * METER_LOUDNESS_SCALE;
     }
     if (audioLevel > 1.0f) {
-        audioLevel = 1.0;
+        audioLevel = 1.0f;
     }
-    AI_UPDATE_FLOAT(audioLevel, audioLevel, 0.01);
+    AI_UPDATE_FLOAT(audioLevel, audioLevel, 0.01f);
     AI_UPDATE(audioClipping, ((audioIO->getTimeSinceLastClip() > 0.0f) && (audioIO->getTimeSinceLastClip() < 1.0f)));
     AI_UPDATE(audioMuted, audioIO->isMuted());
 
