@@ -104,8 +104,9 @@ public:
     glm::vec3 getBodyAngularVelocity() const;
     virtual glm::vec3 getObjectLinearVelocityChange() const;
 
-    virtual uint32_t getIncomingDirtyFlags() = 0;
-    virtual void clearIncomingDirtyFlags() = 0;
+    virtual uint32_t getIncomingDirtyFlags();
+    virtual void clearIncomingDirtyFlags();
+    void addDirtyFlags(uint32_t flags) { _dirtyFlags |= flags; }
 
     virtual PhysicsMotionType computePhysicsMotionType() const = 0;
 
@@ -165,8 +166,9 @@ protected:
     const btCollisionShape* _shape;
     btRigidBody* _body { nullptr };
     int32_t _shapeComplexity { 0 };
+    uint32_t _dirtyFlags { 0 };
 
-    uint32_t _lastKinematicStep;
+    uint32_t _lastKinematicStep { 0 };
     bool _hasInternalKinematicChanges { false };
 };
 

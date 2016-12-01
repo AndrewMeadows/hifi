@@ -1,6 +1,6 @@
 //
 //  ComplexityTracker.h
-//  libraries/physcis/src
+//  libraries/physics/src
 //
 //  Created by Andrew Meadows 2016.11.10
 //  Copyright 2016 High Fidelity, Inc.
@@ -12,48 +12,55 @@
 #ifndef hifi_ComplexityTracker_h
 #define hifi_ComplexityTracker_h
 
-#include <unordered_map>
-
 #include "ComplexityQueue.h"
-
-using ComplexityMap = std::unordered_map<ObjectMotionState*, int32_t>;
+#include "ObjectMotionState.h"
+#include "Quarantine.h"
 
 class ComplexityTracker {
 public:
+    enum TrackerState {
+        Inactive,
+        EnabledButNotReady,
+        Ready,
+        Clamp,
+        Release
+    };
 
     ComplexityTracker();
     ~ComplexityTracker();
 
     void clear();
-    bool isEmpty() const { return _map.empty(); }
 
-    void enable();
-    void disable();
-    bool isEnabled() const { return _enabled; }
-    bool needsInitialization() const;
+    void setSimulationStepRatio(float ratio);
+    void update(VectorOfMotionStates& objects);
+
+    bool isActive() const { return _state != Inactive; }
     void setInitialized();
+    bool needsInitialization() const { return _state == ComplexityTracker::EnabledButNotReady; }
 
     void remember(ObjectMotionState* key, int32_t value);
     void forget(ObjectMotionState* key, int32_t value);
     void remove(ObjectMotionState* key);
 
-    int32_t getTotalComplexity() const { return _totalQueueComplexity; }
-
-    Complexity popTop();
-
     void dump();
 
 protected:
+    Complexity popTop();
     void clearQueue();
+    void rebuildQueue();
 
 private:
+    Quarantine _quarantine;
     ComplexityMap _map;
     ComplexityQueueHighToLow _queue;
+    uint64_t _releaseExpiry { 0 };
     int32_t _totalQueueComplexity { 0 };
     int32_t _totalComplexity { 0 };
+    int32_t _numSlowSteps { 0 };
+    int32_t _updateCounter { 0 };
+    float _simulationStepRatio { 0.0f };
+    TrackerState _state { Inactive };
     bool _queueIsDirty { true };
-    bool _enabled { false };
-    bool _initialized { false };
 };
 
 #endif // hifi_ComplexityTracker_h

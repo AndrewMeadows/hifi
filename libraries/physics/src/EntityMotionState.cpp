@@ -640,9 +640,9 @@ void EntityMotionState::sendUpdate(OctreeEditPacketSender* packetSender, uint32_
 
 uint32_t EntityMotionState::getIncomingDirtyFlags() {
     assert(entityTreeIsLocked());
-    uint32_t dirtyFlags = 0;
+    uint32_t dirtyFlags = ObjectMotionState::getIncomingDirtyFlags();
     if (_body && _entity) {
-        dirtyFlags = _entity->getDirtyFlags();
+        dirtyFlags |= _entity->getDirtyFlags();
 
         if (dirtyFlags & Simulation::DIRTY_SIMULATOR_ID) {
             // when SIMULATOR_ID changes we must check for reinterpretation of asymmetric collision mask
@@ -670,6 +670,7 @@ uint32_t EntityMotionState::getIncomingDirtyFlags() {
 }
 
 void EntityMotionState::clearIncomingDirtyFlags() {
+    ObjectMotionState::clearIncomingDirtyFlags();
     assert(entityTreeIsLocked());
     if (_body && _entity) {
         _entity->clearDirtyFlags();

@@ -23,7 +23,6 @@
 #include "ComplexityTracker.h"
 #include "ContactInfo.h"
 #include "ObjectMotionState.h"
-#include "Quarantine.h"
 #include "ThreadSafeDynamicsWorld.h"
 #include "ObjectAction.h"
 
@@ -119,7 +118,6 @@ private:
     QHash<QUuid, EntityActionPointer> _objectActions;
     std::vector<btRigidBody*> _activeStaticBodies;
     ComplexityTracker _complexityTracker;
-    Quarantine _quarantine;
 
     glm::vec3 _originOffset;
 

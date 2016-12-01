@@ -24,9 +24,6 @@ public:
 
     virtual PhysicsMotionType getMotionType() const override { return _motionType; }
 
-    virtual uint32_t getIncomingDirtyFlags() override;
-    virtual void clearIncomingDirtyFlags() override;
-
     virtual PhysicsMotionType computePhysicsMotionType() const override;
 
     virtual bool isMoving() const override;
@@ -60,8 +57,6 @@ public:
 
     void setBoundingBox(const glm::vec3& corner, const glm::vec3& diagonal);
 
-    void addDirtyFlags(uint32_t flags) { _dirtyFlags |= flags; }
-
     virtual void computeCollisionGroupAndMask(int16_t& group, int16_t& mask) const override;
 
     friend class AvatarManager;
@@ -80,8 +75,6 @@ protected:
     // In other words, it is impossible for the Avatar to be deleted out from under its MotionState.
     // In conclusion: weak pointer shennanigans would be pure overhead.
     Avatar* _avatar; // do NOT use smartpointer here, no need for weakpointer
-
-    uint32_t _dirtyFlags;
 };
 
 typedef QSet<AvatarMotionState*> SetOfAvatarMotionStates;

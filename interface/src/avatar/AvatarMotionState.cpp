@@ -27,17 +27,6 @@ AvatarMotionState::~AvatarMotionState() {
     _avatar = nullptr;
 }
 
-// virtual
-uint32_t AvatarMotionState::getIncomingDirtyFlags() {
-    return _body ? _dirtyFlags : 0;
-}
-
-void AvatarMotionState::clearIncomingDirtyFlags() {
-    if (_body) {
-        _dirtyFlags = 0;
-    }
-}
-
 PhysicsMotionType AvatarMotionState::computePhysicsMotionType() const {
     // TODO?: support non-DYNAMIC motion for avatars? (e.g. when sitting)
     return MOTION_TYPE_DYNAMIC;

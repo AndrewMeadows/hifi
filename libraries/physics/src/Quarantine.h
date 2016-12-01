@@ -1,6 +1,6 @@
 //
 //  Quarantine.h
-//  libraries/physcis/src
+//  libraries/physics/src
 //
 //  Created by Andrew Meadows 2016.12.10
 //  Copyright 2016 High Fidelity, Inc.
@@ -12,11 +12,15 @@
 #ifndef hifi_Quarantine_h
 #define hifi_Quarantine_h
 
-#include "ComplexityTracker.h"
+#include <unordered_map>
+
+#include "ComplexityQueue.h"
 
 const int CF_QUARANTINE = 0x01 << 30; // unused by Bullet
 
 class ObjectMotionState;
+
+using ComplexityMap = std::unordered_map<ObjectMotionState*, int32_t>;
 
 class Quarantine {
 public:
@@ -25,7 +29,6 @@ public:
 
     void clear();
 
-    int32_t size() const;
     bool isEmpty() const;
 
     bool contains(ObjectMotionState* object) const;

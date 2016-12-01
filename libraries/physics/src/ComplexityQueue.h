@@ -1,6 +1,6 @@
 //
 //  ComplexityQueue.h
-//  libraries/physcis/src
+//  libraries/physics/src
 //
 //  Created by Andrew Meadows 2016.12.10
 //  Copyright 2016 High Fidelity, Inc.
@@ -13,11 +13,15 @@
 #define hifi_ComplexityQueue_h
 
 #include <queue>
+#include <stdint.h>
 
 class ObjectMotionState;
 
 class Complexity {
 public:
+    Complexity() {}
+    Complexity(ObjectMotionState* k, int32_t v) : key(k), value(v) {}
+
     class GreaterThan {
     public:
         bool operator() (const Complexity& A, const Complexity& B) { return A.value > B.value; }
@@ -28,8 +32,8 @@ public:
         bool operator() (const Complexity& A, const Complexity& B) { return A.value < B.value; }
     };
 
-    ObjectMotionState* key;
-    int32_t value;
+    ObjectMotionState* key { nullptr };
+    int32_t value { 0 };
 };
 
 using ComplexityQueueHighToLow = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::LessThan>;

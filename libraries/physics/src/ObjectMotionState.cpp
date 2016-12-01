@@ -118,6 +118,16 @@ void ObjectMotionState::setMotionType(PhysicsMotionType motionType) {
     _motionType = motionType;
 }
 
+uint32_t ObjectMotionState::getIncomingDirtyFlags() {
+    return _body ? _dirtyFlags : 0;
+}
+
+void ObjectMotionState::clearIncomingDirtyFlags() {
+    if (_body) {
+        _dirtyFlags = 0;
+    }
+}
+
 // Update the Continuous Collision Detection (CCD) configuration settings of our RigidBody so that
 // CCD will be enabled automatically when its speed surpasses a certain threshold.
 void ObjectMotionState::updateCCDConfiguration() {

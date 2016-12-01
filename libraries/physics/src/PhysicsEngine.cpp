@@ -77,6 +77,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
     if (body && body->getCollisionFlags() & CF_QUARANTINE) {
         // quarantined objects are overriddedn to be STATIC
+        std::cout << "adebug " << (void*)motionState << " slam STATIC" << std::endl;  // adebug
         motionType = MOTION_TYPE_STATIC;
     }
     motionState->setMotionType(motionType);
@@ -156,7 +157,6 @@ void PhysicsEngine::removeObjects(const VectorOfMotionStates& objects) {
     // then remove them
     for (auto object : objects) {
         _complexityTracker.remove(object);
-        _quarantine.release(object);
 
         btRigidBody* body = object->getRigidBody();
         if (body) {
@@ -175,7 +175,6 @@ void PhysicsEngine::removeObjects(const SetOfMotionStates& objects) {
     _contactMap.clear();
     for (auto object : objects) {
         _complexityTracker.remove(object);
-        _quarantine.release(object);
 
         btRigidBody* body = object->getRigidBody();
         if (body) {
@@ -288,7 +287,7 @@ void PhysicsEngine::stepSimulation() {
     int numSubsteps = _dynamicsWorld->stepSimulationWithSubstepCallback(timeStep, PHYSICS_ENGINE_MAX_NUM_SUBSTEPS,
                                                                         PHYSICS_ENGINE_FIXED_SUBSTEP, onSubStep);
     if (numSubsteps > 0) {
-        _lastSimulationStepRatio = (float)(usecTimestampNow() - startTime) / ((float)(USECS_PER_SECOND * numSubsteps) * PHYSICS_ENGINE_FIXED_SUBSTEP);
+        _complexityTracker.setSimulationStepRatio((float)(usecTimestampNow() - startTime) / ((float)(USECS_PER_SECOND * numSubsteps) * PHYSICS_ENGINE_FIXED_SUBSTEP));
 
         BT_PROFILE("postSimulation");
         _numSubsteps += (uint32_t)numSubsteps;
@@ -303,83 +302,13 @@ void PhysicsEngine::stepSimulation() {
 }
 
 void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
-    static int foo = 0;
-    const uint32_t MIN_NUM_SLOW_STEPS = 4;
-    const uint32_t MAX_NUM_SLOW_STEPS = 2 * MIN_NUM_SLOW_STEPS;
-    const float SLOW_FRACTION = 0.25f;
-    const float FAST_FRACTION = 0.10f;
-
-    if (_lastSimulationStepRatio > SLOW_FRACTION) {
-        ++_numSlowSteps;
-        if (_numSlowSteps > MIN_NUM_SLOW_STEPS) {
-            if (!_complexityTracker.isEnabled()) {
-                // start quarantine
-                std::cout << "adebug START complexity analysis  frame = 0" << std::endl;  // adebug
-                _complexityTracker.enable();
-                foo = 0;
-            } else {
-                ++foo;
-                _complexityTracker.setInitialized();
-                // expand quarantine
-                const float INCREMENT_QUARANTINE_PERCENT = 0.11f;
-                int32_t isolatedComplexity = 0;
-                int32_t enoughComplexity = (int32_t)(INCREMENT_QUARANTINE_PERCENT * (float)_complexityTracker.getTotalComplexity());
-                while(isolatedComplexity < enoughComplexity && !_complexityTracker.isEmpty()) {
-                    Complexity complexity = _complexityTracker.popTop();
-                    _quarantine.insert(complexity);
-                    btRigidBody* body = complexity.key->getRigidBody();
-                    body->setCollisionFlags(body->getCollisionFlags() | CF_QUARANTINE);
-                    quarantineChanges.push_back(complexity.key);
-                    isolatedComplexity += complexity.value;
-                    std::cout << "adebug + + " << complexity.value << "  frame = " << foo  << std::endl;  // adebug
-                }
-            }
-        }
-    } else if (_lastSimulationStepRatio > FAST_FRACTION && _complexityTracker.isEnabled()) {
-        ++foo;
-        if (!_complexityTracker.isEmpty()) {
-            Complexity complexity = _complexityTracker.popTop();
-            _quarantine.insert(complexity);
-            btRigidBody* body = complexity.key->getRigidBody();
-            body->setCollisionFlags(body->getCollisionFlags() | CF_QUARANTINE);
-            quarantineChanges.push_back(complexity.key);
-            std::cout << "adebug +++ " << complexity.value << "  frame = " << foo  << std::endl;  // adebug
-        }
-    } else if (_lastSimulationStepRatio < FAST_FRACTION) {
-        if (_numSlowSteps > 0) {
-            if (_numSlowSteps > MAX_NUM_SLOW_STEPS) {
-                _numSlowSteps = MAX_NUM_SLOW_STEPS;
-            }
-            --_numSlowSteps;
-            ++foo;
-        } else if (_complexityTracker.isEnabled()) {
-            ++foo;
-            if (_quarantine.isEmpty()) {
-                // stop quarantine
-                _complexityTracker.disable();
-                std::cout << "adebug STOP complexity analysis  frame = " << foo << std::endl;  // adebug
-            } else {
-                // reduce quarantine
-                const float DECREMENT_QUARANTINE_PERCENT = 0.09f;
-                int32_t releasedComplexity = 0;
-                int32_t enoughComplexity = (int32_t)(DECREMENT_QUARANTINE_PERCENT * (float)_quarantine.getTotalComplexity());
-                while(releasedComplexity < enoughComplexity && !_quarantine.isEmpty()) {
-                    Complexity complexity = _quarantine.popBottom();
-                    btRigidBody* body = complexity.key->getRigidBody();
-                    body->setCollisionFlags(body->getCollisionFlags() & ~CF_QUARANTINE);
-                    quarantineChanges.push_back(complexity.key);
-                    releasedComplexity += complexity.value;
-                    std::cout << "adebug --- " << complexity.value << "  frame = " << foo  << std::endl;  // adebug
-                }
-            }
-        }
-    }
+    _complexityTracker.update(quarantineChanges);
 }
 
 // static helper
 void PhysicsEngine::addSecondSetToFirst(VectorOfMotionStates& A, const VectorOfMotionStates& B) {
-    // NOTE: usually these lists are very short, so we don't bother to sort and use std::set_union
     // for each element in B not in A: add to A
+    // NOTE: usually these lists are very short, so we don't bother to sort for std::set_union
     for (auto b : B) {
         bool add = true;
         for (auto a : A) {
@@ -551,7 +480,7 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
                     _collisionEvents.push_back(Collision(type, idB, QUuid(), position, penetration, velocityChange));
                 }
             }
-            if (_complexityTracker.isEnabled() && motionStateA && motionStateB) {
+            if (_complexityTracker.isActive() && motionStateA && motionStateB) {
                 if (motionStateA > motionStateB) {
                     std::swap(motionStateA, motionStateB);
                 }
@@ -572,6 +501,9 @@ const CollisionEvents& PhysicsEngine::getCollisionEvents() {
         } else {
             ++contactItr;
         }
+    }
+    if (initializeTracker) {
+        _complexityTracker.setInitialized();
     }
     return _collisionEvents;
 }

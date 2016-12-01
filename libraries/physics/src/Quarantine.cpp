@@ -1,6 +1,6 @@
 //
 //  Quarantine.cpp
-//  libraries/physcis/src
+//  libraries/physics/src
 //
 //  Created by Andrew Meadows 2016.12.10
 //  Copyright 2016 High Fidelity, Inc.
@@ -27,10 +27,6 @@ void Quarantine::clear() {
     _queueIsDirty = true;
 }
 
-int32_t Quarantine::size() const {
-    return _map.size();
-}
-
 bool Quarantine::isEmpty() const {
     return _map.empty();
 }
@@ -51,6 +47,8 @@ Complexity Quarantine::popBottom() {
         }
         _queueIsDirty = false;
     }
+    // NOTE: the queue is inverted: low values at the top and high values deeper in the stack,
+    // which is why this method is called 'popBottom'
     Complexity complexity = _queue.top();
     _queue.pop();
     ComplexityMap::const_iterator itr = _map.find(complexity.key);

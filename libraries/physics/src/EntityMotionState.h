@@ -50,8 +50,8 @@ public:
     bool shouldSendUpdate(uint32_t simulationStep);
     void sendUpdate(OctreeEditPacketSender* packetSender, uint32_t step);
 
-    virtual uint32_t getIncomingDirtyFlags() override;
-    virtual void clearIncomingDirtyFlags() override;
+    uint32_t getIncomingDirtyFlags() override;
+    void clearIncomingDirtyFlags() override;
 
     virtual float getObjectRestitution() const override { return _entity->getRestitution(); }
     virtual float getObjectFriction() const override { return _entity->getFriction(); }
