@@ -4008,7 +4008,6 @@ void Application::update(float deltaTime) {
 
             });
 
-            // TODO: make sure we only quarantine entities (not avatars)
             _physicsEngine->updateQuarantine(quarantineChanges);
 
             getEntities()->getTree()->withReadLock([&] {
@@ -4040,7 +4039,9 @@ void Application::update(float deltaTime) {
             });
         }
         {
-            PhysicsEngine::removeQuarantinedObjects(quarantineChanges);
+            // objects that have been quarantined to be STATIC need to be manually added to outgoingChanges
+            // since otherwise _physicsEngine won't include them
+            PhysicsEngine::removeNonStaticObjects(quarantineChanges);
 
             PROFILE_RANGE_EX("HarvestChanges", 0xffffff00, (uint64_t)getActiveDisplayPlugin()->presentCount());
             PerformanceTimer perfTimer("harvestChanges");

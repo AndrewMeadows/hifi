@@ -31,7 +31,8 @@ public:
 
     bool contains(ObjectMotionState* object) const;
 
-    Complexity popBottom();
+    Complexity bottom();
+    Complexity pop();
     void insert(const Complexity& complexity);
     void release(ObjectMotionState* object);
 

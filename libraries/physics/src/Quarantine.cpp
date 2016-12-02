@@ -35,7 +35,9 @@ bool Quarantine::contains(ObjectMotionState* object) const {
     return _map.find(object) != _map.end();
 }
 
-Complexity Quarantine::popBottom() {
+Complexity Quarantine::bottom() {
+    // NOTE: the queue is inverted: low values at the top and high values deeper in the stack,
+    // which is why this method is called 'bottom'
     assert(!_map.empty());
     if (_queueIsDirty) {
         // rebuild the queue
@@ -47,9 +49,11 @@ Complexity Quarantine::popBottom() {
         }
         _queueIsDirty = false;
     }
-    // NOTE: the queue is inverted: low values at the top and high values deeper in the stack,
-    // which is why this method is called 'popBottom'
-    Complexity complexity = _queue.top();
+    return _queue.top();
+}
+
+Complexity Quarantine::pop() {
+    Complexity complexity = bottom();
     _queue.pop();
     ComplexityMap::const_iterator itr = _map.find(complexity.key);
     assert(itr != _map.end());

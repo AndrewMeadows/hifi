@@ -63,7 +63,7 @@ public:
     void updateQuarantine(VectorOfMotionStates& quarantineChanges);
 
     static void addSecondSetToFirst(VectorOfMotionStates& A, const VectorOfMotionStates& B);
-    static void removeQuarantinedObjects(VectorOfMotionStates& objects);
+    static void removeNonStaticObjects(VectorOfMotionStates& objects);
 
     void harvestPerformanceStats();
     void updateContactMap();

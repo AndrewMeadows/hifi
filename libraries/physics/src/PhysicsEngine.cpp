@@ -74,8 +74,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     // NOTE: the body may or may not already exist, depending on whether this corresponds to a reinsertion, or a new insertion.
     btRigidBody* body = motionState->getRigidBody();
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
-    if (body && body->getCollisionFlags() & CF_QUARANTINE) {
-        // quarantined objects are overriddedn to be STATIC
+    if (body && body->getCollisionFlags() & CF_QUARANTINE_SET_STATIC) {
         motionType = MOTION_TYPE_STATIC;
         btVector3 zero(0.0f, 0.0f, 0.0f);
         body->setLinearVelocity(zero);
@@ -96,7 +95,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
             body->updateInertiaTensor();
             motionState->updateBodyVelocities();
             motionState->updateLastKinematicStep();
-            body->setSleepingThresholds(KINEMATIC_LINEAR_SPEED_THRESHOLD, KINEMATIC_ANGULAR_SPEED_THRESHOLD);
+            motionState->updateBodyMaterialProperties();
             motionState->clearInternalKinematicChanges();
             break;
         }
@@ -115,10 +114,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
                                                                   btCollisionObject::CF_STATIC_OBJECT));
             body->updateInertiaTensor();
             motionState->updateBodyVelocities();
-
-            // NOTE: Bullet will deactivate any object whose velocity is below these thresholds for longer than 2 seconds.
-            // (the 2 seconds is determined by: static btRigidBody::gDeactivationTime
-            body->setSleepingThresholds(DYNAMIC_LINEAR_SPEED_THRESHOLD, DYNAMIC_ANGULAR_SPEED_THRESHOLD);
+            motionState->updateBodyMaterialProperties();
             if (!motionState->isMoving()) {
                 // try to initialize this object as inactive
                 body->forceActivationState(ISLAND_SLEEPING);
@@ -309,7 +305,8 @@ void PhysicsEngine::updateQuarantine(VectorOfMotionStates& quarantineChanges) {
 // static helper
 void PhysicsEngine::addSecondSetToFirst(VectorOfMotionStates& A, const VectorOfMotionStates& B) {
     // for each element in B not in A: add to A
-    // NOTE: usually these lists are very short, so we don't bother to sort for std::set_union
+    // NOTE: most of the time B is either empty and or very short
+    // so we don't bother to sort or use std::set_union
     for (auto b : B) {
         bool add = true;
         for (auto a : A) {
@@ -325,18 +322,17 @@ void PhysicsEngine::addSecondSetToFirst(VectorOfMotionStates& A, const VectorOfM
 }
 
 // static helper
-void PhysicsEngine::removeQuarantinedObjects(VectorOfMotionStates& objects) {
+void PhysicsEngine::removeNonStaticObjects(VectorOfMotionStates& objects) {
+    int32_t i = 0;
     int32_t numObjects = objects.size();
-    int32_t j = 0;
-    for (int32_t i = 0; i < numObjects; ++i) {
-        if (objects[i]->getRigidBody()->getCollisionFlags() & CF_QUARANTINE) {
-            if (j < i) {
-                objects[j] = objects[i];
-            }
-            ++j;
+    while (i < numObjects) {
+        if (objects[i]->getRigidBody()->isStaticObject()) {
+            ++i;
+        } else {
+            objects[i] = objects[--numObjects];
         }
     }
-    objects.resize(j);
+    objects.resize(numObjects);
 }
 
 void PhysicsEngine::harvestPerformanceStats() {

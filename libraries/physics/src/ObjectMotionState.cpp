@@ -347,9 +347,35 @@ bool ObjectMotionState::handleHardAndEasyChanges(uint32_t& flags, PhysicsEngine*
 }
 
 void ObjectMotionState::updateBodyMaterialProperties() {
-    _body->setRestitution(getObjectRestitution());
-    _body->setFriction(getObjectFriction());
-    _body->setDamping(fabsf(btMin(getObjectLinearDamping(), 1.0f)), fabsf(btMin(getObjectAngularDamping(), 1.0f)));
+    if (_body->getCollisionFlags() & CF_QUARANTINE_SOFTEN_COLLISIONS) {
+        _body->setRestitution(0.0f);
+        _body->setFriction(getObjectFriction());
+        if (!_body->isStaticObject()) {
+            const float MIN_QUARANTINE_DAMPING = 0.5f;
+            float linearDamping = fabsf(btMax(btMin(getObjectLinearDamping(), 1.0f), MIN_QUARANTINE_DAMPING));
+            float angularDamping = fabsf(btMax(btMin(getObjectAngularDamping(), 1.0f), MIN_QUARANTINE_DAMPING));
+            _body->setDamping(linearDamping, angularDamping);
+            _body->setSleepingThresholds(QUARANTINE_LINEAR_SPEED_THRESHOLD, QUARANTINE_ANGULAR_SPEED_THRESHOLD);
+        }
+    } else {
+        _body->setRestitution(getObjectRestitution());
+        _body->setFriction(getObjectFriction());
+        _body->setDamping(fabsf(btMin(getObjectLinearDamping(), 1.0f)), fabsf(btMin(getObjectAngularDamping(), 1.0f)));
+
+        // NOTE: Bullet will deactivate any object whose velocity is below these "sleeping" thresholds
+        // for longer than 2 seconds.  The 2 seconds is determined by: static btRigidBody::gDeactivationTime.
+        PhysicsMotionType motionType = computePhysicsMotionType();
+        switch (motionType) {
+            case MOTION_TYPE_DYNAMIC: {
+                _body->setSleepingThresholds(DYNAMIC_LINEAR_SPEED_THRESHOLD, DYNAMIC_ANGULAR_SPEED_THRESHOLD);
+                break;
+            }
+            case MOTION_TYPE_KINEMATIC: {
+                _body->setSleepingThresholds(KINEMATIC_LINEAR_SPEED_THRESHOLD, KINEMATIC_ANGULAR_SPEED_THRESHOLD);
+                break;
+            }
+        }
+    }
 }
 
 void ObjectMotionState::updateBodyVelocities() {

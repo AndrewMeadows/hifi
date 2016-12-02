@@ -13,6 +13,8 @@
 
 #include <assert.h>
 
+#include <PhysicsHelpers.h>
+
 #include "ObjectMotionState.h"
 
 ComplexityTracker::ComplexityTracker() : _state(ComplexityTracker::Inactive) {
@@ -96,9 +98,17 @@ void ComplexityTracker::update(VectorOfMotionStates& changedObjects) {
               	Complexity complexity = popTop();
                 if (complexity.value > 0) {
               	    _quarantine.insert(complexity);
-              	    complexity.key->addDirtyFlags(Simulation::DIRTY_MOTION_TYPE);
               	    btRigidBody* body = complexity.key->getRigidBody();
-              	    body->setCollisionFlags(body->getCollisionFlags() | CF_QUARANTINE);
+                    // always soften material properties
+                    int32_t collisionFlags = CF_QUARANTINE_SOFTEN_COLLISIONS;
+                    uint32_t dirtyFlags = Simulation::DIRTY_MATERIAL;
+                    if (complexity.key->getSimulatorID() != Physics::getSessionUUID()) {
+                        // ... but flag for STATIC only if we don't own the simulation
+                        collisionFlags |= CF_QUARANTINE_SET_STATIC;
+                        dirtyFlags |= Simulation::DIRTY_MOTION_TYPE;
+                    }
+              	    body->setCollisionFlags(body->getCollisionFlags() | collisionFlags);
+              	    complexity.key->addDirtyFlags(dirtyFlags);
               	    changedObjects.push_back(complexity.key);
               	    amount += complexity.value;
                 }
@@ -110,10 +120,21 @@ void ComplexityTracker::update(VectorOfMotionStates& changedObjects) {
             int32_t target = 1;
           	int32_t amount = 0;
           	while(amount < target && !_quarantine.isEmpty()) {
-              	Complexity complexity = _quarantine.popBottom();
-              	complexity.key->addDirtyFlags(Simulation::DIRTY_MOTION_TYPE);
+              	Complexity complexity = _quarantine.bottom();
               	btRigidBody* body = complexity.key->getRigidBody();
-              	body->setCollisionFlags(body->getCollisionFlags() & ~CF_QUARANTINE);
+                int32_t collisionFlags = body->getCollisionFlags();
+                if (collisionFlags & CF_QUARANTINE_SET_STATIC) {
+                    // first we back out STATIC quarantine (if any) and leave it in _quarantine
+              	    body->setCollisionFlags(body->getCollisionFlags() & ~CF_QUARANTINE_SET_STATIC);
+              	    complexity.key->addDirtyFlags(Simulation::DIRTY_MOTION_TYPE);
+                } else {
+                    // finally we restore material properties and pop it from _quarantine
+                    if (collisionFlags & CF_QUARANTINE_SOFTEN_COLLISIONS) {
+              	        body->setCollisionFlags(body->getCollisionFlags() & ~CF_QUARANTINE_SOFTEN_COLLISIONS);
+              	        complexity.key->addDirtyFlags(Simulation::DIRTY_MATERIAL);
+                    }
+                    _quarantine.pop();
+                }
               	changedObjects.push_back(complexity.key);
               	amount += complexity.value;
           	}
@@ -137,7 +158,7 @@ void ComplexityTracker::remember(ObjectMotionState* key, int32_t value) {
     } else {
         itr->second += value;
     }
-    if (! (key->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+    if (! (key->getRigidBody()->getCollisionFlags() & CF_QUARANTINE_FLAGS) ) {
         _queueIsDirty = true;
         _totalQueueComplexity += value;
     }
@@ -152,7 +173,7 @@ void ComplexityTracker::forget(ObjectMotionState* key, int32_t value) {
         } else {
             _knownObjects.erase(itr);
         }
-        if (! (key->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+        if (! (key->getRigidBody()->getCollisionFlags() & CF_QUARANTINE_FLAGS) ) {
             _queueIsDirty = true;
             _totalQueueComplexity -= value;
         }
@@ -171,7 +192,8 @@ void ComplexityTracker::remove(ObjectMotionState* key) {
     ComplexityMap::iterator itr = _knownObjects.find(key);
     if (itr != _knownObjects.end()) {
         _totalComplexity -= itr->second;
-        if (! (itr->first->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+        if (! (itr->first->getRigidBody()->getCollisionFlags() & CF_QUARANTINE_FLAGS) ) {
+            // this object was not yet taken for quarantine so _quarantineQueue will need to be rebuilt
             _totalQueueComplexity -= itr->second;
             _queueIsDirty = true;
         }
@@ -216,7 +238,7 @@ void ComplexityTracker::rebuildQueue() {
     ComplexityMap::const_iterator itr = _knownObjects.begin();
     while (itr != _knownObjects.end()) {
         btRigidBody* body = itr->first->getRigidBody();
-        if (! (body->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
+        if (! (body->getCollisionFlags() & CF_QUARANTINE_FLAGS) ) {
             _quarantineQueue.push(Complexity({itr->first, itr->second}));
             _totalQueueComplexity += itr->second;
         }

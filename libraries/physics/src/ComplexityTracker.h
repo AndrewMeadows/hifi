@@ -17,8 +17,9 @@
 #include "Quarantine.h"
 
 
-const int CF_QUARANTINE = 0x01 << 30; // unused by Bullet
-//const int CF_SOFTEN_COLLISIONS = 0x01 << 29; // unused by Bullet
+const int32_t CF_QUARANTINE_SET_STATIC = 0x01 << 30; // unused by Bullet
+const int32_t CF_QUARANTINE_SOFTEN_COLLISIONS = 0x01 << 29; // unused by Bullet
+const int32_t CF_QUARANTINE_FLAGS = CF_QUARANTINE_SET_STATIC | CF_QUARANTINE_SOFTEN_COLLISIONS;
 
 
 class ComplexityTracker {
