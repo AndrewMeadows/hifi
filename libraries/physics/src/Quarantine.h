@@ -39,8 +39,6 @@ public:
 
     int32_t getTotalComplexity() const { return _totalComplexity; }
 
-    void dump() const;
-
 private:
     void clearQueue();
 

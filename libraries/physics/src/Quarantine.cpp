@@ -89,9 +89,6 @@ void Quarantine::release(ObjectMotionState* object) {
     }
 }
 
-void Quarantine::dump() const {
-}
-
 void Quarantine::clearQueue() {
     while (!_queue.empty()) {
         _queue.pop();

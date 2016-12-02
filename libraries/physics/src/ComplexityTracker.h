@@ -42,8 +42,6 @@ public:
     void forget(ObjectMotionState* key, int32_t value);
     void remove(ObjectMotionState* key);
 
-    void dump();
-
 protected:
     Complexity popTop();
     void clearQueue();

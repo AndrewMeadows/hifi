@@ -10,7 +10,6 @@
 //
 
 #include <PhysicsCollisionGroups.h>
-#include <iostream> // adebug
 
 #include <PerfStat.h>
 
@@ -77,8 +76,10 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
     if (body && body->getCollisionFlags() & CF_QUARANTINE) {
         // quarantined objects are overriddedn to be STATIC
-        std::cout << "adebug " << (void*)motionState << " slam STATIC" << std::endl;  // adebug
         motionType = MOTION_TYPE_STATIC;
+        btVector3 zero(0.0f, 0.0f, 0.0f);
+        body->setLinearVelocity(zero);
+        body->setAngularVelocity(zero);
     }
     motionState->setMotionType(motionType);
     switch(motionType) {
@@ -416,7 +417,7 @@ void PhysicsEngine::updateContactMap() {
     int numManifolds = _collisionDispatcher->getNumManifolds();
     for (int i = 0; i < numManifolds; ++i) {
         btPersistentManifold* contactManifold =  _collisionDispatcher->getManifoldByIndexInternal(i);
-        // adebug TODO: also want to track pairs that have zero contacts
+        // TODO: also want to track pairs that have zero contacts
         if (contactManifold->getNumContacts() > 0) {
             // TODO: require scripts to register interest in callbacks for specific objects
             // so we can filter out most collision events right here.
