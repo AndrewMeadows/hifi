@@ -16,6 +16,11 @@
 #include "ObjectMotionState.h"
 #include "Quarantine.h"
 
+
+const int CF_QUARANTINE = 0x01 << 30; // unused by Bullet
+//const int CF_SOFTEN_COLLISIONS = 0x01 << 29; // unused by Bullet
+
+
 class ComplexityTracker {
 public:
     enum TrackerState {
@@ -49,8 +54,8 @@ protected:
 
 private:
     Quarantine _quarantine;
-    ComplexityMap _map;
-    ComplexityQueueHighToLow _queue;
+    ComplexityMap _knownObjects;
+    ComplexityQueueHighToLow _quarantineQueue;
     uint64_t _releaseExpiry { 0 };
     int32_t _totalQueueComplexity { 0 };
     int32_t _totalComplexity { 0 };

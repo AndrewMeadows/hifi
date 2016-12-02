@@ -23,7 +23,7 @@ ComplexityTracker::~ComplexityTracker() {
 }
 
 void ComplexityTracker::clear() {
-    _map.clear();
+    _knownObjects.clear();
     clearQueue();
     _totalComplexity = 0;
     _quarantine.clear();
@@ -88,9 +88,8 @@ void ComplexityTracker::update(VectorOfMotionStates& changedObjects) {
     if ((_updateCounter % STEPS_BETWEEN_CHANGES) == 0) {
         // we only allow quarantine transitions every third step
         // which gives the simulation two steps between to rebuild contact manifolds and resolve penetrations
-        const float CLAMP_RATIO = 0.11f;
-        const float RELEASE_RATIO = CLAMP_RATIO / (1.0f + CLAMP_RATIO);
         if (_state == ComplexityTracker::Clamp && _simulationStepRatio > FAST_RATIO) {
+            const float CLAMP_RATIO = 0.11f;
             int32_t target = (int32_t)(CLAMP_RATIO * (float)_totalQueueComplexity);
           	int32_t amount = 0;
           	while(amount < target && _totalQueueComplexity > 0) {
@@ -108,7 +107,6 @@ void ComplexityTracker::update(VectorOfMotionStates& changedObjects) {
                 _releaseExpiry = now + SETTLE_PERIOD;
             }
         } else if (_state == ComplexityTracker::Release && _simulationStepRatio < FAST_RATIO) {
-          	//int32_t target = (int32_t)(RELEASE_RATIO * (float)_quarantine.getTotalComplexity());
             int32_t target = 1;
           	int32_t amount = 0;
           	while(amount < target && !_quarantine.isEmpty()) {
@@ -132,10 +130,10 @@ void ComplexityTracker::setInitialized() {
 }
 
 void ComplexityTracker::remember(ObjectMotionState* key, int32_t value) {
-    ComplexityMap::iterator itr = _map.find(key);
+    ComplexityMap::iterator itr = _knownObjects.find(key);
     _totalComplexity += value;
-    if (itr == _map.end()) {
-        _map.insert({key, value});
+    if (itr == _knownObjects.end()) {
+        _knownObjects.insert({key, value});
     } else {
         itr->second += value;
     }
@@ -146,20 +144,20 @@ void ComplexityTracker::remember(ObjectMotionState* key, int32_t value) {
 }
 
 void ComplexityTracker::forget(ObjectMotionState* key, int32_t value) {
-    ComplexityMap::iterator itr = _map.find(key);
-    if (itr != _map.end()) {
+    ComplexityMap::iterator itr = _knownObjects.find(key);
+    if (itr != _knownObjects.end()) {
         _totalComplexity -= value;
         if (itr->second > value) {
             itr->second -= value;
         } else {
-            _map.erase(itr);
+            _knownObjects.erase(itr);
         }
         if (! (key->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
             _queueIsDirty = true;
             _totalQueueComplexity -= value;
         }
 
-        if (_map.empty()) {
+        if (_knownObjects.empty()) {
             #ifdef DEBUG
             assert(_totalComplexity == 0);
             #else // DEBUG
@@ -170,16 +168,16 @@ void ComplexityTracker::forget(ObjectMotionState* key, int32_t value) {
 }
 
 void ComplexityTracker::remove(ObjectMotionState* key) {
-    ComplexityMap::iterator itr = _map.find(key);
-    if (itr != _map.end()) {
+    ComplexityMap::iterator itr = _knownObjects.find(key);
+    if (itr != _knownObjects.end()) {
         _totalComplexity -= itr->second;
         if (! (itr->first->getRigidBody()->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
             _totalQueueComplexity -= itr->second;
             _queueIsDirty = true;
         }
-        _map.erase(itr);
+        _knownObjects.erase(itr);
 
-        if (_map.empty()) {
+        if (_knownObjects.empty()) {
             #ifdef DEBUG
             assert(_totalComplexity == 0);
             #else // DEBUG
@@ -196,17 +194,17 @@ Complexity ComplexityTracker::popTop() {
         rebuildQueue();
     }
 
-    if (!_queue.empty()) {
-        complexity = _queue.top();
+    if (!_quarantineQueue.empty()) {
+        complexity = _quarantineQueue.top();
         _totalQueueComplexity -= complexity.value;
-        _queue.pop();
+        _quarantineQueue.pop();
     }
     return complexity;
 }
 
 void ComplexityTracker::clearQueue() {
-    while (!_queue.empty()) {
-        _queue.pop();
+    while (!_quarantineQueue.empty()) {
+        _quarantineQueue.pop();
     }
     _queueIsDirty = true;
     _totalQueueComplexity = 0;
@@ -215,11 +213,11 @@ void ComplexityTracker::clearQueue() {
 void ComplexityTracker::rebuildQueue() {
     // rebuild the queue of non-static, non-quarantined objects
     clearQueue();
-    ComplexityMap::const_iterator itr = _map.begin();
-    while (itr != _map.end()) {
+    ComplexityMap::const_iterator itr = _knownObjects.begin();
+    while (itr != _knownObjects.end()) {
         btRigidBody* body = itr->first->getRigidBody();
         if (! (body->getCollisionFlags() & (btCollisionObject::CF_STATIC_OBJECT | CF_QUARANTINE)) ) {
-            _queue.push(Complexity({itr->first, itr->second}));
+            _quarantineQueue.push(Complexity({itr->first, itr->second}));
             _totalQueueComplexity += itr->second;
         }
         ++itr;

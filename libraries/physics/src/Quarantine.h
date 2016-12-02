@@ -16,8 +16,6 @@
 
 #include "ComplexityQueue.h"
 
-const int CF_QUARANTINE = 0x01 << 30; // unused by Bullet
-
 class ObjectMotionState;
 
 using ComplexityMap = std::unordered_map<ObjectMotionState*, int32_t>;
