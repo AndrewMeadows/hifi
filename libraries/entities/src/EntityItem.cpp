@@ -1942,11 +1942,11 @@ bool EntityItem::removeActionInternal(const QUuid& actionID, EntitySimulationPoi
 
         if (simulation) {
             action->removeFromSimulation(simulation);
+            _dirtyFlags |= Simulation::DIRTY_PHYSICS_ACTIVATION;
         }
 
         bool success = true;
         serializeActions(success, _allActionsDataCache);
-        _dirtyFlags |= Simulation::DIRTY_PHYSICS_ACTIVATION;
         setActionDataNeedsTransmit(true);
         return success;
     }
@@ -1962,11 +1962,11 @@ bool EntityItem::clearActions(EntitySimulationPointer simulation) {
             i = _objectActions.erase(i);
             action->setOwnerEntity(nullptr);
             action->removeFromSimulation(simulation);
+            _dirtyFlags |= Simulation::DIRTY_PHYSICS_ACTIVATION;
         }
         // empty _serializedActions means no actions for the EntityItem
         _actionsToRemove.clear();
         _allActionsDataCache.clear();
-        _dirtyFlags |= Simulation::DIRTY_PHYSICS_ACTIVATION;
     });
     return true;
 }
