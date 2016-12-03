@@ -74,7 +74,8 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
     // NOTE: the body may or may not already exist, depending on whether this corresponds to a reinsertion, or a new insertion.
     btRigidBody* body = motionState->getRigidBody();
     PhysicsMotionType motionType = motionState->computePhysicsMotionType();
-    if (body && body->getCollisionFlags() & CF_QUARANTINE_SET_STATIC) {
+    if (body && (body->getCollisionFlags() & CF_QUARANTINE_SET_STATIC)) {
+        // override motionType to be STATIC
         motionType = MOTION_TYPE_STATIC;
         btVector3 zero(0.0f, 0.0f, 0.0f);
         body->setLinearVelocity(zero);
@@ -91,7 +92,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
             } else {
                 body->setMassProps(mass, inertia);
             }
-            body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+            body->setCollisionFlags((body->getCollisionFlags() & CF_QUARANTINE_FLAGS) | btCollisionObject::CF_KINEMATIC_OBJECT);
             body->updateInertiaTensor();
             motionState->updateBodyVelocities();
             motionState->updateLastKinematicStep();
@@ -110,8 +111,8 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
             } else {
                 body->setMassProps(mass, inertia);
             }
-            body->setCollisionFlags(body->getCollisionFlags() & ~(btCollisionObject::CF_KINEMATIC_OBJECT |
-                                                                  btCollisionObject::CF_STATIC_OBJECT));
+            const int32_t DYNAMIC_MASK = ~(btCollisionObject::CF_KINEMATIC_OBJECT | btCollisionObject::CF_STATIC_OBJECT);
+            body->setCollisionFlags(body->getCollisionFlags() & CF_QUARANTINE_FLAGS & DYNAMIC_MASK);
             body->updateInertiaTensor();
             motionState->updateBodyVelocities();
             motionState->updateBodyMaterialProperties();
@@ -130,7 +131,7 @@ void PhysicsEngine::addObjectToDynamicsWorld(ObjectMotionState* motionState) {
             } else {
                 body->setMassProps(mass, inertia);
             }
-            body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+            body->setCollisionFlags((body->getCollisionFlags() & CF_QUARANTINE_FLAGS) | btCollisionObject::CF_STATIC_OBJECT);
             body->updateInertiaTensor();
             break;
         }
