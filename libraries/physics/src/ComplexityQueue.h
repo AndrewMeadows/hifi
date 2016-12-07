@@ -20,7 +20,7 @@ class ObjectMotionState;
 class Complexity {
 public:
     Complexity() {}
-    Complexity(ObjectMotionState* k, int32_t v) : key(k), value(v) {}
+    Complexity(ObjectMotionState* k, int64_t v) : key(k), value(v) {}
 
     class GreaterThan {
     public:
@@ -33,7 +33,7 @@ public:
     };
 
     ObjectMotionState* key { nullptr };
-    int32_t value { 0 };
+    int64_t value { 0 };
 };
 
 using ComplexityQueueHighToLow = std::priority_queue<Complexity, std::vector<Complexity>, Complexity::LessThan>;

@@ -187,39 +187,45 @@ void ObjectMotionState::computeShapeComplexity() {
         switch (type) {
             case (int32_t)BOX_SHAPE_PROXYTYPE: {
                     // a box has six planes
-                    _shapeComplexity = 6;
+                    _shapeComplexity = 6L;
                 }
                 break;
             case (int32_t)SPHERE_SHAPE_PROXYTYPE: {
                     // spheres are simplest shape
-                    _shapeComplexity = 1;
+                    _shapeComplexity = 2L;
                 }
                 break;
             case (int32_t)CONVEX_HULL_SHAPE_PROXYTYPE: {
                     // count the hull's planes
                     const btConvexHullShape* convexHull = static_cast<const btConvexHullShape*>(_shape);
-                    _shapeComplexity = 2 + convexHull->getNumPlanes();
+                    _shapeComplexity = 1L + (uint64_t)convexHull->getNumPlanes();
                 }
                 break;
             case (int32_t)COMPOUND_SHAPE_PROXYTYPE: {
                     // HACK: estimate sum of all chile planes assuming an average of 14 planes per child
                     const btCompoundShape* compound = static_cast<const btCompoundShape*>(_shape);
-                    _shapeComplexity = 2 + 14 * compound->getNumChildShapes();
+                    _shapeComplexity = 1L + 14L * (uint64_t)compound->getNumChildShapes();
                 }
                 break;
             case (int32_t) TRIANGLE_MESH_SHAPE_PROXYTYPE: {
                     // mesh shapes use the triangle count
                     const ShapeFactory::StaticMeshShape* meshShape = static_cast<const ShapeFactory::StaticMeshShape*>(_shape);
-                    _shapeComplexity = 2 + meshShape->getNumTriangles();
+                    _shapeComplexity = 1L + (uint64_t)meshShape->getNumTriangles();
                 }
                 break;
             default:
                 // default complexity for misc shape types we don't track
-                _shapeComplexity = 2;
+                _shapeComplexity = 1L;
                 break;
         }
     } else {
-        _shapeComplexity = 0;
+        _shapeComplexity = 0L;
+    }
+    // add a term based on object's span
+    if (_body) {
+        btVector3 minCorner, maxCorner;
+        _body->getAabb(minCorner, maxCorner);
+        _shapeComplexity += (int64_t)((maxCorner - minCorner).length2());
     }
 }
 
@@ -374,6 +380,8 @@ void ObjectMotionState::updateBodyMaterialProperties() {
                 _body->setSleepingThresholds(KINEMATIC_LINEAR_SPEED_THRESHOLD, KINEMATIC_ANGULAR_SPEED_THRESHOLD);
                 break;
             }
+            default:
+            break;
         }
     }
 }

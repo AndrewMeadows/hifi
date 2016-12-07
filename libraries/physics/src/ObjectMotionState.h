@@ -146,7 +146,7 @@ public:
     void dirtyInternalKinematicChanges() { _hasInternalKinematicChanges = true; }
     void clearInternalKinematicChanges() { _hasInternalKinematicChanges = false; }
 
-    virtual int32_t getShapeComplexity() const { return _shapeComplexity; }
+    virtual int64_t getShapeComplexity() const { return _shapeComplexity; }
 
     friend class PhysicsEngine;
 
@@ -165,10 +165,10 @@ protected:
 
     const btCollisionShape* _shape;
     btRigidBody* _body { nullptr };
-    int32_t _shapeComplexity { 0 };
-    uint32_t _dirtyFlags { 0 };
+    int64_t _shapeComplexity { 0L };
+    uint32_t _dirtyFlags { 0U };
 
-    uint32_t _lastKinematicStep { 0 };
+    uint32_t _lastKinematicStep { 0U };
     bool _hasInternalKinematicChanges { false };
 };
 

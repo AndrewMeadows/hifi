@@ -18,7 +18,8 @@
 
 class ObjectMotionState;
 
-using ComplexityMap = std::unordered_map<ObjectMotionState*, int32_t>;
+using ComplexityMap = std::unordered_map<ObjectMotionState*, int64_t>;
+using SoftMap = std::unordered_map<ObjectMotionState*, uint64_t>;
 
 class Quarantine {
 public:
@@ -28,6 +29,7 @@ public:
     void clear();
 
     bool isEmpty() const;
+    int32_t size() const;
 
     bool contains(ObjectMotionState* object) const;
 
@@ -36,7 +38,7 @@ public:
     void insert(const Complexity& complexity);
     void release(ObjectMotionState* object);
 
-    int32_t getTotalComplexity() const { return _totalComplexity; }
+    int64_t getTotalComplexity() const { return _totalComplexity; }
 
 private:
     void clearQueue();
@@ -44,7 +46,7 @@ private:
 private:
     ComplexityMap _map;
     ComplexityQueueLowToHigh _queue;
-    int32_t _totalComplexity { 0 };
+    int64_t _totalComplexity { 0UL };
     bool _queueIsDirty { false };
 };
 

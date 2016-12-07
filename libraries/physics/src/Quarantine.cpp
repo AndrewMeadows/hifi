@@ -23,12 +23,16 @@ Quarantine::~Quarantine() {
 void Quarantine::clear() {
     _map.clear();
 	clearQueue();
-    _totalComplexity = 0;
+    _totalComplexity = 0L;
     _queueIsDirty = true;
 }
 
 bool Quarantine::isEmpty() const {
     return _map.empty();
+}
+
+int32_t Quarantine::size() const {
+    return _queue.size();
 }
 
 bool Quarantine::contains(ObjectMotionState* object) const {

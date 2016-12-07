@@ -44,8 +44,8 @@ public:
     void setInitialized();
     bool needsInitialization() const { return _state == ComplexityTracker::EnabledButNotReady; }
 
-    void remember(ObjectMotionState* key, int32_t value);
-    void forget(ObjectMotionState* key, int32_t value);
+    void remember(ObjectMotionState* key, int64_t value);
+    void forget(ObjectMotionState* key, int64_t value);
     void remove(ObjectMotionState* key);
 
 protected:
@@ -57,9 +57,11 @@ private:
     Quarantine _quarantine;
     ComplexityMap _knownObjects;
     ComplexityQueueHighToLow _quarantineQueue;
+    SoftMap _softMap;
     uint64_t _releaseExpiry { 0 };
-    int32_t _totalQueueComplexity { 0 };
-    int32_t _totalComplexity { 0 };
+    uint64_t _nextSoftExpiry { 0 };
+    int64_t _totalQueueComplexity { 0 };
+    int64_t _totalComplexity { 0 };
     int32_t _numSlowSteps { 0 };
     int32_t _updateCounter { 0 };
     float _simulationStepRatio { 0.0f };
