@@ -75,13 +75,13 @@ void ScriptableAvatar::update(float deltatime) {
             if (_jointData.size() != nJoints) {
                 _jointData.resize(nJoints);
             }
-            
+
             const int frameCount = _animation->getFrames().size();
             const FBXAnimationFrame& floorFrame = _animation->getFrames().at((int)glm::floor(currentFrame) % frameCount);
             const FBXAnimationFrame& ceilFrame = _animation->getFrames().at((int)glm::ceil(currentFrame) % frameCount);
             const float frameFraction = glm::fract(currentFrame);
             std::vector<AnimPose> poses = _animSkeleton->getRelativeDefaultPoses();
-            
+
             for (int i = 0; i < animationJointNames.size(); i++) {
                 const QString& name = animationJointNames[i];
                 // As long as we need the model preRotations anyway, let's get the jointIndex from the bind skeleton rather than
@@ -89,16 +89,16 @@ void ScriptableAvatar::update(float deltatime) {
                 int mapping = _bind->getGeometry().getJointIndex(name);
                 if (mapping != -1 && !_maskedJoints.contains(name)) {
                     // Eventually, this should probably deal with post rotations and translations, too.
-                    poses[mapping].rot = modelJoints[mapping].preRotation *
-                        safeMix(floorFrame.rotations.at(i), ceilFrame.rotations.at(i), frameFraction);;
+                    poses[mapping].setRotation(modelJoints[mapping].preRotation *
+                        safeMix(floorFrame.rotations.at(i), ceilFrame.rotations.at(i), frameFraction));
                  }
             }
             _animSkeleton->convertRelativePosesToAbsolute(poses);
             for (int i = 0; i < nJoints; i++) {
                 JointData& data = _jointData[i];
                 AnimPose& pose = poses[i];
-                if (data.rotation != pose.rot) {
-                    data.rotation = pose.rot;
+                if (data.rotation != pose.getRotation()) {
+                    data.rotation = pose.getRotation();
                     data.rotationSet = true;
                 }
             }

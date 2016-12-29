@@ -2091,10 +2091,10 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor() const {
 
     glm::vec3 rigMiddleEyePos = DEFAULT_RIG_MIDDLE_EYE_POS;
     if (leftEyeIndex >= 0 && rightEyeIndex >= 0) {
-        rigMiddleEyePos = (_rig->getAbsoluteDefaultPose(leftEyeIndex).trans + _rig->getAbsoluteDefaultPose(rightEyeIndex).trans) / 2.0f;
+        rigMiddleEyePos = (_rig->getAbsoluteDefaultPose(leftEyeIndex).getTranslation() + _rig->getAbsoluteDefaultPose(rightEyeIndex).getTranslation()) / 2.0f;
     }
-    glm::vec3 rigNeckPos = neckIndex != -1 ? _rig->getAbsoluteDefaultPose(neckIndex).trans : DEFAULT_RIG_NECK_POS;
-    glm::vec3 rigHipsPos = hipsIndex != -1 ? _rig->getAbsoluteDefaultPose(hipsIndex).trans : DEFAULT_RIG_HIPS_POS;
+    glm::vec3 rigNeckPos = neckIndex != -1 ? _rig->getAbsoluteDefaultPose(neckIndex).getTranslation() : DEFAULT_RIG_NECK_POS;
+    glm::vec3 rigHipsPos = hipsIndex != -1 ? _rig->getAbsoluteDefaultPose(hipsIndex).getTranslation() : DEFAULT_RIG_HIPS_POS;
 
     glm::vec3 localEyes = (rigMiddleEyePos - rigHipsPos);
     glm::vec3 localNeck = (rigNeckPos - rigHipsPos);
@@ -2274,16 +2274,20 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar, const glm::mat
 
     AnimPose followWorldPose(currentWorldMatrix);
     if (isActive(Rotation)) {
-        followWorldPose.rot = glmExtractRotation(desiredWorldMatrix);
+        followWorldPose.setRotation(glmExtractRotation(desiredWorldMatrix));
     }
     if (isActive(Horizontal)) {
         glm::vec3 desiredTranslation = extractTranslation(desiredWorldMatrix);
-        followWorldPose.trans.x = desiredTranslation.x;
-        followWorldPose.trans.z = desiredTranslation.z;
+        glm::vec3 translation = followWorldPose.getTranslation();
+        translation.x = desiredTranslation.x;
+        translation.z = desiredTranslation.z;
+        followWorldPose.setTranslation(translation);
     }
     if (isActive(Vertical)) {
         glm::vec3 desiredTranslation = extractTranslation(desiredWorldMatrix);
-        followWorldPose.trans.y = desiredTranslation.y;
+        glm::vec3 translation = followWorldPose.getTranslation();
+        translation.y = desiredTranslation.y;
+        followWorldPose.setTranslation(translation);
     }
 
     myAvatar.getCharacterController()->setFollowParameters(followWorldPose, getMaxTimeRemaining());

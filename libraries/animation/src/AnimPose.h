@@ -20,7 +20,7 @@
 struct AnimPose {
     AnimPose() {}
     explicit AnimPose(const glm::mat4& mat);
-    AnimPose(const glm::vec3& scaleIn, const glm::quat& rotIn, const glm::vec3& transIn) : scale(scaleIn), rot(rotIn), trans(transIn) {}
+    AnimPose(const glm::vec3& scaleIn, const glm::quat& rotIn, const glm::vec3& transIn) : _scale(scaleIn), _rot(rotIn), _trans(transIn) {}
     static const AnimPose identity;
 
     glm::vec3 xformPoint(const glm::vec3& rhs) const;
@@ -33,13 +33,27 @@ struct AnimPose {
     AnimPose mirror() const;
     operator glm::mat4() const;
 
-    glm::vec3 scale;
-    glm::quat rot;
-    glm::vec3 trans;
+    glm::vec3 getTranslation() const { return _trans; }
+    glm::quat getRotation() const { return _rot; }
+    glm::vec3 getScale() const { return _scale; }
+
+    void setTranslation(const glm::vec3& t) { _trans = t; }
+    void setRotation(const glm::quat& q) { _rot = q; }
+    void setScale(const glm::vec3& s) { _scale = s; }
+
+private:
+    glm::vec3 _scale;
+    glm::quat _rot;
+    glm::vec3 _trans;
 };
 
 inline QDebug operator<<(QDebug debug, const AnimPose& pose) {
-    debug << "AnimPose, trans = (" << pose.trans.x << pose.trans.y << pose.trans.z << "), rot = (" << pose.rot.x << pose.rot.y << pose.rot.z << pose.rot.w << "), scale = (" << pose.scale.x << pose.scale.y << pose.scale.z << ")";
+    glm::vec3 trans = pose.getTranslation();
+    glm::quat rot = pose.getRotation();
+    glm::vec3 scale = pose.getScale();
+    debug << "AnimPose, trans = (" << trans.x << trans.y << trans.z << "), "
+        << "rot = (" << rot.x << rot.y << rot.z << rot.w << "), "
+        << "scale = (" << scale.x << scale.y << scale.z << ")";
     return debug;
 }
 

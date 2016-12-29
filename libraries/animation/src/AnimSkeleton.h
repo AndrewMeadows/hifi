@@ -27,7 +27,7 @@ public:
     explicit AnimSkeleton(const std::vector<FBXJoint>& joints);
     int nameToJointIndex(const QString& jointName) const;
     const QString& getJointName(int jointIndex) const;
-    int getNumJoints() const;
+    int getNumJoints() const { return (int)_joints.size(); }
 
     // absolute pose, not relative to parent
     const AnimPose& getAbsoluteBindPose(int jointIndex) const;
