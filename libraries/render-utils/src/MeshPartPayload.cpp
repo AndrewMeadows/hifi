@@ -360,7 +360,8 @@ void ModelMeshPartPayload::notifyLocationChanged() {
 }
 
 void ModelMeshPartPayload::updateTransformForSkinnedMesh(const Transform& transform, const Transform& offsetTransform, const QVector<glm::mat4>& clusterMatrices) {
-    ModelMeshPartPayload::updateTransform(transform, offsetTransform);
+    _transform = transform;
+    Transform::mult(_drawTransform, _transform, offsetTransform);
 
     if (clusterMatrices.size() > 0) {
         _worldBound = AABox();
@@ -372,6 +373,9 @@ void ModelMeshPartPayload::updateTransformForSkinnedMesh(const Transform& transf
 
         // clusterMatrix has world rotation but not world translation.
         _worldBound.translate(transform.getTranslation());
+    } else {
+        _worldBound = _localBound;
+        _worldBound.transform(_drawTransform);
     }
 }
 

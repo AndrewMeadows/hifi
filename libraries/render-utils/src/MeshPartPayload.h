@@ -34,7 +34,7 @@ public:
     virtual void updateMeshPart(const std::shared_ptr<const model::Mesh>& drawMesh, int partIndex);
 
     virtual void notifyLocationChanged() {}
-    virtual void updateTransform(const Transform& transform, const Transform& offsetTransform);
+    void updateTransform(const Transform& transform, const Transform& offsetTransform);
 
     virtual void updateMaterial(model::MaterialPointer drawMaterial);
 
@@ -85,7 +85,9 @@ public:
     typedef Payload::DataPointer Pointer;
 
     void notifyLocationChanged() override;
-    void updateTransformForSkinnedMesh(const Transform& transform, const Transform& offsetTransform, const QVector<glm::mat4>& clusterMatrices);
+    void updateTransformForSkinnedMesh(const Transform& transform,
+            const Transform& offsetTransform,
+            const QVector<glm::mat4>& clusterMatrices);
 
     // Entity fade in
     void startFade();
@@ -100,7 +102,7 @@ public:
 
     // ModelMeshPartPayload functions to perform render
     void bindMesh(gpu::Batch& batch) const override;
-    void bindTransform(gpu::Batch& batch, const render::ShapePipeline::LocationsPointer locations, bool canCauterize) const override;
+    void bindTransform(gpu::Batch& batch, const render::ShapePipeline::LocationsPointer locations, bool canCauterize = true) const override;
 
     void initCache();
 
