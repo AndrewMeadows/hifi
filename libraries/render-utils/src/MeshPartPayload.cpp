@@ -63,8 +63,7 @@ void MeshPartPayload::updateMeshPart(const std::shared_ptr<const model::Mesh>& d
 
 void MeshPartPayload::updateTransform(const Transform& transform, const Transform& offsetTransform) {
     _transform = transform;
-    _offsetTransform = offsetTransform;
-    Transform::mult(_drawTransform, _transform, _offsetTransform);
+    Transform::mult(_drawTransform, _transform, offsetTransform);
     _worldBound = _localBound;
     _worldBound.transform(_drawTransform);
 }
