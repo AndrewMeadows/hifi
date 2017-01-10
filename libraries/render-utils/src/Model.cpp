@@ -245,7 +245,8 @@ void Model::updateRenderItems() {
 
                         // update the model transform and bounding box for this render item.
                         const Model::MeshState& state = data._model->_meshStates.at(data._meshIndex);
-                        data.updateTransformForSkinnedMesh(modelTransform, modelMeshOffset, state.clusterMatrices);
+                        data.updateTransformAndBounds(modelTransform, modelMeshOffset, state.clusterMatrices);
+                        //data.updateTransformAndBounds2(modelTransform, modelMeshOffset, data._model->getLocalBound());
                     }
                 }
             });
@@ -828,6 +829,10 @@ Extents Model::calculateScaledOffsetExtents(const Extents& extents,
 /// Returns the world space equivalent of some box in model space.
 AABox Model::calculateScaledOffsetAABox(const AABox& box, glm::vec3 modelPosition, glm::quat modelOrientation) const {
     return AABox(calculateScaledOffsetExtents(Extents(box), modelPosition, modelOrientation));
+}
+
+void Model::updateLocalBound() {
+    // TODO: implement this
 }
 
 glm::vec3 Model::calculateScaledOffsetPoint(const glm::vec3& point) const {

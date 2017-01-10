@@ -85,9 +85,14 @@ public:
     typedef Payload::DataPointer Pointer;
 
     void notifyLocationChanged() override;
-    void updateTransformForSkinnedMesh(const Transform& transform,
+    void updateTransformAndBounds(const Transform& transform,
             const Transform& offsetTransform,
             const QVector<glm::mat4>& clusterMatrices);
+
+    void updateTransformAndBounds2(const Transform& transform,
+            const Transform& offsetTransform,
+            const AABox& localBound);
+
 
     // Entity fade in
     void startFade();

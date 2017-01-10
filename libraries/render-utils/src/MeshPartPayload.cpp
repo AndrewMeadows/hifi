@@ -359,7 +359,7 @@ void ModelMeshPartPayload::notifyLocationChanged() {
 
 }
 
-void ModelMeshPartPayload::updateTransformForSkinnedMesh(const Transform& transform, const Transform& offsetTransform, const QVector<glm::mat4>& clusterMatrices) {
+void ModelMeshPartPayload::updateTransformAndBounds(const Transform& transform, const Transform& offsetTransform, const QVector<glm::mat4>& clusterMatrices) {
     _transform = transform;
     Transform::mult(_drawTransform, _transform, offsetTransform);
 
@@ -377,6 +377,14 @@ void ModelMeshPartPayload::updateTransformForSkinnedMesh(const Transform& transf
         _worldBound = _localBound;
         _worldBound.transform(_drawTransform);
     }
+}
+
+void ModelMeshPartPayload::updateTransformAndBounds2(const Transform& transform, const Transform& offsetTransform, const AABox& localBound) {
+    _transform = transform;
+    Transform::mult(_drawTransform, _transform, offsetTransform);
+    _localBound = localBound;
+    _worldBound = _localBound;
+    _worldBound.transform(_drawTransform);
 }
 
 ItemKey ModelMeshPartPayload::getKey() const {

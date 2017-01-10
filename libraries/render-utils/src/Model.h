@@ -105,6 +105,8 @@ public:
     void setRenderItemsNeedUpdate() { _renderItemsNeedUpdate = true; }
     bool getRenderItemsNeedUpdate() { return _renderItemsNeedUpdate; }
     AABox getRenderableMeshBound() const;
+    AABox getLocalBound() const { return _localBound; }
+    void updateLocalBound();
 
     bool maybeStartBlender();
 
@@ -349,6 +351,7 @@ protected:
 
     float _pupilDilation;
     QVector<float> _blendshapeCoefficients;
+    AABox _localBound;
 
     QUrl _url;
     bool _isVisible;
