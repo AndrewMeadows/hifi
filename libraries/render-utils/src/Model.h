@@ -253,9 +253,6 @@ signals:
 protected:
     bool addedToScene() const { return _addedToScene; }
 
-    void setPupilDilation(float dilation) { _pupilDilation = dilation; }
-    float getPupilDilation() const { return _pupilDilation; }
-
     void setBlendshapeCoefficients(const QVector<float>& coefficients) { _blendshapeCoefficients = coefficients; }
     const QVector<float>& getBlendshapeCoefficients() const { return _blendshapeCoefficients; }
 
@@ -349,7 +346,6 @@ protected:
     void deleteGeometry();
     void initJointTransforms();
 
-    float _pupilDilation;
     QVector<float> _blendshapeCoefficients;
     AABox _localBound;
 
