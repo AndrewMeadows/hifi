@@ -580,8 +580,7 @@ void ModelMeshPartPayload::render(RenderArgs* args) const {
         return;
     }
 
-
-    // When an individual mesh parts like this finishes its fade, we will mark the Model as 
+    // When an individual mesh parts like this finishes its fade, we will mark the Model as
     // having render items that need updating
     bool nextIsFading = _isFading ? isStillFading() : false;
     bool startFading = !_isFading && !_hasFinishedFade && _hasStartedFade;

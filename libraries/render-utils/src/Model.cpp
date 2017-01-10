@@ -295,6 +295,7 @@ bool Model::updateGeometry() {
 
     if (_rig->jointStatesEmpty() && getFBXGeometry().joints.size() > 0) {
         initJointStates();
+        assert(_meshStates.empty());
 
         const FBXGeometry& fbxGeometry = getFBXGeometry();
         foreach (const FBXMesh& mesh, fbxGeometry.meshes) {
@@ -304,6 +305,7 @@ bool Model::updateGeometry() {
 
             _meshStates.append(state);
 
+            // TODO? make _blendedVertexBuffers a map instead of vector and only add for meshes with blendshapes
             auto buffer = std::make_shared<gpu::Buffer>();
             if (!mesh.blendshapes.isEmpty()) {
                 buffer->resize((mesh.vertices.size() + mesh.normals.size()) * sizeof(glm::vec3));
@@ -1171,6 +1173,7 @@ void Model::updateClusterMatrices(glm::vec3 modelPosition, glm::quat modelOrient
         glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     auto cauterizeMatrix = _rig->getJointTransform(geometry.neckJointIndex) * zeroScale;
 
+    // TODO: don't include modelToWorld inside each clusterMatrix, let render pipeline apply the rotation later
     glm::mat4 modelToWorld = glm::mat4_cast(modelOrientation);
     for (int i = 0; i < _meshStates.size(); i++) {
         MeshState& state = _meshStates[i];
