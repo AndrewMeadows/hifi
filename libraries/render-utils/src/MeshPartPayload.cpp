@@ -511,10 +511,10 @@ void ModelMeshPartPayload::bindMesh(gpu::Batch& batch) const {
         batch.setInputStream(2, _drawMesh->getVertexStream().makeRangedStream(2));
     }
 
-    if (!_hasColorAttrib) {
-        batch._glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    } else if (_fadeState != FADE_COMPLETE) {
+    if (_fadeState != FADE_COMPLETE) {
         batch._glColor4f(1.0f, 1.0f, 1.0f, computeFadeAlpha());
+    } else if (!_hasColorAttrib) {
+        batch._glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -563,8 +563,10 @@ void ModelMeshPartPayload::render(RenderArgs* args) const {
         if (_model->isLoaded() && _model->getGeometry()->areTexturesLoaded()) {
             if (EntityItem::getEntitiesShouldFadeFunction()()) {
                 _fadeStartTime = usecTimestampNow();
+                _fadeState = FADE_IN_PROGRESS;
+            } else {
+                _fadeState = FADE_COMPLETE;
             }
-            _fadeState = FADE_IN_PROGRESS;
             _model->setRenderItemsNeedUpdate();
         } else {
             return;
