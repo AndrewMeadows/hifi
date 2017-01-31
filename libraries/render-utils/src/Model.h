@@ -351,8 +351,6 @@ protected:
 
     gpu::Buffers _blendedVertexBuffers;
 
-    QVector<QVector<QSharedPointer<Texture> > > _dilatedTextures;
-
     QVector<float> _blendedBlendshapeCoefficients;
     int _blendNumber;
     int _appliedBlendNumber;

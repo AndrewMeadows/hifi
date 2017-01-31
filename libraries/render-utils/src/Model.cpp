@@ -596,16 +596,6 @@ void Model::recalculateMeshBoxes(bool pickAgainstTriangles) {
 }
 
 void Model::renderSetup(RenderArgs* args) {
-    // set up dilated textures on first render after load/simulate
-    const FBXGeometry& geometry = getFBXGeometry();
-    if (_dilatedTextures.isEmpty()) {
-        foreach (const FBXMesh& mesh, geometry.meshes) {
-            QVector<QSharedPointer<Texture> > dilated;
-            dilated.resize(mesh.parts.size());
-            _dilatedTextures.append(dilated);
-        }
-    }
-
     if (!_addedToScene && isLoaded()) {
         createRenderItemSet();
     }
