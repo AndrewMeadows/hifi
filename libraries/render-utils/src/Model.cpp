@@ -595,12 +595,6 @@ void Model::recalculateMeshBoxes(bool pickAgainstTriangles) {
     }
 }
 
-void Model::renderSetup(RenderArgs* args) {
-    if (!_addedToScene && isLoaded()) {
-        createRenderItemSet();
-    }
-}
-
 void Model::setVisibleInScene(bool newValue, std::shared_ptr<render::Scene> scene) {
     if (_isVisible != newValue) {
         _isVisible = newValue;

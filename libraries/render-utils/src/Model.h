@@ -95,7 +95,6 @@ public:
                     render::PendingChanges& pendingChanges,
                     render::Item::Status::Getters& statusGetters);
     void removeFromScene(std::shared_ptr<render::Scene> scene, render::PendingChanges& pendingChanges);
-    void renderSetup(RenderArgs* args);
     bool isRenderable() const;
 
     bool isVisible() const { return _isVisible; }
