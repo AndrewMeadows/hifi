@@ -237,7 +237,7 @@ void Model::updateRenderItems() {
         render::PendingChanges pendingChanges;
         foreach (auto itemID, self->_modelMeshRenderItems.keys()) {
             pendingChanges.updateItem<ModelMeshPartPayload>(itemID, [deleteGeometryCounter](ModelMeshPartPayload& data) {
-                if (data._model && data._model->isLoaded()) {
+                if (data._model->isLoaded()) {
                     // Ensure the model geometry was not reset between frames
                     if (deleteGeometryCounter == data._model->_deleteGeometryCounter) {
                         Transform modelTransform = data._model->getTransform();
