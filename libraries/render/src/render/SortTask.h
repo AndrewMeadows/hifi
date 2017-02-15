@@ -42,6 +42,14 @@ namespace render {
 
         void run(const SceneContextPointer& sceneContext, const RenderContextPointer& renderContext, const ItemBounds& inItems, ItemBounds& outItems);
     };
+
+    class PrioritySortItems {
+    public:
+        using JobModel = Job::ModelIO<PrioritySortItems, ItemBounds, ItemBounds>;
+
+        PrioritySortItems() {}
+        void run(const SceneContextPointer& sceneContext, const RenderContextPointer& renderContext, const ItemBounds& inItems, ItemBounds& outItems);
+    };
 }
 
 #endif // hifi_render_SortTask_h;

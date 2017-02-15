@@ -10,10 +10,14 @@
 //
 
 #include "SortTask.h"
-#include "ShapePipeline.h"
 
 #include <assert.h>
+#include <queue>
+
+#include "ShapePipeline.h"
+
 #include <ViewFrustum.h>
+#include <Profile.h>
 
 using namespace render;
 
@@ -41,28 +45,25 @@ struct BackToFrontSort {
 };
 
 void render::depthSortItems(const SceneContextPointer& sceneContext, const RenderContextPointer& renderContext, bool frontToBack, const ItemBounds& inItems, ItemBounds& outItems) {
+    PROFILE_RANGE(render, "depthSort");
     assert(renderContext->args);
     assert(renderContext->args->hasViewFrustum());
 
-    auto& scene = sceneContext->_scene;
     RenderArgs* args = renderContext->args;
-
 
     // Allocate and simply copy
     outItems.clear();
     outItems.reserve(inItems.size());
 
-
     // Make a local dataset of the center distance and closest point distance
     std::vector<ItemBoundSort> itemBoundSorts;
     itemBoundSorts.reserve(outItems.size());
 
-    for (auto itemDetails : inItems) {
-        auto item = scene->getItem(itemDetails.id);
-        auto bound = itemDetails.bound; // item.getBound();
-        float distance = args->getViewFrustum().distanceToCamera(bound.calcCenter());
-
-        itemBoundSorts.emplace_back(ItemBoundSort(distance, distance, distance, itemDetails.id, bound));
+    glm::vec3 eye = args->getViewFrustum().getPosition();
+    for (const auto& itemDetails : inItems) {
+        // use "distance squared" for speed: sorts the same as 'distance' but avoids a sqrt
+        float distance2 = glm::distance2(eye, itemDetails.bound.calcCenter());
+        itemBoundSorts.emplace_back(ItemBoundSort(distance2, distance2, distance2, itemDetails.id, itemDetails.bound));
     }
 
     // sort against Z
@@ -117,4 +118,44 @@ void DepthSortShapes::run(const SceneContextPointer& sceneContext, const RenderC
 
 void DepthSortItems::run(const SceneContextPointer& sceneContext, const RenderContextPointer& renderContext, const ItemBounds& inItems, ItemBounds& outItems) {
     depthSortItems(sceneContext, renderContext, _frontToBack, inItems, outItems);
+}
+
+
+void PrioritySortItems::run(const SceneContextPointer& sceneContext, const RenderContextPointer& renderContext, const ItemBounds& inItems, ItemBounds& outItems) {
+    PROFILE_RANGE(render, "prioritySort");
+    RenderArgs* args = renderContext->args;
+    assert(args);
+    assert(args->hasViewFrustum());
+
+    // allocate
+    outItems.clear();
+    outItems.reserve(inItems.size());
+
+    // declare some tools
+    class ItemPriority {
+    public:
+        ItemPriority(const ItemID& i, const AABox& b, float p) : id(i), bound(b), priority(p) {}
+        bool operator<(const ItemPriority& other) const { return priority < other.priority; }
+        ItemID id;
+        AABox bound;
+        float priority;
+    };
+    std::priority_queue<ItemPriority> sortedItems;
+
+    // build priority queue
+    glm::vec3 eye = args->getViewFrustum().getPosition();
+    const float PROXIMITY_BIAS_SQUARED = 150.0f * 150.0f;
+    for (const auto& itemDetails : inItems) {
+        float distance2 = glm::distance2(eye, itemDetails.bound.calcCenter()) + 0.0001f; // add 1cm^2 avoids divide by zero
+        // the exponential envelope prefers nearby objects over distant ones with same apparent size
+        float priority = expf(- distance2 / PROXIMITY_BIAS_SQUARED) * glm::length2(itemDetails.bound.getScale()) / distance2;
+        sortedItems.emplace(ItemPriority(itemDetails.id, itemDetails.bound, priority));
+    }
+
+    // transfer queue to list
+    while (!sortedItems.empty()) {
+        const ItemPriority& item = sortedItems.top();
+        outItems.emplace_back(ItemBound(item.id, item.bound));
+        sortedItems.pop();
+    }
 }

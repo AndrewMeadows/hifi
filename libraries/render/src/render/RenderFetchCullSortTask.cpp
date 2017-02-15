@@ -55,7 +55,7 @@ RenderFetchCullSortTask::RenderFetchCullSortTask(CullFunctor cullFunctor) {
             .get<MultiFilterItem<NUM_NON_SPATIAL_FILTERS>::ItemBoundsArray>();
 
     // Extract opaques / transparents / lights / overlays
-    const auto opaques = addJob<DepthSortItems>("DepthSortOpaque", filteredSpatialBuckets[OPAQUE_SHAPE_BUCKET]);
+    const auto opaques = addJob<PrioritySortItems>("PrioritySortOpaque", filteredSpatialBuckets[OPAQUE_SHAPE_BUCKET]);
     const auto transparents = addJob<DepthSortItems>("DepthSortTransparent", filteredSpatialBuckets[TRANSPARENT_SHAPE_BUCKET], DepthSortItems(false));
     const auto lights = filteredSpatialBuckets[LIGHT_BUCKET];
     const auto metas = filteredSpatialBuckets[META_BUCKET];
