@@ -119,6 +119,9 @@ public:
 protected:
     render::ShapePlumberPointer _shapePlumber;
     int _maxDrawn; // initialized by Config
+    int _numDrawn { 0 };
+    float _targetBudget { 0.0f };
+    float _budget { 0.0f };
     float _maxTimeBudget; //ms time budget
     bool _stateSort;
 };
