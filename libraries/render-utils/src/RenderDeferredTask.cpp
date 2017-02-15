@@ -11,7 +11,6 @@
 //
 
 #include "RenderDeferredTask.h"
-#include <iostream> // adebug
 
 #include <PerfStat.h>
 #include <PathUtils.h>
