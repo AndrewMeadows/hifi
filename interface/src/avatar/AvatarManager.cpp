@@ -599,8 +599,8 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersection(const PickRay& 
 
 // HACK
 void AvatarManager::setAvatarUpdateTimeBudget(uint32_t timeBudget) {
-    const uint32_t MIN_AVATAR_UPDATE_TIME_BUDGET = 0;
-    const uint32_t MAX_AVATAR_UPDATE_TIME_BUDGET = 11000U;
+    const uint32_t MIN_AVATAR_UPDATE_TIME_BUDGET = 0; // usec
+    const uint32_t MAX_AVATAR_UPDATE_TIME_BUDGET = 11000U; // usec
     _avatarUpdateTimeBudget = (uint64_t)glm::clamp(timeBudget, MIN_AVATAR_UPDATE_TIME_BUDGET, MAX_AVATAR_UPDATE_TIME_BUDGET);
 }
 
