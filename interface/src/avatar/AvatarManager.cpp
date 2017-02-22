@@ -226,12 +226,14 @@ void AvatarManager::updateOtherAvatars(float deltaTime) {
         }
     }
 
-    render::PendingChanges pendingChanges;
-    const uint64_t RENDER_UPDATE_BUDGET = 1500; // usec
-    const uint64_t MAX_UPDATE_BUDGET = 2000; // usec
-    uint64_t renderExpiry = startTime + RENDER_UPDATE_BUDGET;
+    // reset startTime and and compute expirys
+    startTime = usecTimestampNow();
+    uint64_t renderExpiry = startTime + _avatarUpdateTimeBudget;
+    const uint64_t MAX_UPDATE_BUDGET = _avatarUpdateTimeBudget + 500UL; // usec
     uint64_t maxExpiry = startTime + MAX_UPDATE_BUDGET;
 
+    // update avatars while we have time
+    render::PendingChanges pendingChanges;
     int fullySimulatedAvatars = 0;
     int partiallySimulatedAvatars = 0;
     while (!sortedAvatars.empty()) {
@@ -596,7 +598,14 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersection(const PickRay& 
 }
 
 // HACK
-float AvatarManager::getAvatarSortCoefficient(const QString& name) {
+void AvatarManager::setAvatarUpdateTimeBudget(uint32_t timeBudget) {
+    const uint32_t MIN_AVATAR_UPDATE_TIME_BUDGET = 500;
+    const uint32_t MAX_AVATAR_UPDATE_TIME_BUDGET = 6000U;
+    _avatarUpdateTimeBudget = (uint64_t)glm::clamp(timeBudget, MIN_AVATAR_UPDATE_TIME_BUDGET, MAX_AVATAR_UPDATE_TIME_BUDGET);
+}
+
+// HACK
+float AvatarManager::getAvatarSortCoefficient(const QString& name) const {
     if (name == "size") {
         return _avatarSortCoefficientSize;
     } else if (name == "center") {

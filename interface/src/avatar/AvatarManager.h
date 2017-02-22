@@ -82,7 +82,9 @@ public:
                                                                   const QScriptValue& avatarIdsToDiscard = QScriptValue());
 
     // TODO: remove this HACK once we settle on optimal default sort coefficients
-    Q_INVOKABLE float getAvatarSortCoefficient(const QString& name);
+    Q_INVOKABLE uint32_t getAvatarUpdateTimeBudget() const { return _avatarUpdateTimeBudget; }
+    Q_INVOKABLE void setAvatarUpdateTimeBudget(uint32_t timeBudget);
+    Q_INVOKABLE float getAvatarSortCoefficient(const QString& name) const;
     Q_INVOKABLE void setAvatarSortCoefficient(const QString& name, const QScriptValue& value);
 
     float getMyAvatarSendRate() const { return _myAvatarSendRate.rate(); }
@@ -126,6 +128,7 @@ private:
 
     // TODO: remove this HACK once we settle on optimal sort coefficients
     // These coefficients exposed for fine tuning the sort priority for transfering new _jointData to the render pipeline.
+    uint64_t _avatarUpdateTimeBudget { 1300 }; // usec
     float _avatarSortCoefficientSize { 0.5f };
     float _avatarSortCoefficientCenter { 0.25 };
     float _avatarSortCoefficientAge { 1.0f };
