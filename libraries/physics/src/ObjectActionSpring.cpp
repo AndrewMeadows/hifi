@@ -146,11 +146,20 @@ void ObjectActionSpring::updateActionWorker(btScalar deltaTimeStep) {
 
         */
 
-        btScalar k = 2.0; //spring constant
-        //I don't know where else k is set, so I'll set it here
+        //btScalar k = 2.0; //spring constant
+        const float k = 10;
+        const float inv_w_sq = 4; //This is (1/omega)^2, which is the same as m/k
+        //  m/k = 4 => (1/m) = 1/(4*k)
+        //can also use rigidBody->getInvMass() for 1/m
+        btVector3 restPosition;
+        restPosition[0]= 1.0f;
+        restPosition[1]= 2.0f;
+        restPosition[2]= 3.0f;
         btVector3 targetVelocity(0.0f, 0.0f, 0.0f);
-        btVector3 newPosition = rigidBody->getCenterOfMassPosition() + rigidBody->getLinearVelocity()*deltaTimeStep;
-        targetVelocity = rigidBody->getLinearVelocity() + (1/m_mass)*(-rigidBody->etLinearDamping()*m_currentVelocity - k*rigidBody->getCenterOfMassPosition())*deltaTimeStep;
+        //remove getLinearDamping() because 
+        //"You can let Bullet apply the damping in its integration step, so no need to handle it directly in your code."
+        btVector3 newPosition = rigidBody->getCenterOfMassPosition() - restPosition + rigidBody->getLinearVelocity()*deltaTimeStep;
+        targetVelocity = rigidBody->getLinearVelocity() - (1/inv_w_sq)*(rigidBody->getCenterOfMassPosition())*deltaTimeStep;
         //I see m_mass for rigidBody is set in btRigidBodyConstructionInfo
         //But I wasn't sure how to return the mass for a rigidBody
         rigidBody->setLinearVelocity(targetVelocity);
