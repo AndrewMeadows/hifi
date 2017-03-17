@@ -14,6 +14,7 @@
 #include "ObjectActionSpring.h"
 
 #include "PhysicsLogging.h"
+#include <NumericalConstants.h>
 
 const float SPRING_MAX_SPEED = 10.0f;
 
@@ -133,41 +134,49 @@ void ObjectActionSpring::updateActionWorker(btScalar deltaTimeStep) {
         }
 
 
-        /*JCK
+        /*Jerry Kim
         equations of motion for a mass m attached to a spring with damping constant b and spring constant k
         dt = deltaTimeStep
         x_{N+1} = xN + vN*dt
         x_{N+1} is the position at the (N+1)th iteration
         x_N is the position at the Nth iteration
+
+        use x1 instead of x_{N+1} and x0 instead of xN
         
         v_{N+1} = vN + (1/m)*(-b*vN - k*xN)*dt
         v_{N+1} is the velocity at the (N+1)th iteration
         v_N is the velocity at the Nth iteration
 
+        use v1 instead of v_{N+1} and v0 instead of vN
+
         */
 
-        //btScalar k = 2.0; //spring constant
-        const float k = 10;
-        const float inv_w_sq = 4; //This is (1/omega)^2, which is the same as m/k
-        //  m/k = 4 => (1/m) = 1/(4*k)
+        //const float k = 10;
+        const btScalar frequency = 1.0f; // Hz
+        const btScalar omega = TWO_PI * frequency;
+        //const float omega = .5; //This is the same as sqrt(k/m)
         //can also use rigidBody->getInvMass() for 1/m
+        
         btVector3 restPosition;
         restPosition[0]= 1.0f;
         restPosition[1]= 2.0f;
         restPosition[2]= 3.0f;
-        btVector3 targetVelocity(0.0f, 0.0f, 0.0f);
+        btVector3 v1(0.0f, 0.0f, 0.0f);
+        btVector3 v0 = rigidBody->getLinearVelocity();
+        
         //remove getLinearDamping() because 
         //"You can let Bullet apply the damping in its integration step, so no need to handle it directly in your code."
-        btVector3 newPosition = rigidBody->getCenterOfMassPosition() - restPosition + rigidBody->getLinearVelocity()*deltaTimeStep;
-        targetVelocity = rigidBody->getLinearVelocity() - (1/inv_w_sq)*(rigidBody->getCenterOfMassPosition())*deltaTimeStep;
+        btVector3 displacement = rigidBody->getCenterOfMassPosition() - restPosition + rigidBody->getLinearVelocity()*deltaTimeStep;
+        v1 = v0 - omega*omega*displacement*deltaTimeStep;
         //I see m_mass for rigidBody is set in btRigidBodyConstructionInfo
         //But I wasn't sure how to return the mass for a rigidBody
-        rigidBody->setLinearVelocity(targetVelocity);
+        
+        rigidBody->setLinearVelocity(v1);
 
         //I know this my code is flawed, but I wanted to produce some code quickly
         //so I decided to just go with this
 
-        //end JCK
+        //end Jerry Kim
     });
 }
 
