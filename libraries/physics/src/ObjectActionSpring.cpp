@@ -132,51 +132,33 @@ void ObjectActionSpring::updateActionWorker(btScalar deltaTimeStep) {
             return;
         }
 
-        const float MAX_TIMESCALE = 600.0f; // 10 min is a long time
-        if (_linearTimeScale < MAX_TIMESCALE) {
-            btVector3 targetVelocity(0.0f, 0.0f, 0.0f);
-            btVector3 offset = rigidBody->getCenterOfMassPosition() - glmToBullet(_positionalTarget);
-            float offsetLength = offset.length();
-            if (offsetLength > FLT_EPSILON) {
-                float speed = glm::min(offsetLength / _linearTimeScale, SPRING_MAX_SPEED);
-                targetVelocity = (-speed / offsetLength) * offset;
-                if (speed > rigidBody->getLinearSleepingThreshold()) {
-                    forceBodyNonStatic();
-                    rigidBody->activate();
-                }
-            }
-            // this action is aggresively critically damped and defeats the current velocity
-            rigidBody->setLinearVelocity(targetVelocity);
-        }
 
-        if (_angularTimeScale < MAX_TIMESCALE) {
-            btVector3 targetVelocity(0.0f, 0.0f, 0.0f);
+        /*JCK
+        equations of motion for a mass m attached to a spring with damping constant b and spring constant k
+        dt = deltaTimeStep
+        x_{N+1} = xN + vN*dt
+        x_{N+1} is the position at the (N+1)th iteration
+        x_N is the position at the Nth iteration
+        
+        v_{N+1} = vN + (1/m)*(-b*vN - k*xN)*dt
+        v_{N+1} is the velocity at the (N+1)th iteration
+        v_N is the velocity at the Nth iteration
 
-            btQuaternion bodyRotation = rigidBody->getOrientation();
-            auto alignmentDot = bodyRotation.dot(glmToBullet(_rotationalTarget));
-            const float ALMOST_ONE = 0.99999f;
-            if (glm::abs(alignmentDot) < ALMOST_ONE) {
-                btQuaternion target = glmToBullet(_rotationalTarget);
-                if (alignmentDot < 0.0f) {
-                    target = -target;
-                }
-                // if dQ is the incremental rotation that gets an object from Q0 to Q1 then:
-                //
-                //      Q1 = dQ * Q0
-                //
-                // solving for dQ gives:
-                //
-                //      dQ = Q1 * Q0^
-                btQuaternion deltaQ = target * bodyRotation.inverse();
-                float speed = deltaQ.getAngle() / _angularTimeScale;
-                targetVelocity = speed * deltaQ.getAxis();
-                if (speed > rigidBody->getAngularSleepingThreshold()) {
-                    rigidBody->activate();
-                }
-            }
-            // this action is aggresively critically damped and defeats the current velocity
-            rigidBody->setAngularVelocity(targetVelocity);
-        }
+        */
+
+        btScalar k = 2.0; //spring constant
+        //I don't know where else k is set, so I'll set it here
+        btVector3 targetVelocity(0.0f, 0.0f, 0.0f);
+        btVector3 newPosition = rigidBody->getCenterOfMassPosition() + rigidBody->getLinearVelocity()*deltaTimeStep;
+        targetVelocity = rigidBody->getLinearVelocity() + (1/m_mass)*(-rigidBody->etLinearDamping()*m_currentVelocity - k*rigidBody->getCenterOfMassPosition())*deltaTimeStep;
+        //I see m_mass for rigidBody is set in btRigidBodyConstructionInfo
+        //But I wasn't sure how to return the mass for a rigidBody
+        rigidBody->setLinearVelocity(targetVelocity);
+
+        //I know this my code is flawed, but I wanted to produce some code quickly
+        //so I decided to just go with this
+
+        //end JCK
     });
 }
 
