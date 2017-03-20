@@ -211,6 +211,7 @@ public:
     QVector<glm::vec3> colors;
     QVector<glm::vec2> texCoords;
     QVector<glm::vec2> texCoords1;
+    // TODO: follow these into gpu::mesh and reduce memory footprint
     QVector<glm::vec4> clusterIndices;
     QVector<glm::vec4> clusterWeights;
     

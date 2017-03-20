@@ -15,6 +15,8 @@
 #include <MeshPartPayload.h>
 #include <PerfStat.h>
 
+#include <FBXGeometryStats.h>
+
 #include "CauterizedMeshPartPayload.h"
 
 
@@ -88,6 +90,12 @@ void CauterizedModel::createVisibleRenderItemSet() {
     } else {
         Model::createVisibleRenderItemSet();
     }
+
+#ifdef MEASURE_AVATAR_FBX_STATS
+    static FBXGeometryStats modelStats;
+    modelStats.process(getFBXGeometry());
+    modelStats.dump();
+#endif // MEASURE_AVATAR_FBX_STATS
 }
 
 void CauterizedModel::createCollisionRenderItemSet() {
