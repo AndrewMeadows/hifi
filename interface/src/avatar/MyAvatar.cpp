@@ -151,12 +151,12 @@ MyAvatar::MyAvatar(RigPointer rig) :
             if (recordingInterface->getPlayFromCurrentLocation()) {
                 setRecordingBasis();
             }
-            _wasCharacterControllerEnabled = _characterController.isEnabled();
-            _characterController.setEnabled(false);
+            _previousCollisionGroup = _characterController.getCollisionGroup();
+            _characterController.setCollisionGroup(BULLET_COLLISION_GROUP_COLLISIONLESS);
         } else {
             clearRecordingBasis();
             useFullAvatarURL(_fullAvatarURLFromPreferences, _fullAvatarModelName);
-            _characterController.setEnabled(_wasCharacterControllerEnabled);
+            _characterController.setCollisionGroup(_previousCollisionGroup);
         }
 
         auto audioIO = DependencyManager::get<AudioClient>();
@@ -2115,7 +2115,7 @@ void MyAvatar::setAvatarCollisionsEnabled(bool enabled) {
             ghostingAllowed = zone->getGhostingAllowed();
         }
     }
-    int16_t group = enabled || !ghostingAllowed ? BULLET_COLLISION_GROUP_MY_AVATAR : BULLET_COLLISION_GROUP_COLLISIONLESS;
+    int16_t group = (enabled || !ghostingAllowed) ? BULLET_COLLISION_GROUP_MY_AVATAR : BULLET_COLLISION_GROUP_COLLISIONLESS;
     _characterController.setCollisionGroup(group);
 }
 
