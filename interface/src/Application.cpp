@@ -5091,6 +5091,7 @@ void Application::displaySide(RenderArgs* renderArgs, Camera& theCamera, bool se
             QMutexLocker viewLocker(&_viewMutex);
             renderArgs->setViewFrustum(_displayViewFrustum);
         }
+        renderArgs->_cameraMode = (int8_t)theCamera.getMode(); // HACK
         _renderEngine->getRenderContext()->args = renderArgs;
 
         // Before the deferred pass, let's try to use the render engine
