@@ -270,7 +270,7 @@ public:
     int getMaxOctreePacketsPerSecond() const;
 
     render::ScenePointer getMain3DScene() override { return _main3DScene; }
-    render::ScenePointer getMain3DScene() const { return _main3DScene; }
+    const render::ScenePointer& getMain3DScene() const { return _main3DScene; }
     render::EnginePointer getRenderEngine() override { return _renderEngine; }
     gpu::ContextPointer getGPUContext() const { return _gpuContext; }
 
@@ -280,7 +280,7 @@ public:
 
     float getAvatarSimrate() const { return _avatarSimCounter.rate(); }
     float getAverageSimsPerSecond() const { return _simCounter.rate(); }
-    
+
     void takeSnapshot(bool notify, bool includeAnimated = false, float aspectRatio = 0.0f);
     void shareSnapshot(const QString& filename, const QUrl& href = QUrl(""));
 
