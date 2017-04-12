@@ -1120,19 +1120,19 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer, bo
         return qApp->isHMDMode() ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_CAMERA_FULL_SCREEN_MIRROR, []() -> float {
-        return qApp->getCamera()->getMode() == CAMERA_MODE_MIRROR ? 1 : 0;
+        return qApp->getCamera().getMode() == CAMERA_MODE_MIRROR ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_CAMERA_FIRST_PERSON, []() -> float {
-        return qApp->getCamera()->getMode() == CAMERA_MODE_FIRST_PERSON ? 1 : 0;
+        return qApp->getCamera().getMode() == CAMERA_MODE_FIRST_PERSON ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_CAMERA_THIRD_PERSON, []() -> float {
-        return qApp->getCamera()->getMode() == CAMERA_MODE_THIRD_PERSON ? 1 : 0;
+        return qApp->getCamera().getMode() == CAMERA_MODE_THIRD_PERSON ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_CAMERA_ENTITY, []() -> float {
-        return qApp->getCamera()->getMode() == CAMERA_MODE_ENTITY ? 1 : 0;
+        return qApp->getCamera().getMode() == CAMERA_MODE_ENTITY ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_CAMERA_INDEPENDENT, []() -> float {
-        return qApp->getCamera()->getMode() == CAMERA_MODE_INDEPENDENT ? 1 : 0;
+        return qApp->getCamera().getMode() == CAMERA_MODE_INDEPENDENT ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_SNAP_TURN, []() -> float {
         return qApp->getMyAvatar()->getSnapTurn() ? 1 : 0;
@@ -2434,7 +2434,7 @@ void Application::resizeGL() {
     // Possible change in aspect ratio
     {
         QMutexLocker viewLocker(&_viewMutex);
-        loadViewFrustum(_myCamera, _viewFrustum);
+        _myCamera.loadViewFrustum(_viewFrustum);
     }
 
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
@@ -4519,7 +4519,7 @@ void Application::update(float deltaTime) {
     // to the server.
     {
         QMutexLocker viewLocker(&_viewMutex);
-        loadViewFrustum(_myCamera, _viewFrustum);
+        _myCamera.loadViewFrustum(_viewFrustum);
     }
 
     quint64 now = usecTimestampNow();
@@ -4847,24 +4847,6 @@ QRect Application::getDesirableApplicationGeometry() const {
     return applicationGeometry;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// loadViewFrustum()
-//
-// Description: this will load the view frustum bounds for EITHER the head
-//                 or the "myCamera".
-//
-void Application::loadViewFrustum(Camera& camera, ViewFrustum& viewFrustum) {
-    // We will use these below, from either the camera or head vectors calculated above
-    viewFrustum.setProjection(camera.getProjection());
-
-    // Set the viewFrustum up with the correct position and orientation of the camera
-    viewFrustum.setPosition(camera.getPosition());
-    viewFrustum.setOrientation(camera.getOrientation());
-
-    // Ask the ViewFrustum class to calculate our corners
-    viewFrustum.calculate();
-}
-
 glm::vec3 Application::getSunDirection() const {
     // Sun direction is in fact just the location of the sun relative to the origin
     auto skyStage = DependencyManager::get<SceneScriptingInterface>()->getSkyStage();
@@ -5036,7 +5018,7 @@ void Application::displaySide(RenderArgs* renderArgs, Camera& theCamera, bool se
     // load the view frustum
     {
         QMutexLocker viewLocker(&_viewMutex);
-        loadViewFrustum(theCamera, _displayViewFrustum);
+        theCamera.loadViewFrustum(_displayViewFrustum);
     }
 
     // TODO fix shadows and make them use the GPU library
@@ -5053,7 +5035,7 @@ void Application::displaySide(RenderArgs* renderArgs, Camera& theCamera, bool se
         transaction.resetItem(BackgroundRenderData::_item, backgroundRenderPayload);
     }
 
-    // Assuming nothing get's rendered through that
+    // Assuming nothing gets rendered through that
     if (!selfAvatarOnly) {
         if (DependencyManager::get<SceneScriptingInterface>()->shouldRenderEntities()) {
             // render models...
@@ -5109,6 +5091,8 @@ void Application::displaySide(RenderArgs* renderArgs, Camera& theCamera, bool se
             QMutexLocker viewLocker(&_viewMutex);
             renderArgs->setViewFrustum(_displayViewFrustum);
         }
+        renderArgs->_cameraMode = (int8_t)theCamera.getMode(); // HACK
+        renderArgs->_scene = getMain3DScene();
         _renderEngine->getRenderContext()->args = renderArgs;
 
         // Before the deferred pass, let's try to use the render engine
