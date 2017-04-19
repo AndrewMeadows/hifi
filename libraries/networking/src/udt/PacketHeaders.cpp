@@ -84,6 +84,8 @@ PacketVersion versionForPacketType(PacketType packetType) {
         case PacketType::MicrophoneAudioWithEcho:
         case PacketType::AudioStreamStats:
             return static_cast<PacketVersion>(AudioVersion::HighDynamicRangeVolume);
+        case PacketType::AvatarIdentityRequest:
+            return VERSION_AVATAR_IDENTITY_REQUEST;
 
         default:
             return 17;

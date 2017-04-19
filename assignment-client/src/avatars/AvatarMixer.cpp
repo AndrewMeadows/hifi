@@ -53,6 +53,7 @@ AvatarMixer::AvatarMixer(ReceivedMessage& message) :
     packetReceiver.registerListener(PacketType::NodeIgnoreRequest, this, "handleNodeIgnoreRequestPacket");
     packetReceiver.registerListener(PacketType::RadiusIgnoreRequest, this, "handleRadiusIgnoreRequestPacket");
     packetReceiver.registerListener(PacketType::RequestsDomainListData, this, "handleRequestsDomainListDataPacket");
+    packetReceiver.registerListener(PacketType::AvatarIdentityRequest, this, "handleAvatarIdentityRequest");
 
     auto nodeList = DependencyManager::get<NodeList>();
     connect(nodeList.data(), &NodeList::packetVersionMismatch, this, &AvatarMixer::handlePacketVersionMismatch);
@@ -390,6 +391,9 @@ void AvatarMixer::handleRequestsDomainListDataPacket(QSharedPointer<ReceivedMess
     }
     auto end = usecTimestampNow();
     _handleRequestsDomainListDataPacketElapsedTime += (end - start);
+}
+
+void AvatarMixer::handleAvatarIdentityRequest(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {
 }
 
 void AvatarMixer::handleAvatarIdentityPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {
