@@ -83,6 +83,13 @@ uint16_t AvatarMixerClientData::getLastBroadcastSequenceNumber(const QUuid& node
     return 0;
 }
 
+void AvatarMixerClientData::clearLastBroadcastTime(const QUuid& nodeUUID) {
+    std::unordered_map<QUuid, uint64_t>::iterator itr = _lastBroadcastTimes.find(nodeUUID);
+    if (itr != _lastBroadcastTimes.end()) {
+        itr->second = 0;
+    }
+}
+
 void AvatarMixerClientData::ignoreOther(SharedNodePointer self, SharedNodePointer other) {
     if (!isRadiusIgnoring(other->getUUID())) {
         addToRadiusIgnoringSet(other->getUUID());

@@ -394,6 +394,13 @@ void AvatarMixer::handleRequestsDomainListDataPacket(QSharedPointer<ReceivedMess
 }
 
 void AvatarMixer::handleAvatarIdentityRequest(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {
+    AvatarMixerClientData* nodeData = dynamic_cast<AvatarMixerClientData*>(senderNode->getLinkedData());
+    if (nodeData) {
+        while (message->getBytesLeftToRead() >= NUM_BYTES_RFC4122_UUID) {
+            QUuid otherNodeID = QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID));
+            nodeData->clearLastBroadcastTime(otherNodeID);
+        }
+    }
 }
 
 void AvatarMixer::handleAvatarIdentityPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {
