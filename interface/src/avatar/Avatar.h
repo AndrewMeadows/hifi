@@ -11,8 +11,6 @@
 #ifndef hifi_Avatar_h
 #define hifi_Avatar_h
 
-#include <stdint.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <QtCore/QUuid>
