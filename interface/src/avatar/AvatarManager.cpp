@@ -330,37 +330,6 @@ AvatarSharedPointer AvatarManager::newSharedAvatar() {
     return std::make_shared<Avatar>(qApp->thread(), std::make_shared<Rig>());
 }
 
-void AvatarManager::processAvatarDataPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode) {
-    PerformanceTimer perfTimer("receiveAvatar");
-    // enumerate over all of the avatars in this packet
-    // only add them if mixerWeakPointer points to something (meaning that mixer is still around)
-    while (message->getBytesLeftToRead()) {
-        AvatarSharedPointer avatarData = parseAvatarData(message, sendingNode);
-        if (avatarData) {
-            auto avatar = std::static_pointer_cast<Avatar>(avatarData);
-            if (avatar->isInScene()) {
-                if (!_shouldRender) {
-                    // rare transition so we process the transaction immediately
-                    const render::ScenePointer& scene = qApp->getMain3DScene();
-                    render::Transaction transaction;
-                    avatar->removeFromScene(avatar, scene, transaction);
-                    if (scene) {
-                        scene->enqueueTransaction(transaction);
-                    }
-                }
-            } else if (_shouldRender) {
-                // very rare transition so we process the transaction immediately
-                const render::ScenePointer& scene = qApp->getMain3DScene();
-                render::Transaction transaction;
-                avatar->addToScene(avatar, scene, transaction);
-                if (scene) {
-                    scene->enqueueTransaction(transaction);
-                }
-            }
-        }
-    }
-}
-
 void AvatarManager::handleRemovedAvatar(const AvatarSharedPointer& removedAvatar, KillAvatarReason removalReason) {
     // removedAvatar is a shared pointer to an AvatarData but we need to get to the derived Avatar
     // class in this context so we can call methods that don't exist at the base class.

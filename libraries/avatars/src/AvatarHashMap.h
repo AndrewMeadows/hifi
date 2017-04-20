@@ -57,7 +57,7 @@ public slots:
 protected slots:
     void sessionUUIDChanged(const QUuid& sessionUUID, const QUuid& oldUUID);
 
-    virtual void processAvatarDataPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
+    void processAvatarDataPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
     void processAvatarIdentityPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
     void processKillAvatar(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
     void processExitingSpaceBubble(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
@@ -65,7 +65,6 @@ protected slots:
 protected:
     AvatarHashMap();
 
-    virtual AvatarSharedPointer parseAvatarData(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
     virtual AvatarSharedPointer newSharedAvatar();
     virtual AvatarSharedPointer addAvatar(const QUuid& sessionUUID, const QWeakPointer<Node>& mixerWeakPointer);
     AvatarSharedPointer newOrExistingAvatar(const QUuid& sessionUUID, const QWeakPointer<Node>& mixerWeakPointer);
