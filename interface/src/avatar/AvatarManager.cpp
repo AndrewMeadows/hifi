@@ -362,8 +362,6 @@ void AvatarManager::processAvatarDataPacket(QSharedPointer<ReceivedMessage> mess
 }
 
 void AvatarManager::handleRemovedAvatar(const AvatarSharedPointer& removedAvatar, KillAvatarReason removalReason) {
-    AvatarHashMap::handleRemovedAvatar(removedAvatar, removalReason);
-
     // removedAvatar is a shared pointer to an AvatarData but we need to get to the derived Avatar
     // class in this context so we can call methods that don't exist at the base class.
     Avatar* avatar = static_cast<Avatar*>(removedAvatar.get());
@@ -387,6 +385,8 @@ void AvatarManager::handleRemovedAvatar(const AvatarSharedPointer& removedAvatar
         DependencyManager::get<UsersScriptingInterface>()->avatarDisconnected(avatar->getSessionUUID());
     }
     _avatarsToFade.push_back(removedAvatar);
+
+    AvatarHashMap::handleRemovedAvatar(removedAvatar, removalReason);
 }
 
 void AvatarManager::clearOtherAvatars() {
@@ -399,18 +399,14 @@ void AvatarManager::clearOtherAvatars() {
     AvatarHash::iterator avatarIterator =  _avatarHash.begin();
     while (avatarIterator != _avatarHash.end()) {
         auto avatar = std::static_pointer_cast<Avatar>(avatarIterator.value());
-        if (avatar != _myAvatar) {
-            if (avatar->isInScene()) {
-                avatar->removeFromScene(avatar, scene, transaction);
-            }
-            AvatarMotionState* motionState = avatar->getMotionState();
-            if (motionState) {
-                _motionStatesThatMightUpdate.remove(motionState);
-                _motionStatesToAddToPhysics.remove(motionState);
-                _motionStatesToRemoveFromPhysics.push_back(motionState);
-            }
-        }
-        ++avatarIterator;
+		if (avatar == _myAvatar || !avatar->isInitialized()) {
+            // don't remove myAvatar or uninitialized avatars from the list
+            ++avatarIterator;
+        } else {
+            auto removedAvatar = avatarIterator.value();
+            avatarIterator = _avatarHash.erase(avatarIterator);
+            handleRemovedAvatar(removedAvatar);
+		}
     }
     scene->enqueueTransaction(transaction);
     _myAvatar->clearLookAtTargetAvatar();
