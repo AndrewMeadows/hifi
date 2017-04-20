@@ -147,6 +147,11 @@ void Avatar::init() {
     _initialized = true;
 }
 
+void Avatar::processAvatarIdentity(const Identity& identity, bool& identityChanged, bool& displayNameChanged) {
+    AvatarData::processAvatarIdentity(identity, identityChanged, displayNameChanged);
+    _identityRequestExpiry = 0;
+}
+
 glm::vec3 Avatar::getChestPosition() const {
     // for now, let's just assume that the "chest" is halfway between the root and the neck
     glm::vec3 neckPosition;
@@ -378,7 +383,12 @@ void Avatar::simulate(float deltaTime, bool inView) {
     {
         PROFILE_RANGE(simulation, "updateJoints");
         if (inView && _hasNewJointData) {
-            _skeletonModel->getRig()->copyJointsFromJointData(_jointData);
+            if (_skeletonModel->getRig()->getNumJoints() == _jointData.size()) {
+                _skeletonModel->getRig()->copyJointsFromJointData(_jointData);
+            } else {
+                // identity data is probably stale --> request new data
+                requestIdentityData();
+            }
             glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
             _skeletonModel->getRig()->computeExternalPoses(rootTransform);
             _jointDataSimulationRate.increment();
@@ -445,6 +455,21 @@ float Avatar::getSimulationRate(const QString& rateName) const {
         return _jointDataSimulationRate.rate();
     }
     return 0.0f;
+}
+
+void Avatar::requestIdentityData() {
+    uint64_t now = usecTimestampNow();
+	if (_identityRequestExpiry < now) {
+		// send the packet immediately
+    	auto packet = NLPacket::create(PacketType::AvatarIdentityRequest, NUM_BYTES_RFC4122_UUID);
+    	packet->write(getSessionUUID().toRfc4122());
+    	auto nodeList = DependencyManager::get<NodeList>();
+    	nodeList->broadcastToNodes(std::move(packet), NodeSet() << NodeType::AvatarMixer);
+
+		// and set expiry for next request
+		const uint64_t IDENTITY_REQUEST_PERIOD = 2 * USECS_PER_SECOND;
+		_identityRequestExpiry = now + IDENTITY_REQUEST_PERIOD;
+	}
 }
 
 bool Avatar::isLookingAtMe(AvatarSharedPointer avatar) const {

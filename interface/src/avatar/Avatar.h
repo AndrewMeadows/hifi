@@ -11,15 +11,15 @@
 #ifndef hifi_Avatar_h
 #define hifi_Avatar_h
 
+#include <stdint.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-
 #include <QtCore/QUuid>
 
 #include <AvatarData.h>
 #include <ShapeInfo.h>
 #include <render/Scene.h>
-
 
 #include "Head.h"
 #include "SkeletonModel.h"
@@ -73,6 +73,7 @@ public:
     typedef std::shared_ptr<render::Item::PayloadInterface> PayloadPointer;
 
     void init();
+    void processAvatarIdentity(const Identity& identity, bool& identityChanged, bool& displayNameChanged) override;
     void updateAvatarEntities();
     void simulate(float deltaTime, bool inView);
     virtual void simulateAttachments(float deltaTime);
@@ -228,6 +229,8 @@ public:
 
     bool hasNewJointData() const { return _hasNewJointData; }
 
+	void requestIdentityData();
+
     inline float easeInOutQuad(float lerpValue) {
         assert(!((lerpValue < 0.0f) || (lerpValue > 1.0f)));
 
@@ -346,6 +349,7 @@ private:
     MapOfAvatarEntityDataHashes _avatarEntityDataHashes;
 
     uint64_t _lastRenderUpdateTime { 0 };
+    uint64_t _identityRequestExpiry { 0 };
     int _leftPointerGeometryID { 0 };
     int _rightPointerGeometryID { 0 };
     int _nameRectGeometryID { 0 };

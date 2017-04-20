@@ -228,6 +228,8 @@ public:
 
     void setEnableDebugDrawIKTargets(bool enableDebugDrawIKTargets) { _enableDebugDrawIKTargets = enableDebugDrawIKTargets; }
 
+    int getNumJoints() const { return _animSkeleton ? _animSkeleton->getNumJoints() : 0; }
+
 signals:
     void onLoadComplete();
 
