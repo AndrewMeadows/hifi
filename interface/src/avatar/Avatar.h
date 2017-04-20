@@ -73,7 +73,6 @@ public:
     typedef std::shared_ptr<render::Item::PayloadInterface> PayloadPointer;
 
     void init();
-    void processAvatarIdentity(const Identity& identity, bool& identityChanged, bool& displayNameChanged) override;
     void updateAvatarEntities();
     void simulate(float deltaTime, bool inView);
     virtual void simulateAttachments(float deltaTime);

@@ -147,11 +147,6 @@ void Avatar::init() {
     _initialized = true;
 }
 
-void Avatar::processAvatarIdentity(const Identity& identity, bool& identityChanged, bool& displayNameChanged) {
-    AvatarData::processAvatarIdentity(identity, identityChanged, displayNameChanged);
-    _identityRequestExpiry = 0;
-}
-
 glm::vec3 Avatar::getChestPosition() const {
     // for now, let's just assume that the "chest" is halfway between the root and the neck
     glm::vec3 neckPosition;

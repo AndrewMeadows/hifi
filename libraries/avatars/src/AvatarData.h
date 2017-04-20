@@ -536,7 +536,7 @@ public:
 
     // identityChanged returns true if identity has changed, false otherwise.
     // displayNameChanged returns true if displayName has changed, false otherwise.
-    virtual void processAvatarIdentity(const Identity& identity, bool& identityChanged, bool& displayNameChanged);
+    void processAvatarIdentity(const Identity& identity, bool& identityChanged, bool& displayNameChanged);
 
     QByteArray identityByteArray() const;
 
