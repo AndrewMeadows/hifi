@@ -1497,9 +1497,6 @@ void AvatarData::processAvatarIdentity(const Identity& identity, bool& identityC
         setAvatarEntityData(identity.avatarEntityData);
         identityChanged = true;
     }
-    // flag this avatar as non-stale by updating _averageBytesReceived
-    const int BOGUS_NUM_BYTES = 1;
-    _averageBytesReceived.updateAverage(BOGUS_NUM_BYTES);
 }
 
 QByteArray AvatarData::identityByteArray() const {
