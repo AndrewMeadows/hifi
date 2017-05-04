@@ -105,6 +105,13 @@ Convexifier::Convexifier(MeshWorker::Data& data) : MeshWorker(data) {
 }
 
 void Convexifier::run() {
+    int j = 0;
+    for (int i = 0; i < 10; ++i) {
+        j = i;
+        emit onProgress();
+    }
+    std::cout << "adebug Convexifier::run() j = " << j << std::endl;  // adebug
+    emit onSuccess();
 }
 
 void Convexifier::setParams(const VhacdParameters& params) {

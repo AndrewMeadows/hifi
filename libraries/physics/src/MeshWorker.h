@@ -26,7 +26,7 @@ class MeshWorker : public QObject, public QRunnable {
 public:
     class Data {
     public:
-        Data(model::MeshPointer& input);
+        Data(model::MeshPointer& input) : _inputMesh(input) {}
         model::MeshPointer _inputMesh;
         model::MeshPointer _outputMesh;
     };
@@ -36,8 +36,8 @@ public:
     void stop() { _stopped = true; }
 
 signals:
-    void onSuccess();
-    void onProgress();
+    void onSuccess(model::MeshPointer output);
+    void onProgress(float progressValue);
     void onError(int error, QString str);
 
 protected:

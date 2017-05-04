@@ -20,6 +20,7 @@
 #include <PerfStat.h>
 #include <render/Scene.h>
 #include <DependencyManager.h>
+#include <Convexifier.h> // EXPERIMENTAL
 
 #include "EntityTreeRenderer.h"
 #include "EntitiesRendererLogging.h"
@@ -697,6 +698,12 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& info) {
         glm::vec3 collisionModelDimensions = box.getDimensions();
         info.setParams(type, collisionModelDimensions, _compoundShapeURL);
         info.setOffset(_model->getOffset());
+
+#ifdef EXPERIMENTAL
+        MeshWorker::Data data
+        auto testJob = new Convexifier(data);
+        QThreadPool::globalInstance()->start(testJob);
+#endif // EXPERIMENTAL
     } else {
         ModelEntityItem::computeShapeInfo(info);
         info.setParams(type, 0.5f * getDimensions());
