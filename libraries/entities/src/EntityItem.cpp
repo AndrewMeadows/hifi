@@ -2265,12 +2265,11 @@ void EntityItem::serializeActions(bool& success, QByteArray& result) const {
 }
 
 const QByteArray EntityItem::getDynamicDataInternal() const {
-    if (_dynamicDataDirty) {
-        bool success;
-        serializeActions(success, _allActionsDataCache);
-        if (success) {
-            _dynamicDataDirty = false;
-        }
+    assert(_dynamicDataDirty);
+    bool success;
+    serializeActions(success, _allActionsDataCache);
+    if (success) {
+        _dynamicDataDirty = false;
     }
     return _allActionsDataCache;
 }
