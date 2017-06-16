@@ -236,8 +236,7 @@ void EntityMotionState::getWorldTransform(btTransform& worldTrans) const {
         float dt = (thisStep - _lastKinematicStep) * PHYSICS_ENGINE_FIXED_SUBSTEP;
         _entity->stepKinematicMotion(dt);
 
-        // bypass const-ness so we can remember the step
-        const_cast<EntityMotionState*>(this)->_lastKinematicStep = thisStep;
+        _lastKinematicStep = thisStep;
 
         // and set the acceleration-matches-gravity count high so that if we send an update
         // it will use the correct acceleration for remote simulations
