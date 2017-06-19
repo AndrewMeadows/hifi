@@ -4,11 +4,15 @@
   orientation = Quat.fromVec3Degrees(orientation);
   var center = Vec3.sum(MyAvatar.position, Vec3.multiply(3, Quat.getForward(orientation)));
 
+  //TODO_CUSACK: Return this to its pre-21389 state after
+  //             testing.  Should make a custom one for QA to use.
   // Math.random ensures no caching of script
-  var SCRIPT_URL = Script.resolvePath("myEntityScript.js")
+  //var SCRIPT_URL = Script.resolvePath("myEntityScript.js")
 
   var myEntity = Entities.addEntity({
-      type: "Sphere",
+      name: "Cusack_Testing",
+      type: "Shape",
+      shapeType: "cylinder-y",
       color: {
           red: 200,
           green: 10,
@@ -16,11 +20,12 @@
       },
       position: center,
       dimensions: {
-          x: 1,
-          y: 1,
-          z: 1
+          x: 2,
+          y: 4,
+          z: 2
       },
-      script: SCRIPT_URL
+      lifetime: -1,
+      //script: SCRIPT_URL
   })
 
 

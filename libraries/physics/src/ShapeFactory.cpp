@@ -17,7 +17,7 @@
 #include "BulletUtil.h"
 
 // These are the same normalized directions used by the btShapeHull class.
-// 12 points for the face centers of a duodecohedron plus another 30 points
+// 12 points for the face centers of a dodecahedron plus another 30 points
 // for the midpoints the edges, for a total of 42.
 const uint32_t NUM_UNIT_SPHERE_DIRECTIONS = 42;
 static const btVector3 _unitSphereDirections[NUM_UNIT_SPHERE_DIRECTIONS] = {
@@ -288,6 +288,41 @@ const btCollisionShape* ShapeFactory::createShapeFromInfo(const ShapeInfo& info)
             shape = new btCapsuleShape(radius, height);
         }
         break;
+		case SHAPE_TYPE_CAPSULE_X: {
+			glm::vec3 halfExtents = info.getHalfExtents();
+			float radius = halfExtents.y;
+			float height = 2.0f * halfExtents.x;
+			shape = new btCapsuleShapeX(radius, height);
+		}
+		break;
+		case SHAPE_TYPE_CAPSULE_Z: {
+			glm::vec3 halfExtents = info.getHalfExtents();
+			float radius = halfExtents.x;
+			float height = 2.0f * halfExtents.z;
+			shape = new btCapsuleShapeZ(radius, height);
+		}
+		break;
+		case SHAPE_TYPE_CYLINDER_X:
+		case SHAPE_TYPE_CYLINDER_Z:
+		case SHAPE_TYPE_CYLINDER_Y: {
+			// TODO_CUSACK: Should allow for minor variance along axes.
+			const glm::vec3 halfExtents = info.getHalfExtents();
+			const btVector3 btHalfExtents(halfExtents.x, halfExtents.y, halfExtents.z);
+			if ((halfExtents.y > halfExtents.x) && (halfExtents.y > halfExtents.z)) {
+				shape = new btCylinderShape(btHalfExtents);
+			}
+			else if (halfExtents.x > halfExtents.z) {
+				shape = new btCylinderShapeX(btHalfExtents);
+			}
+			else if (halfExtents.z > halfExtents.x) {
+				shape = new btCylinderShapeZ(btHalfExtents);
+			}
+			else //...there was no major axis, treat as a sphere
+			{
+				//TODO_CUSACK: Shunt to ELLIPSOID handling
+			}
+		}
+		break;
         case SHAPE_TYPE_COMPOUND:
         case SHAPE_TYPE_SIMPLE_HULL: {
             const ShapeInfo::PointCollection& pointCollection = info.getPointCollection();

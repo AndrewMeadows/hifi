@@ -20,6 +20,8 @@
 #include <render-utils/simple_vert.h>
 #include <render-utils/simple_frag.h>
 
+#include "EntityItemProperties.h"
+
 // Sphere entities should fit inside a cube entity of the same size, so a sphere that has dimensions 1x1x1 
 // is a half unit sphere.  However, the geometry cache renders a UNIT sphere, so we need to scale down.
 static const float SPHERE_ENTITY_SCALE = 0.5f;
@@ -48,19 +50,39 @@ RenderableShapeEntityItem::Pointer RenderableShapeEntityItem::baseFactory(const 
 }
 
 EntityItemPointer RenderableShapeEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
-    return baseFactory(entityID, properties);
+	auto result = baseFactory(entityID, properties);
+	const entity::Shape resultShape = entity::getShapeForShapeType(properties.getShapeType());
+	if (resultShape != entity::Shape::NUM_SHAPES) {
+		result->setShape(resultShape);
+	}
+
+    //TODO_CUSACK Needed for debugging, remove later
+	if (resultShape == entity::Shape::Cylinder)
+	{
+		qCDebug(entities) << "Creating RenderableShapeEntityItem( " << result->_name << " ): " << result.get() << " ID: " << result->_id;
+	}
+
+	return result;
 }
 
 EntityItemPointer RenderableShapeEntityItem::boxFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     auto result = baseFactory(entityID, properties);
-    result->setShape(entity::Cube);
+    result->setShape(entity::Shape::Cube);
     return result;
 }
 
 EntityItemPointer RenderableShapeEntityItem::sphereFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     auto result = baseFactory(entityID, properties);
-    result->setShape(entity::Sphere);
+    result->setShape(entity::Shape::Sphere);
     return result;
+}
+
+RenderableShapeEntityItem::~RenderableShapeEntityItem()
+{
+	if (_shape == entity::Shape::Cylinder){
+		//TODO_CUSACK Needed for debugging, remove later
+		qCDebug(entities) << "Killing RenderableShapeEntityItem( " << _name << " ): " << this << " ID: " << _id;
+	}
 }
 
 void RenderableShapeEntityItem::setUserData(const QString& value) {

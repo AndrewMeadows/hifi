@@ -32,6 +32,11 @@ namespace entity {
 
     Shape shapeFromString(const ::QString& shapeString);
     ::QString stringFromShape(Shape shape);
+
+	//! @return The entity::Shape which correlates to the specified ShapeType; otherwise,
+	//!			entity::Shape::NUM_SHAPES if there's no equivalent or an unknown shape
+	//!			value was specified.
+	Shape getShapeForShapeType(ShapeType shapeType);
 }
 
 
@@ -44,6 +49,7 @@ public:
     static EntityItemPointer boxFactory(const EntityItemID& entityID, const EntityItemProperties& properties);
 
     ShapeEntityItem(const EntityItemID& entityItemID);
+	virtual ~ShapeEntityItem();
 
     void pureVirtualFunctionPlaceHolder() override { };
     // Triggers warnings on OSX
@@ -70,7 +76,7 @@ public:
 
     entity::Shape getShape() const { return _shape; }
     void setShape(const entity::Shape& shape);
-    void setShape(const QString& shape) { setShape(entity::shapeFromString(shape)); }
+	void setShape(const QString& shape);
 
     float getAlpha() const { return _alpha; };
     void setAlpha(float alpha) { _alpha = alpha; }

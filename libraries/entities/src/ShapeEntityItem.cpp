@@ -39,16 +39,59 @@ namespace entity {
 
     Shape shapeFromString(const ::QString& shapeString) {
         for (size_t i = 0; i < shapeStrings.size(); ++i) {
-            if (shapeString.toLower() == shapeStrings[i].toLower()) {
+			const QString &normalizedShapeString = shapeString.toLower();
+			const QString &normalizedKnownShapeString = shapeStrings[i].toLower();
+			if (normalizedShapeString == normalizedKnownShapeString) {
                 return static_cast<Shape>(i);
             }
+			else if (normalizedKnownShapeString.contains(normalizedShapeString)) {
+				return static_cast<Shape>(i);
+			}
         }
+
         return Shape::Sphere;
     }
 
     ::QString stringFromShape(Shape shape) {
         return shapeStrings[shape];
     }
+
+	Shape getShapeForShapeType(const ShapeType shapeType)
+	{
+		switch ( shapeType )
+		{
+		case SHAPE_TYPE_BOX:
+			return entity::Shape::Cube;
+		case SHAPE_TYPE_ELLIPSOID: //Note: Explicit fallthrough from Ellipsoid to Sphere
+		case SHAPE_TYPE_SPHERE:
+			return entity::Shape::Sphere;
+			//TODO_CUSACK:  There are 2 shape lists: ShapeInfo::Shape, (entity::Shape, entityProperties.html)
+			//		 Which shape list is actually correct or is it that
+			//		 the capsule and cylinders should only support y-axis aligned types?
+			//		 If that's not it then what exactly is it?
+			//       Is it expected that Capsules will be treated as Cylinders as they're not
+			//		 listed within the entity::Shape enumeration?
+			//       Currently treat all capsules and cylinder ShapeInfo::Shapes as Y-Axis Aligned
+			//		 cylinders.
+		case SHAPE_TYPE_CAPSULE_X:
+		case SHAPE_TYPE_CAPSULE_Y:
+		case SHAPE_TYPE_CAPSULE_Z:
+		case SHAPE_TYPE_CYLINDER_X:
+		case SHAPE_TYPE_CYLINDER_Y:
+		case SHAPE_TYPE_CYLINDER_Z:
+			return entity::Shape::Cylinder;
+		case SHAPE_TYPE_PLANE:
+			return entity::Shape::Quad;
+		case SHAPE_TYPE_HULL: //Note: Explicit fallthrough from Hull to Default
+		case SHAPE_TYPE_COMPOUND:
+		case SHAPE_TYPE_SIMPLE_HULL:
+		case SHAPE_TYPE_SIMPLE_COMPOUND:
+		case SHAPE_TYPE_STATIC_MESH:
+		case SHAPE_TYPE_NONE:
+		default:
+			return entity::Shape::NUM_SHAPES;
+		}
+	}
 }
 
 ShapeEntityItem::Pointer ShapeEntityItem::baseFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
@@ -58,7 +101,19 @@ ShapeEntityItem::Pointer ShapeEntityItem::baseFactory(const EntityItemID& entity
 }
 
 EntityItemPointer ShapeEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
-    return baseFactory(entityID, properties);
+	auto result = baseFactory(entityID, properties);
+	const entity::Shape resultShape = entity::getShapeForShapeType(properties.getShapeType());
+	if (resultShape != entity::Shape::NUM_SHAPES) {
+		result->setShape(resultShape);
+	}
+
+    //TODO_CUSACK Needed for debugging, remove later
+	if (resultShape == entity::Shape::Cylinder)
+	{
+		qCDebug(entities) << "Creating ShapeEntityItem( " << result->_name << " ): " << result.get() << " ID: " << result->_id;
+	}
+
+	return result;
 }
 
 EntityItemPointer ShapeEntityItem::boxFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
@@ -77,6 +132,14 @@ EntityItemPointer ShapeEntityItem::sphereFactory(const EntityItemID& entityID, c
 ShapeEntityItem::ShapeEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
     _type = EntityTypes::Shape;
     _volumeMultiplier *= PI / 6.0f;
+}
+
+ShapeEntityItem::~ShapeEntityItem()
+{
+	if (_shape == entity::Shape::Cylinder) {
+		//TODO_CUSACK Needed for debugging, remove later
+		qCDebug(entities) << "Killing ShapeEntityItem( " << _name << " ): " << this << " ID: " << _id;
+	}
 }
 
 EntityItemProperties ShapeEntityItem::getProperties(EntityPropertyFlags desiredProperties) const {
@@ -99,6 +162,11 @@ void ShapeEntityItem::setShape(const entity::Shape& shape) {
             _type = EntityTypes::Shape;
             break;
     }
+}
+
+//TODO_CUSACK: Move back to header prior to PN
+void ShapeEntityItem::setShape( const QString &shape ) {
+	setShape(entity::shapeFromString(shape));
 }
 
 bool ShapeEntityItem::setProperties(const EntityItemProperties& properties) {
@@ -163,7 +231,18 @@ void ShapeEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
 // This value specifes how the shape should be treated by physics calculations.  
 // For now, all polys will act as spheres
 ShapeType ShapeEntityItem::getShapeType() const {
-    return (_shape == entity::Shape::Cube) ? SHAPE_TYPE_BOX : SHAPE_TYPE_ELLIPSOID;
+	//TODO_CUSACK: This needs to be retrieved from properties if possible
+	//		    or stored within a new member and set during parsing of
+	//			the properties like setShape via set/get/readEntityProperties.
+	//          Perhaps if the _actual_ collisionShapeType is needed (the version that's in use
+	//			based on analysis of the shape's halfExtents when BulletLibrary collision shape was
+	//			created as opposed to the desired ShapeType is it possible to retrieve that information)?
+	if (_shape == entity::Shape::Cylinder) {
+		return SHAPE_TYPE_CYLINDER_Y;
+	}
+
+	// Original functionality:  Everything not a cube, is treated like an ellipsoid/sphere
+	return (_shape == entity::Shape::Cube) ? SHAPE_TYPE_BOX : SHAPE_TYPE_ELLIPSOID;
 }
 
 void ShapeEntityItem::setColor(const rgbColor& value) {
