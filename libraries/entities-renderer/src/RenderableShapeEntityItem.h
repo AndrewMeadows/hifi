@@ -22,7 +22,6 @@ public:
     static EntityItemPointer boxFactory(const EntityItemID& entityID, const EntityItemProperties& properties);
     static EntityItemPointer sphereFactory(const EntityItemID& entityID, const EntityItemProperties& properties);
     RenderableShapeEntityItem(const EntityItemID& entityItemID) : ShapeEntityItem(entityItemID) {}
-	virtual ~RenderableShapeEntityItem();
 
     void render(RenderArgs* args) override;
     void setUserData(const QString& value) override;
