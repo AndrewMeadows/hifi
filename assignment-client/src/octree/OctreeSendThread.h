@@ -53,7 +53,8 @@ protected:
 
     /// Called before a packetDistributor pass to allow for pre-distribution processing
     virtual void preDistributionProcessing() {};
-    virtual void traverseTreeAndSendContents(SharedNodePointer node, OctreeQueryNode* nodeData, bool viewFrustumChanged, bool isFullScene);
+    virtual void traverseTreeAndSendContents(SharedNodePointer node, OctreeQueryNode* nodeData,
+            bool viewFrustumChanged, bool isFullScene);
 
     OctreeServer* _myServer { nullptr };
     QWeakPointer<Node> _node;
