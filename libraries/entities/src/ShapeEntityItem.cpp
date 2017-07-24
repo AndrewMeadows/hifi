@@ -160,10 +160,22 @@ void ShapeEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
     APPEND_ENTITY_PROPERTY(PROP_ALPHA, getAlpha());
 }
 
-// This value specifes how the shape should be treated by physics calculations.  
-// For now, all polys will act as spheres
+// returns the "collision shape" for physics simulation
 ShapeType ShapeEntityItem::getShapeType() const {
-    return (_shape == entity::Shape::Cube) ? SHAPE_TYPE_BOX : SHAPE_TYPE_ELLIPSOID;
+    if (_shape == entity::Shape::Cube) {
+        return SHAPE_TYPE_BOX;
+    }
+    if (_shape == entity::Shape::Sphere) {
+        // SHAPE_TYPE_SPHERE means: "collide like true implicit sphere" whereas
+        // "SHAPE_TYPE_ELLIPSOID" means: "if spherical then use implicit sphere, otherwise use convex hull"
+        return SHAPE_TYPE_ELLIPSOID;
+    }
+    if (_shape == entity::Shape::Cylinder) {
+        return SHAPE_TYPE_CYLINDER_Y;
+    }
+
+    // for now, all unhandled types just collide same as "Sphere"
+    return SHAPE_TYPE_ELLIPSOID;
 }
 
 void ShapeEntityItem::setColor(const rgbColor& value) {

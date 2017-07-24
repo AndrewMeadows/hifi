@@ -136,7 +136,8 @@ float ShapeInfo::computeVolume() const {
         }
         case SHAPE_TYPE_CAPSULE_Y: {
             float radius = _halfExtents.x;
-            volume = PI * radius * radius * (2.0f * (_halfExtents.y - _halfExtents.x) + 4.0f * radius / 3.0f);
+            float heightOfCylinderPart = 2.0f * (_halfExtents.y - _halfExtents.x);
+            volume = PI * radius * radius * (heightOfCylinderPart + 4.0f * radius / 3.0f);
             break;
         }
         default:

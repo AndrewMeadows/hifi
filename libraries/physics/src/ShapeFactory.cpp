@@ -288,6 +288,12 @@ const btCollisionShape* ShapeFactory::createShapeFromInfo(const ShapeInfo& info)
             shape = new btCapsuleShape(radius, height);
         }
         break;
+        case SHAPE_TYPE_CYLINDER_Y: {
+            const glm::vec3 halfExtents = info.getHalfExtents();
+            const btVector3 btHalfExtents(halfExtents.x, halfExtents.y, halfExtents.x); // z = x
+            shape = new btCylinderShape(btHalfExtents);
+        }
+        break;
         case SHAPE_TYPE_COMPOUND:
         case SHAPE_TYPE_SIMPLE_HULL: {
             const ShapeInfo::PointCollection& pointCollection = info.getPointCollection();
