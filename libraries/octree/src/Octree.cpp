@@ -431,8 +431,7 @@ int Octree::readElementData(const OctreeElementPointer& destinationElement, cons
     return bytesRead;
 }
 
-void Octree::readBitstreamToTree(const unsigned char * bitstream, uint64_t bufferSizeBytes,
-                                 ReadBitstreamToTreeParams& args) {
+void Octree::readBitstreamToTree(const unsigned char * bitstream, uint64_t bufferSizeBytes, ReadBitstreamToTreeParams& args) {
     int bytesRead = 0;
     const unsigned char* bitstreamAt = bitstream;
 
