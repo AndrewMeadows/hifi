@@ -924,8 +924,8 @@ int Octree::encodeTreeBitstream(const OctreeElementPointer& element,
         roomForOctalCode = packetData->startSubTree(newCode);
 
         if (newCode) {
-            delete[] newCode;
             codeLength = numberOfThreeBitSectionsInCode(newCode);
+            delete[] newCode;
         } else {
             codeLength = 1;
         }
