@@ -307,7 +307,9 @@ bool EntityTree::updateEntity(EntityItemPointer entity, const EntityItemProperti
                 }
                 UpdateEntityOperator theOperator(getThisPointer(), containingElement, entity, queryCube);
                 recurseTreeWithOperator(&theOperator);
-                entity->setProperties(tempProperties);
+                if (entity->setProperties(tempProperties)) {
+                    emit editingEntityPointer(entity);
+                }
                 _isDirty = true;
             }
         }
@@ -382,7 +384,9 @@ bool EntityTree::updateEntity(EntityItemPointer entity, const EntityItemProperti
         }
         UpdateEntityOperator theOperator(getThisPointer(), containingElement, entity, newQueryAACube);
         recurseTreeWithOperator(&theOperator);
-        entity->setProperties(properties);
+        if (entity->setProperties(properties)) {
+            emit editingEntityPointer(entity);
+        }
 
         // if the entity has children, run UpdateEntityOperator on them.  If the children have children, recurse
         QQueue<SpatiallyNestablePointer> toProcess;
@@ -556,6 +560,7 @@ void EntityTree::deleteEntity(const EntityItemID& entityID, bool force, bool ign
 
     unhookChildAvatar(entityID);
     emit deletingEntity(entityID);
+    emit deletingEntityPointer(existingEntity.get());
 
     // NOTE: callers must lock the tree before using this method
     DeleteEntityOperator theOperator(getThisPointer(), entityID);
@@ -564,6 +569,10 @@ void EntityTree::deleteEntity(const EntityItemID& entityID, bool force, bool ign
         auto descendantID = descendant->getID();
         theOperator.addEntityIDToDeleteList(descendantID);
         emit deletingEntity(descendantID);
+        EntityItemPointer descendantEntity = std::static_pointer_cast<EntityItem>(descendant);
+        if (descendantEntity) {
+            emit deletingEntityPointer(descendantEntity.get());
+        }
     });
 
     recurseTreeWithOperator(&theOperator);
@@ -613,6 +622,7 @@ void EntityTree::deleteEntities(QSet<EntityItemID> entityIDs, bool force, bool i
         unhookChildAvatar(entityID);
         theOperator.addEntityIDToDeleteList(entityID);
         emit deletingEntity(entityID);
+        emit deletingEntityPointer(existingEntity.get());
     }
 
     if (theOperator.getEntities().size() > 0) {
@@ -1249,7 +1259,7 @@ int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned c
                     if (!isPhysics) {
                         properties.setLastEditedBy(senderNode->getUUID());
                     }
-                    updateEntity(entityItemID, properties, senderNode);
+                    updateEntity(existingEntity, properties, senderNode);
                     existingEntity->markAsChangedOnServer();
                     endUpdate = usecTimestampNow();
                     _totalUpdates++;

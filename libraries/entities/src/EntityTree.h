@@ -268,7 +268,9 @@ public:
 
 signals:
     void deletingEntity(const EntityItemID& entityID);
+    void deletingEntityPointer(EntityItem* entityID);
     void addingEntity(const EntityItemID& entityID);
+    void editingEntityPointer(const EntityItemPointer& entityID);
     void entityScriptChanging(const EntityItemID& entityItemID, const bool reload);
     void entityServerScriptChanging(const EntityItemID& entityItemID, const bool reload);
     void newCollisionSoundURL(const QUrl& url, const EntityItemID& entityID);
