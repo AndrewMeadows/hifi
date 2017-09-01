@@ -458,7 +458,7 @@ int OctreeSendThread::packetDistributor(SharedNodePointer node, OctreeQueryNode*
     return _truePacketsSent;
 }
 
-bool OctreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstreamParams& params) {
+bool OctreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstreamParams& params, const QJsonObject& jsonFilters) {
     bool somethingToSend = false;
     OctreeQueryNode* nodeData = static_cast<OctreeQueryNode*>(params.nodeData);
     if (!nodeData->elementBag.isEmpty()) {
@@ -523,7 +523,7 @@ void OctreeSendThread::traverseTreeAndSendContents(SharedNodePointer node, Octre
         bool lastNodeDidntFit = false; // assume each node fits
         params.stopReason = EncodeBitstreamParams::UNKNOWN; // reset params.stopReason before traversal
 
-        somethingToSend = traverseTreeAndBuildNextPacketPayload(params);
+        somethingToSend = traverseTreeAndBuildNextPacketPayload(params, nodeData->getJSONParameters());
 
         // If the bag had contents but is now empty then we know we've sent the entire scene.
         bool completedScene = bagHadSomething && nodeData->elementBag.isEmpty();
