@@ -29,15 +29,12 @@ void ShapeInfo::clear() {
 }
 
 void ShapeInfo::setParams(ShapeType type, const glm::vec3& halfExtents, QString url) {
-    //TODO WL21389: Does this need additional cases and handling added?
-    _url = "";
+    clear();
     _type = type;
     setHalfExtents(halfExtents);
     switch(type) {
         case SHAPE_TYPE_NONE:
             _halfExtents = glm::vec3(0.0f);
-            break;
-        case SHAPE_TYPE_BOX:
             break;
         case SHAPE_TYPE_SPHERE: {
                 float radius = glm::length(halfExtents) / SQUARE_ROOT_OF_3;
@@ -49,46 +46,41 @@ void ShapeInfo::setParams(ShapeType type, const glm::vec3& halfExtents, QString 
         case SHAPE_TYPE_STATIC_MESH:
             _url = QUrl(url);
             break;
+        case SHAPE_TYPE_BOX:
+        case SHAPE_TYPE_HULL:
+        case SHAPE_TYPE_SIMPLE_HULL:
+            break;
         default:
             break;
     }
-    _doubleHashKey.clear();
 }
 
 void ShapeInfo::setBox(const glm::vec3& halfExtents) {
-    //TODO WL21389:  Should this pointlist clearance added in case
-    //              this is a re-purposed instance?
-    // See https://github.com/highfidelity/hifi/pull/11024#discussion_r128885491
-    _url = "";
+    clear();
     _type = SHAPE_TYPE_BOX;
     setHalfExtents(halfExtents);
-    _doubleHashKey.clear();
 }
 
 void ShapeInfo::setSphere(float radius) {
-    //TODO WL21389: See comment in setBox regarding clearance
-    _url = "";
+    clear();
     _type = SHAPE_TYPE_SPHERE;
     radius = glm::max(radius, MIN_HALF_EXTENT);
     _halfExtents = glm::vec3(radius);
-    _doubleHashKey.clear();
 }
 
 void ShapeInfo::setPointCollection(const ShapeInfo::PointCollection& pointCollection) {
-    //TODO WL21389: May need to skip resetting type here.
+    // DO NOT clear() ShapeInfo here
     _pointCollection = pointCollection;
     _type = (_pointCollection.size() > 0) ? SHAPE_TYPE_COMPOUND : SHAPE_TYPE_NONE;
     _doubleHashKey.clear();
 }
 
 void ShapeInfo::setCapsuleY(float radius, float halfHeight) {
-    //TODO WL21389: See comment in setBox regarding clearance
-    _url = "";
+    clear();
     _type = SHAPE_TYPE_CAPSULE_Y;
     radius = glm::max(radius, MIN_HALF_EXTENT);
     halfHeight = glm::max(halfHeight, 0.0f);
     _halfExtents = glm::vec3(radius, halfHeight, radius);
-    _doubleHashKey.clear();
 }
 
 void ShapeInfo::setOffset(const glm::vec3& offset) {
