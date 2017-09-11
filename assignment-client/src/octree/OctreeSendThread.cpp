@@ -47,7 +47,7 @@ OctreeSendThread::OctreeSendThread(OctreeServer* myServer, const SharedNodePoint
 
 OctreeSendThread::~OctreeSendThread() {
     setIsShuttingDown();
-    
+
     QString safeServerName("Octree");
     if (_myServer) {
         safeServerName = _myServer->getMyServerName();
@@ -514,7 +514,7 @@ void OctreeSendThread::traverseTreeAndSendContents(SharedNodePointer node, Octre
     }
 
     bool somethingToSend = true; // assume we have something
-    bool bagHadSomething = hasSomethingToSend(nodeData);
+    bool hadSomething = hasSomethingToSend(nodeData);
     while (somethingToSend && _packetsSentThisInterval < maxPacketsPerInterval && !nodeData->isShuttingDown()) {
         float compressAndWriteElapsedUsec = OctreeServer::SKIP_TIME;
         float packetSendingElapsedUsec = OctreeServer::SKIP_TIME;
@@ -527,7 +527,7 @@ void OctreeSendThread::traverseTreeAndSendContents(SharedNodePointer node, Octre
         somethingToSend = traverseTreeAndBuildNextPacketPayload(params, nodeData->getJSONParameters());
 
         // If the bag had contents but is now empty then we know we've sent the entire scene.
-        bool completedScene = bagHadSomething && !hasSomethingToSend(nodeData);
+        bool completedScene = hadSomething && !hasSomethingToSend(nodeData);
 
         if (params.stopReason == EncodeBitstreamParams::DIDNT_FIT) {
             lastNodeDidntFit = true;
