@@ -123,10 +123,26 @@ void DiffTraversal::Waypoint::getNextVisibleElementDifferential(DiffTraversal::V
                     float distance = glm::distance(view.viewFrustum.getPosition(), cube.calcCenter()) + MIN_VISIBLE_DISTANCE;
                     float apparentAngle = cube.getScale() / distance;
                     if (apparentAngle > MIN_ELEMENT_APPARENT_ANGLE * view.lodScaleFactor) {
-                        if (view.viewFrustum.calculateCubeKeyholeIntersection(cube) != ViewFrustum::OUTSIDE) {
-                            next.element = nextElement;
-                            next.intersection = ViewFrustum::OUTSIDE;
-                            return;
+                        if (view.viewFrustum.cubeIntersectsKeyhole(cube)) {
+                            ViewFrustum::intersection lastIntersection = lastView.viewFrustum.calculateCubeKeyholeIntersection(cube);
+                            if (lastIntersection != ViewFrustum::INSIDE || nextElement->getLastChanged() > lastView.startTime) {
+                                next.element = nextElement;
+                                // NOTE: for differential case next.intersection is against the lastView
+                                // because this helps the "external scan" optimize its culling
+                                next.intersection = lastIntersection;
+                                return;
+                            } else {
+                                // check for LOD truncation in the last traversal because
+                                // we may need to traverse this element after all if the lastView skipped it for LOD
+                                distance = glm::distance(lastView.viewFrustum.getPosition(), cube.calcCenter()) + MIN_VISIBLE_DISTANCE;
+                                apparentAngle = cube.getScale() / distance;
+                                if (apparentAngle <= MIN_ELEMENT_APPARENT_ANGLE * lastView.lodScaleFactor) {
+                                    next.element = nextElement;
+                                    // element's intersection with lastView was effectively OUTSIDE
+                                    next.intersection = ViewFrustum::OUTSIDE;
+                                    return;
+                                }
+                            }
                         }
                     }
                 }
