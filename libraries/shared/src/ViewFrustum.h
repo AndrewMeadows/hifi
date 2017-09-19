@@ -108,6 +108,7 @@ public:
     bool boxIntersectsKeyhole(const AABox& box) const;
 
     bool isVerySimilar(const ViewFrustum& compareTo) const;
+    bool isPositionVerySimilar(const ViewFrustum& compareTo) const;
 
     PickRay computePickRay(float x, float y);
     void computePickRay(float x, float y, glm::vec3& origin, glm::vec3& direction) const;

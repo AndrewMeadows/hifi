@@ -343,6 +343,12 @@ bool ViewFrustum::isVerySimilar(const ViewFrustum& other) const {
         closeEnough(_centerSphereRadius, other._centerSphereRadius, MIN_RELATIVE_ERROR);
 }
 
+bool ViewFrustum::isPositionVerySimilar(const ViewFrustum& other) const {
+    const float MIN_POSITION_SLOP_SQUARED = 25.0f; // 5 meters squared
+
+    return glm::distance2(_position, other._position) < MIN_POSITION_SLOP_SQUARED;
+}
+
 PickRay ViewFrustum::computePickRay(float x, float y) {
     glm::vec3 pickRayOrigin;
     glm::vec3 pickRayDirection;

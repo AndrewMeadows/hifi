@@ -45,7 +45,7 @@ public:
 
         void getNextVisibleElementFirstTime(VisibleElement& next, const View& view);
         void getNextVisibleElementRepeat(VisibleElement& next, const View& view, uint64_t lastTime);
-        void getNextVisibleElementDifferential(VisibleElement& next, const View& view, const View& lastView);
+        void getNextVisibleElementDifferential(VisibleElement& next, const View& view, const View& lastView, const bool fullTraversal);
 
         int8_t getNextIndex() const { return _nextIndex; }
         void initRootNextIndex() { _nextIndex = -1; }
