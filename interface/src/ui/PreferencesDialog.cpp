@@ -147,7 +147,8 @@ void setupPreferences() {
         auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableActivityLogger, !value); };
         preferences->addPreference(new CheckPreference("Privacy", "Send data", getter, setter));
     }
-    
+
+    /* TODO: andrew to reimplement this
     static const QString LOD_TUNING("Level of Detail Tuning");
     {
         auto getter = []()->float { return DependencyManager::get<LODManager>()->getDesktopLODDecreaseFPS(); };
@@ -168,6 +169,7 @@ void setupPreferences() {
         preference->setStep(1);
         preferences->addPreference(preference);
     }
+    */
 
     static const QString AVATAR_TUNING { "Avatar Tuning" };
     {

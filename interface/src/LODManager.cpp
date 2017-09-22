@@ -19,164 +19,101 @@
 
 #include "LODManager.h"
 
-Setting::Handle<float> desktopLODDecreaseFPS("desktopLODDecreaseFPS", DEFAULT_DESKTOP_LOD_DOWN_FPS);
-Setting::Handle<float> hmdLODDecreaseFPS("hmdLODDecreaseFPS", DEFAULT_HMD_LOD_DOWN_FPS);
+const float MIN_LOD_SCALE_FACTOR = 1.0f;
+
+// In an attempt to maintain legacy behavior we set ABSOLUTE_MIN_ANGULAR_SIZE to be that of a
+// 1x1x1 cube at 400 meters (which corresponds to about 0.00433 radians or 0.25 degrees).
+const float SQRT_THREE = 1.7320508f;
+const float ABSOLUTE_MIN_ANGULAR_SIZE = SQRT_THREE / 400.0f;
+
+
+void LODManager::setMinVisibleAngularSize(float value) {
+    if (value < ABSOLUTE_MIN_ANGULAR_SIZE) {
+        value = ABSOLUTE_MIN_ANGULAR_SIZE;
+    }
+    // we store the ratio rather than the value
+    _lodScaleFactor = value / ABSOLUTE_MIN_ANGULAR_SIZE;
+}
+
+float LODManager::getMinVisibleAngularSize() const {
+    // return the angle value rather than the ratio
+    return _lodScaleFactor * ABSOLUTE_MIN_ANGULAR_SIZE;
+}
 
 LODManager::LODManager() {
+    // preset_avgRenderTime to be on target
+    _avgRenderTime = 1.0f / _targetFPS;
 }
 
-float LODManager::getLODDecreaseFPS() {
-    if (qApp->isHMDMode()) {
-        return getHMDLODDecreaseFPS();
+const uint64_t LOD_ADJUST_PERIOD = 1 * USECS_PER_SECOND;
+
+void LODManager::autoAdjustLOD(float batchTime, float engineRunTime, float deltaTimeSec) {
+
+    float renderTime = batchTime + 2.0f; // msec
+    float maxTime = glm::max(renderTime, engineRunTime);
+
+    // skip the first several samples
+    const int NUM_SAMPLES_TO_SKIP = 100;
+    if (_skippedRenderTimeSamples < NUM_SAMPLES_TO_SKIP) {
+        ++_skippedRenderTimeSamples;
+        return;
     }
-    return getDesktopLODDecreaseFPS();
-}
 
-float LODManager::getLODIncreaseFPS() {
-    if (qApp->isHMDMode()) {
-        return getHMDLODIncreaseFPS();
+    // compute time-weighted running average
+    const float BLEND_TIMESCALE = 0.3f; // sec
+    float blend = BLEND_TIMESCALE / deltaTimeSec;
+    if (blend > 1.0f) {
+        blend = 1.0f;
     }
-    return getDesktopLODIncreaseFPS();
-}
+    _avgRenderTime = (1.0f - blend) * _avgRenderTime + blend * maxTime; // msec
 
-void LODManager::autoAdjustLOD(float currentFPS) {
-    
-    // NOTE: our first ~100 samples at app startup are completely all over the place, and we don't
-    // really want to count them in our average, so we will ignore the real frame rates and stuff
-    // our moving average with simulated good data
-    const int IGNORE_THESE_SAMPLES = 100;
-    if (_fpsAverageUpWindow.getSampleCount() < IGNORE_THESE_SAMPLES) {
-        currentFPS = ASSUMED_FPS;
-        _lastStable = _lastUpShift = _lastDownShift = usecTimestampNow();
+    if (!_automaticLODAdjust) {
+        _lodScaleFactor = MIN_LOD_SCALE_FACTOR;
+        return;
     }
-    
-    _fpsAverageStartWindow.updateAverage(currentFPS);
-    _fpsAverageDownWindow.updateAverage(currentFPS);
-    _fpsAverageUpWindow.updateAverage(currentFPS);
-    
-    quint64 now = usecTimestampNow();
 
-    bool changed = false;
-    quint64 elapsedSinceDownShift = now - _lastDownShift;
-    quint64 elapsedSinceUpShift = now - _lastUpShift;
-
-    quint64 lastStableOrUpshift = glm::max(_lastUpShift, _lastStable);
-    quint64 elapsedSinceStableOrUpShift = now - lastStableOrUpshift;
-    
-    if (_automaticLODAdjust) {
-    
-        // LOD Downward adjustment 
-        // If we've been downshifting, we watch a shorter downshift window so that we will quickly move toward our
-        // target frame rate. But if we haven't just done a downshift (either because our last shift was an upshift,
-        // or because we've just started out) then we look at a much longer window to consider whether or not to start
-        // downshifting.
-        bool doDownShift = false; 
-
-        if (_isDownshifting) {
-            // only consider things if our DOWN_SHIFT time has elapsed...
-            if (elapsedSinceDownShift > DOWN_SHIFT_ELPASED) {
-                doDownShift = _fpsAverageDownWindow.getAverage() < getLODDecreaseFPS();
-                
-                if (!doDownShift) {
-                    qCDebug(interfaceapp) << "---- WE APPEAR TO BE DONE DOWN SHIFTING -----";
-                    _isDownshifting = false;
-                    _lastStable = now;
-                }
+    uint64_t now = usecTimestampNow();
+    if (now > _lodAdjustExpiry) {
+        // check for LOD adjustment
+        const float maxRenderTimeBudget = MSECS_PER_SECOND / _targetFPS; // msec
+        const float minRenderTimeBudget = 0.5f * maxRenderTimeBudget;
+        bool changed = false;
+        if (_avgRenderTime > maxRenderTimeBudget) {
+            // we're over budget --> decrease LOD (increase _lodScaleFactor)
+            const float LOD_SCALE_FACTOR_INCREASE = 1.1f;
+            _lodScaleFactor *= LOD_SCALE_FACTOR_INCREASE;
+            changed = true;
+        } else if (_avgRenderTime < minRenderTimeBudget && _lodScaleFactor > MIN_LOD_SCALE_FACTOR) {
+            // we're well under budget --> increase LOD (decrease _lodScaleFactor)
+            const float LOD_SCALE_FACTOR_DECREASE = 0.9f;
+            _lodScaleFactor *= LOD_SCALE_FACTOR_DECREASE;
+            if (_lodScaleFactor < MIN_LOD_SCALE_FACTOR) {
+                _lodScaleFactor = MIN_LOD_SCALE_FACTOR;
             }
-        } else {
-            doDownShift = (elapsedSinceStableOrUpShift > START_SHIFT_ELPASED 
-                                && _fpsAverageStartWindow.getAverage() < getLODDecreaseFPS());
+            changed = true;
         }
-        
-        if (doDownShift) {
 
-            // Octree items... stepwise adjustment
-            if (_octreeSizeScale > ADJUST_LOD_MIN_SIZE_SCALE) {
-                _octreeSizeScale *= ADJUST_LOD_DOWN_BY;
-                if (_octreeSizeScale < ADJUST_LOD_MIN_SIZE_SCALE) {
-                    _octreeSizeScale = ADJUST_LOD_MIN_SIZE_SCALE;
-                }
-                changed = true;
-            }
-
-            if (changed) {
-                if (_isDownshifting) {
-                    // subsequent downshift
-                    qCDebug(interfaceapp) << "adjusting LOD DOWN..."
-                                << "average fps for last "<< DOWN_SHIFT_WINDOW_IN_SECS <<"seconds was " 
-                                << _fpsAverageDownWindow.getAverage() 
-                                << "minimum is:" << getLODDecreaseFPS() 
-                                << "elapsedSinceDownShift:" << elapsedSinceDownShift
-                                << " NEW _octreeSizeScale=" << _octreeSizeScale;
-                } else {
-                    // first downshift
-                    qCDebug(interfaceapp) << "adjusting LOD DOWN after initial delay..."
-                                << "average fps for last "<< START_DELAY_WINDOW_IN_SECS <<"seconds was " 
-                                << _fpsAverageStartWindow.getAverage() 
-                                << "minimum is:" << getLODDecreaseFPS() 
-                                << "elapsedSinceUpShift:" << elapsedSinceUpShift
-                                << " NEW _octreeSizeScale=" << _octreeSizeScale;
-                }
-
-                _lastDownShift = now;
-                _isDownshifting = true;
-
-                emit LODDecreased();
-            }
-        } else {
-    
-            // LOD Upward adjustment
-            if (elapsedSinceUpShift > UP_SHIFT_ELPASED) {
-            
-                if (_fpsAverageUpWindow.getAverage() > getLODIncreaseFPS()) {
-
-                    // Octee items... stepwise adjustment
-                    if (_octreeSizeScale < ADJUST_LOD_MAX_SIZE_SCALE) {
-                        if (_octreeSizeScale < ADJUST_LOD_MIN_SIZE_SCALE) {
-                            _octreeSizeScale = ADJUST_LOD_MIN_SIZE_SCALE;
-                        } else {
-                            _octreeSizeScale *= ADJUST_LOD_UP_BY;
-                        }
-                        if (_octreeSizeScale > ADJUST_LOD_MAX_SIZE_SCALE) {
-                            _octreeSizeScale = ADJUST_LOD_MAX_SIZE_SCALE;
-                        }
-                        changed = true;
-                    }
-                }
-        
-                if (changed) {
-                    qCDebug(interfaceapp) << "adjusting LOD UP... average fps for last "<< UP_SHIFT_WINDOW_IN_SECS <<"seconds was " 
-                                << _fpsAverageUpWindow.getAverage()
-                                << "upshift point is:" << getLODIncreaseFPS() 
-                                << "elapsedSinceUpShift:" << elapsedSinceUpShift
-                                << " NEW _octreeSizeScale=" << _octreeSizeScale;
-
-                    _lastUpShift = now;
-                    _isDownshifting = false;
-
-                    emit LODIncreased();
-                }
-            }
-        }
-    
         if (changed) {
             auto lodToolsDialog = DependencyManager::get<DialogsManager>()->getLodToolsDialog();
             if (lodToolsDialog) {
                 lodToolsDialog->reloadSliders();
             }
         }
+
+        // set expiry for next adjustment
+        _lodAdjustExpiry = now + LOD_ADJUST_PERIOD;
     }
 }
 
 void LODManager::resetLODAdjust() {
-    _fpsAverageStartWindow.reset();
-    _fpsAverageDownWindow.reset();
-    _fpsAverageUpWindow.reset();
-    _lastUpShift = _lastDownShift = usecTimestampNow();
-    _isDownshifting = false;
+    _lodAdjustExpiry = usecTimestampNow() + LOD_ADJUST_PERIOD;
+    _skippedRenderTimeSamples = 0;
+    _lodScaleFactor = MIN_LOD_SCALE_FACTOR;
 }
 
 QString LODManager::getLODFeedbackText() {
+    return QString("TODO: fix LODManager::getLODFeedback()");
+/* TODO: andrew to implement this again
     // determine granularity feedback
     int boundaryLevelAdjust = getBoundaryLevelAdjust();
     QString granularityFeedback;
@@ -212,30 +149,44 @@ QString LODManager::getLODFeedbackText() {
         result = QString("%2 of default distance for average vision%3").arg(relativeToDefault,0,'f',3).arg(granularityFeedback);
     }
     return result;
+*/
 }
 
 bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
-    // FIXME - eventually we want to use the render accuracy as an indicator for the level of detail
-    // to use in rendering.
-    float renderAccuracy = calculateRenderAccuracy(args->getViewFrustum().getPosition(), bounds, args->_sizeScale, args->_boundaryLevelAdjust);
-    return (renderAccuracy > 0.0f);
+    // should render when:
+    //   apparentAngle > minApparentAngle
+    //   (size / distance) > (lodScaleFactor * MIN_ANGLE)
+    //   size > (distance * lodScaleFactor * MIN_ANGLE)
+    //   size^2 > (distance * lodScaleFactor * MIN_ANGLE)^2
+    float lodScaleFactor = DEFAULT_OCTREE_SIZE_SCALE / args->_sizeScale;
+    float minAngle = lodScaleFactor * ABSOLUTE_MIN_ANGULAR_SIZE;
+    float distance2 = glm::distance2(args->getViewFrustum().getPosition(), bounds.calcCenter());
+    return glm::length2(bounds.getScale()) > distance2 * minAngle * minAngle;
 };
 
-void LODManager::setOctreeSizeScale(float sizeScale) {
-    _octreeSizeScale = sizeScale;
-}
-
-void LODManager::setBoundaryLevelAdjust(int boundaryLevelAdjust) {
-    _boundaryLevelAdjust = boundaryLevelAdjust;
-}
-
 void LODManager::loadSettings() {
+    /* TODO: andrew to implement this again
     setDesktopLODDecreaseFPS(desktopLODDecreaseFPS.get());
     setHMDLODDecreaseFPS(hmdLODDecreaseFPS.get());
+    */
 }
 
 void LODManager::saveSettings() {
+    /* TODO: andrew to implement this again
     desktopLODDecreaseFPS.set(getDesktopLODDecreaseFPS());
     hmdLODDecreaseFPS.set(getHMDLODDecreaseFPS());
+    */
 }
 
+void LODManager::setRenderMode(QString mode) {
+    // TODO: make mode FPS's configurable as Settings rather than use hard-coded defaults
+    if (mode == "HMD") {
+        _targetFPS = DEFAULT_HMD_TARGET_FPS;
+    } else if (mode == "Desktop") {
+        _targetFPS = DEFAULT_DESKTOP_TARGET_FPS;
+    } else {
+        _targetFPS = DEFAULT_TARGET_FPS;
+    }
+    // preset_avgRenderTime to be on target
+    _avgRenderTime = 1.0f / _targetFPS;
+}

@@ -2428,8 +2428,13 @@ void Application::paintGL() {
             _viewFrustum.setProjection(adjustedProjection);
             _viewFrustum.calculate();
         }
-        renderArgs = RenderArgs(_gpuContext, lodManager->getOctreeSizeScale(),
-            lodManager->getBoundaryLevelAdjust(), RenderArgs::DEFAULT_RENDER_MODE,
+        // HACK: convert LODScaleFactor back into octreeSizeScale and boundaryLevelAdjust for legacy LOD system
+        // TODO: use a real angularSize instead of LODScaleFactor abstraction and store directly in renderArgs
+        float octreeSizeScale = DEFAULT_OCTREE_SIZE_SCALE / lodManager->getLODScaleFactor();
+        int32_t boundaryLevelAdjust = 0;
+
+        renderArgs = RenderArgs(_gpuContext, octreeSizeScale, boundaryLevelAdjust,
+            RenderArgs::DEFAULT_RENDER_MODE,
             RenderArgs::MONO, RenderArgs::RENDER_DEBUG_NONE);
         {
             QMutexLocker viewLocker(&_viewMutex);
@@ -4470,11 +4475,13 @@ void Application::init() {
     }, Qt::QueuedConnection);
 }
 
-void Application::updateLOD() const {
+void Application::updateLOD(float deltaTime) {
     PerformanceTimer perfTimer("LOD");
     // adjust it unless we were asked to disable this feature, or if we're currently in throttleRendering mode
     if (!isThrottleRendering()) {
-        DependencyManager::get<LODManager>()->autoAdjustLOD(_frameCounter.rate());
+        float batchTime = (float)_gpuContext->getFrameTimerBatchAverage();
+        float engineRunTime = (float)(_renderEngine->getConfiguration().get()->getCPURunTime());
+        DependencyManager::get<LODManager>()->autoAdjustLOD(batchTime, engineRunTime, deltaTime);
     } else {
         DependencyManager::get<LODManager>()->resetLODAdjust();
     }
@@ -4851,7 +4858,7 @@ void Application::update(float deltaTime) {
     bool showWarnings = Menu::getInstance()->isOptionChecked(MenuOption::PipelineWarnings);
     PerformanceWarning warn(showWarnings, "Application::update()");
 
-    updateLOD();
+    updateLOD(deltaTime);
 
     if (!_physicsEnabled) {
         if (!domainLoadingInProgress) {
@@ -5326,8 +5333,8 @@ void Application::queryOctree(NodeType_t serverType, PacketType packetType, Node
     _octreeQuery.setCameraEyeOffsetPosition(glm::vec3());
     _octreeQuery.setCameraCenterRadius(viewFrustum.getCenterRadius());
     auto lodManager = DependencyManager::get<LODManager>();
-    _octreeQuery.setOctreeSizeScale(lodManager->getOctreeSizeScale());
-    _octreeQuery.setBoundaryLevelAdjust(lodManager->getBoundaryLevelAdjust());
+    _octreeQuery.setOctreeSizeScale(DEFAULT_OCTREE_SIZE_SCALE * lodManager->getLODScaleFactor());
+    _octreeQuery.setBoundaryLevelAdjust(0);
 
     // Iterate all of the nodes, and get a count of how many octree servers we have...
     int totalServers = 0;
@@ -7434,7 +7441,9 @@ void Application::updateDisplayMode() {
     }
 
     bool isHmd = _displayPlugin->isHmd();
-    qCDebug(interfaceapp) << "Entering into" << (isHmd ? "HMD" : "Desktop") << "Mode";
+    QString mode = isHmd ? "HMD" : "Dekstop";
+    DependencyManager::get<LODManager>()->setRenderMode(mode);
+    qCDebug(interfaceapp) << "Entering into" << mode << "Mode";
 
     // Only log/emit after a successful change
     UserActivityLogger::getInstance().logAction("changed_display_mode", {

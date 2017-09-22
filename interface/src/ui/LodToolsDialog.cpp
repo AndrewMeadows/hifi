@@ -63,7 +63,7 @@ LodToolsDialog::LodToolsDialog(QWidget* parent) :
     _lodSize->setTickPosition(QSlider::TicksBelow);
     _lodSize->setFixedWidth(SLIDER_WIDTH);
     _lodSize->setPageStep(PAGE_STEP_LOD_SIZE);
-    int sliderValue = lodManager->getOctreeSizeScale() / TREE_SCALE;
+    int sliderValue = lodManager->getLODScaleFactor();
     _lodSize->setValue(sliderValue);
     form->addRow("Level of Detail:", _lodSize);
     connect(_lodSize,SIGNAL(valueChanged(int)),this,SLOT(sizeScaleValueChanged(int)));
@@ -80,7 +80,7 @@ LodToolsDialog::LodToolsDialog(QWidget* parent) :
 
 void LodToolsDialog::reloadSliders() {
     auto lodManager = DependencyManager::get<LODManager>();
-    _lodSize->setValue(lodManager->getOctreeSizeScale() / TREE_SCALE);
+    _lodSize->setValue(lodManager->getLODScaleFactor());
     _feedback->setText(lodManager->getLODFeedbackText());
 }
 
@@ -92,8 +92,7 @@ void LodToolsDialog::updateAutomaticLODAdjust() {
 
 void LodToolsDialog::sizeScaleValueChanged(int value) {
     auto lodManager = DependencyManager::get<LODManager>();
-    float realValue = value * TREE_SCALE;
-    lodManager->setOctreeSizeScale(realValue);
+    lodManager->setLODScaleFactor(value);
     
     _feedback->setText(lodManager->getLODFeedbackText());
 }
@@ -123,9 +122,7 @@ void LodToolsDialog::closeEvent(QCloseEvent* event) {
     lodManager->setAutomaticLODAdjust(true); 
 
     // if the user adjusted the LOD above "normal" then always revert back to default
-    if (lodManager->getOctreeSizeScale() > DEFAULT_OCTREE_SIZE_SCALE) {
-        lodManager->setOctreeSizeScale(DEFAULT_OCTREE_SIZE_SCALE);
-    }
+    lodManager->setLODScaleFactor(1.0f);
 #endif
 }
 
