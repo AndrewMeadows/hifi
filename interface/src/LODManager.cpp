@@ -123,44 +123,10 @@ void LODManager::resetLODAdjust() {
 }
 
 QString LODManager::getLODFeedbackText() {
-    return QString("TODO: fix LODManager::getLODFeedback()");
-/* TODO: andrew to implement this again
-    // determine granularity feedback
-    int boundaryLevelAdjust = getBoundaryLevelAdjust();
-    QString granularityFeedback;
-    
-    switch (boundaryLevelAdjust) {
-        case 0: {
-            granularityFeedback = QString(".");
-        } break;
-        case 1: {
-            granularityFeedback = QString(" at half of standard granularity.");
-        } break;
-        case 2: {
-            granularityFeedback = QString(" at a third of standard granularity.");
-        } break;
-        default: {
-            granularityFeedback = QString(" at 1/%1th of standard granularity.").arg(boundaryLevelAdjust + 1);
-        } break;
-    }
-    
-    // distance feedback
-    float octreeSizeScale = getOctreeSizeScale();
-    float relativeToDefault = octreeSizeScale / DEFAULT_OCTREE_SIZE_SCALE;
-    int relativeToTwentyTwenty = 20 / relativeToDefault;
-
-    QString result;
-    if (relativeToDefault > 1.01f) {
-        result = QString("20:%1 or %2 times further than average vision%3").arg(relativeToTwentyTwenty).arg(relativeToDefault,0,'f',2).arg(granularityFeedback);
-    } else if (relativeToDefault > 0.99f) {
-        result = QString("20:20 or the default distance for average vision%1").arg(granularityFeedback);
-    } else if (relativeToDefault > 0.01f) {
-        result = QString("20:%1 or %2 of default distance for average vision%3").arg(relativeToTwentyTwenty).arg(relativeToDefault,0,'f',3).arg(granularityFeedback);
-    } else {
-        result = QString("%2 of default distance for average vision%3").arg(relativeToDefault,0,'f',3).arg(granularityFeedback);
-    }
-    return result;
-*/
+    float scaleFactor = _minAngularSize / ABSOLUTE_MIN_ANGULAR_SIZE;
+    float angleDegrees = glm::degrees(_minAngularSize);
+    QString granularityFeedback = QString("minAngle = %1  scaleFactor = %2").arg(angleDegrees).arg(scaleFactor);
+    return granularityFeedback;
 }
 
 bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
