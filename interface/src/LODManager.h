@@ -35,8 +35,8 @@ public:
     Q_INVOKABLE void setAutomaticLODAdjust(bool value) { _automaticLODAdjust = value; }
     Q_INVOKABLE bool getAutomaticLODAdjust() const { return _automaticLODAdjust; }
 
-    Q_INVOKABLE void setMinVisibleAngularSize(float valueDegrees); // takes degrees
-    Q_INVOKABLE float getMinVisibleAngularSize() const; // returns degrees
+    Q_INVOKABLE void setMinAngularDiameter(float valueDegrees); // takes degrees
+    Q_INVOKABLE float getMinAngularDiameter() const; // returns degrees
 
     Q_INVOKABLE QString getLODFeedbackText();
 
@@ -58,7 +58,7 @@ private:
     LODManager();
 
     uint64_t _lodAdjustExpiry { 0 }; // next timestamp to check for LOD adjustment
-    float _minAngularSize { 0.0f }; // radians
+    float _minAngularDiameter { 0.0f }; // radians
     float _targetFPS { DEFAULT_TARGET_FPS };
     float _avgRenderTime { 0.0f };
     int _skippedRenderTimeSamples { 0 };

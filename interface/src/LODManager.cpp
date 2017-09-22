@@ -21,39 +21,39 @@
 
 const float MIN_LOD_SCALE_FACTOR = 1.0f;
 
-// In an attempt to maintain legacy behavior we set ABSOLUTE_MIN_ANGULAR_SIZE to be that of a
+// In an attempt to maintain legacy behavior we set ABSOLUTE_MIN_ANGULAR_DIAMETER to be that of a
 // 1x1x1 cube at 400 meters (which corresponds to about 0.00433 radians or 0.25 degrees).
 const float SQRT_THREE = 1.7320508f;
-const float ABSOLUTE_MIN_ANGULAR_SIZE = SQRT_THREE / 400.0f; // radians
+const float ABSOLUTE_MIN_ANGULAR_DIAMETER = SQRT_THREE / 400.0f; // radians
 
 
-void LODManager::setMinVisibleAngularSize(float valueDegrees) {
+void LODManager::setMinAngularDiameter(float valueDegrees) {
     float valueRadians = glm::radians(valueDegrees);
-    if (valueRadians < ABSOLUTE_MIN_ANGULAR_SIZE) {
-        valueRadians = ABSOLUTE_MIN_ANGULAR_SIZE;
+    if (valueRadians < ABSOLUTE_MIN_ANGULAR_DIAMETER) {
+        valueRadians = ABSOLUTE_MIN_ANGULAR_DIAMETER;
     }
-    _minAngularSize = valueRadians;
+    _minAngularDiameter = valueRadians;
 }
 
-float LODManager::getMinVisibleAngularSize() const {
-    return glm::degrees(_minAngularSize);
+float LODManager::getMinAngularDiameter() const {
+    return glm::degrees(_minAngularDiameter);
 }
 
 LODManager::LODManager() {
     // preset_avgRenderTime to be on target
     _avgRenderTime = 1.0f / _targetFPS;
-    _minAngularSize = ABSOLUTE_MIN_ANGULAR_SIZE;
+    _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
 }
 
 void LODManager::setLODScaleFactor(float value) {
-    _minAngularSize = value * ABSOLUTE_MIN_ANGULAR_SIZE;
-    if (_minAngularSize < ABSOLUTE_MIN_ANGULAR_SIZE) {
-        _minAngularSize = ABSOLUTE_MIN_ANGULAR_SIZE;
+    _minAngularDiameter = value * ABSOLUTE_MIN_ANGULAR_DIAMETER;
+    if (_minAngularDiameter < ABSOLUTE_MIN_ANGULAR_DIAMETER) {
+        _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
     }
 }
 
 float LODManager::getLODScaleFactor() const {
-    return _minAngularSize / ABSOLUTE_MIN_ANGULAR_SIZE;
+    return _minAngularDiameter / ABSOLUTE_MIN_ANGULAR_DIAMETER;
 }
 
 const uint64_t LOD_ADJUST_PERIOD = 1 * USECS_PER_SECOND;
@@ -79,7 +79,7 @@ void LODManager::autoAdjustLOD(float batchTime, float engineRunTime, float delta
     _avgRenderTime = (1.0f - blend) * _avgRenderTime + blend * maxTime; // msec
 
     if (!_automaticLODAdjust) {
-        _minAngularSize = ABSOLUTE_MIN_ANGULAR_SIZE;
+        _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
         return;
     }
 
@@ -90,16 +90,16 @@ void LODManager::autoAdjustLOD(float batchTime, float engineRunTime, float delta
         const float minRenderTimeBudget = 0.5f * maxRenderTimeBudget;
         bool changed = false;
         if (_avgRenderTime > maxRenderTimeBudget) {
-            // we're over budget --> decrease LOD (increase _minAngularSize)
+            // we're over budget --> decrease LOD (increase _minAngularDiameter)
             const float LOD_SCALE_FACTOR_INCREASE = 1.1f;
-            _minAngularSize *= LOD_SCALE_FACTOR_INCREASE;
+            _minAngularDiameter *= LOD_SCALE_FACTOR_INCREASE;
             changed = true;
-        } else if (_avgRenderTime < minRenderTimeBudget && _minAngularSize > ABSOLUTE_MIN_ANGULAR_SIZE) {
-            // we're well under budget --> increase LOD (decrease _minAngularSize)
+        } else if (_avgRenderTime < minRenderTimeBudget && _minAngularDiameter > ABSOLUTE_MIN_ANGULAR_DIAMETER) {
+            // we're well under budget --> increase LOD (decrease _minAngularDiameter)
             const float LOD_SCALE_FACTOR_DECREASE = 0.9f;
-            _minAngularSize *= LOD_SCALE_FACTOR_DECREASE;
-            if (_minAngularSize < ABSOLUTE_MIN_ANGULAR_SIZE) {
-                _minAngularSize = ABSOLUTE_MIN_ANGULAR_SIZE;
+            _minAngularDiameter *= LOD_SCALE_FACTOR_DECREASE;
+            if (_minAngularDiameter < ABSOLUTE_MIN_ANGULAR_DIAMETER) {
+                _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
             }
             changed = true;
         }
@@ -119,24 +119,24 @@ void LODManager::autoAdjustLOD(float batchTime, float engineRunTime, float delta
 void LODManager::resetLODAdjust() {
     _lodAdjustExpiry = usecTimestampNow() + LOD_ADJUST_PERIOD;
     _skippedRenderTimeSamples = 0;
-    _minAngularSize = ABSOLUTE_MIN_ANGULAR_SIZE;
+    _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
 }
 
 QString LODManager::getLODFeedbackText() {
-    float scaleFactor = _minAngularSize / ABSOLUTE_MIN_ANGULAR_SIZE;
-    float angleDegrees = glm::degrees(_minAngularSize);
+    float scaleFactor = _minAngularDiameter / ABSOLUTE_MIN_ANGULAR_DIAMETER;
+    float angleDegrees = glm::degrees(_minAngularDiameter);
     QString granularityFeedback = QString("minAngle = %1  scaleFactor = %2").arg(angleDegrees).arg(scaleFactor);
     return granularityFeedback;
 }
 
 bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
-    // We filter by apparent angular size:
-    //   shouldRender = apparentAngle > minApparentAngle
-    //                = (size / distance) > (lodScaleFactor * MIN_ANGLE)
+    // We filter by angular diameter:
+    //   shouldRender = angularDiameter > minAngularDiameter
+    //                = (diameter / distance) > (lodScaleFactor * MIN_ANGLE)
     // That's simple enough, but by moving things around we can make it cheaper to evaluate:
-    //                = (size^2 > distance^2 * (lodScaleFactor * MIN_ANGLE)^2)
+    //                = (diameter^2 > distance^2 * (lodScaleFactor * MIN_ANGLE)^2)
     float lodScaleFactor = DEFAULT_OCTREE_SIZE_SCALE / args->_sizeScale;
-    float minAngle = lodScaleFactor * ABSOLUTE_MIN_ANGULAR_SIZE;
+    float minAngle = lodScaleFactor * ABSOLUTE_MIN_ANGULAR_DIAMETER;
     float distance2 = glm::distance2(args->getViewFrustum().getPosition(), bounds.calcCenter());
     return glm::length2(bounds.getScale()) > distance2 * minAngle * minAngle;
 };
