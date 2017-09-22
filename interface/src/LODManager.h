@@ -35,13 +35,13 @@ public:
     Q_INVOKABLE void setAutomaticLODAdjust(bool value) { _automaticLODAdjust = value; }
     Q_INVOKABLE bool getAutomaticLODAdjust() const { return _automaticLODAdjust; }
 
-    Q_INVOKABLE void setLODScaleFactor(float value) { _lodScaleFactor = value; }
-    Q_INVOKABLE float getLODScaleFactor() const { return _lodScaleFactor; }
-
-    Q_INVOKABLE void setMinVisibleAngularSize(float value);
-    Q_INVOKABLE float getMinVisibleAngularSize() const;
+    Q_INVOKABLE void setMinVisibleAngularSize(float valueDegrees); // takes degrees
+    Q_INVOKABLE float getMinVisibleAngularSize() const; // returns degrees
 
     Q_INVOKABLE QString getLODFeedbackText();
+
+    void setLODScaleFactor(float scaleFactor);
+    float getLODScaleFactor() const;
 
     void autoAdjustLOD(float batchTimeMsec, float engineRunTimeMsec, float deltaTimeSec);
 
@@ -58,9 +58,9 @@ private:
     LODManager();
 
     uint64_t _lodAdjustExpiry { 0 }; // next timestamp to check for LOD adjustment
+    float _minAngularSize { 0.0f }; // radians
     float _targetFPS { DEFAULT_TARGET_FPS };
     float _avgRenderTime { 0.0f };
-    float _lodScaleFactor { 1.0f }; // multiplicative factor for minimum apparent angle of visible objects
     int _skippedRenderTimeSamples { 0 };
     bool _automaticLODAdjust = true;
 };

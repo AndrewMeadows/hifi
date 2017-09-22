@@ -2428,8 +2428,7 @@ void Application::paintGL() {
             _viewFrustum.setProjection(adjustedProjection);
             _viewFrustum.calculate();
         }
-        // HACK: convert LODScaleFactor back into octreeSizeScale and boundaryLevelAdjust for legacy LOD system
-        // TODO: use a real angularSize instead of LODScaleFactor abstraction and store directly in renderArgs
+        // HACK: convert LODManager's state into a form that RenderArgs can understand
         float octreeSizeScale = DEFAULT_OCTREE_SIZE_SCALE / lodManager->getLODScaleFactor();
         int32_t boundaryLevelAdjust = 0;
 
@@ -4309,9 +4308,6 @@ void Application::loadSettings() {
     DependencyManager::get<AudioClient>()->loadSettings();
     DependencyManager::get<LODManager>()->loadSettings();
 
-    // DONT CHECK IN
-    //DependencyManager::get<LODManager>()->setAutomaticLODAdjust(false);
-
     Menu::getInstance()->loadSettings();
 
     // If there is a preferred plugin, we probably messed it up with the menu settings, so fix it.
@@ -5332,6 +5328,8 @@ void Application::queryOctree(NodeType_t serverType, PacketType packetType, Node
     _octreeQuery.setCameraFarClip(viewFrustum.getFarClip());
     _octreeQuery.setCameraEyeOffsetPosition(glm::vec3());
     _octreeQuery.setCameraCenterRadius(viewFrustum.getCenterRadius());
+
+    // HACK: convert LODManager's state into a form that OctreeQuery can understand
     auto lodManager = DependencyManager::get<LODManager>();
     _octreeQuery.setOctreeSizeScale(DEFAULT_OCTREE_SIZE_SCALE * lodManager->getLODScaleFactor());
     _octreeQuery.setBoundaryLevelAdjust(0);
