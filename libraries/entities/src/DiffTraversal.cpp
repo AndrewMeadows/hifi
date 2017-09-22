@@ -103,7 +103,7 @@ void DiffTraversal::Waypoint::getNextVisibleElementRepeat(
 }
 
 void DiffTraversal::Waypoint::getNextVisibleElementDifferential(DiffTraversal::VisibleElement& next,
-        const DiffTraversal::View& view, const DiffTraversal::View& lastView) {
+        const DiffTraversal::View& view, const DiffTraversal::View& lastView, const bool fullTraversal) {
     if (_nextIndex == -1) {
         // root case is special
         ++_nextIndex;
@@ -123,10 +123,37 @@ void DiffTraversal::Waypoint::getNextVisibleElementDifferential(DiffTraversal::V
                     float distance = glm::distance(view.viewFrustum.getPosition(), cube.calcCenter()) + MIN_VISIBLE_DISTANCE;
                     float apparentAngle = cube.getScale() / distance;
                     if (apparentAngle > MIN_ELEMENT_APPARENT_ANGLE * view.lodScaleFactor) {
-                        if (view.viewFrustum.calculateCubeKeyholeIntersection(cube) != ViewFrustum::OUTSIDE) {
-                            next.element = nextElement;
-                            next.intersection = ViewFrustum::OUTSIDE;
-                            return;
+                        if (view.viewFrustum.cubeIntersectsKeyhole(cube)) {
+                            ViewFrustum::intersection lastIntersection = lastView.viewFrustum.calculateCubeKeyholeIntersection(cube);
+                            // If an element is in view and was not in view before, we need to scan it
+                            // If an element has changed, either it or one of its children may have changed, so we need to traverse it,
+                            // but we will only need to scan it if it was this cell that changed
+                            if (lastIntersection != ViewFrustum::INSIDE || nextElement->getLastChanged() > lastView.startTime) {
+                                next.element = nextElement;
+                                // NOTE: for differential case next.intersection is against the lastView
+                                // because this helps the "external scan" optimize its culling
+                                next.intersection = lastIntersection;
+                                return;
+                            } else {
+                                distance = glm::distance(lastView.viewFrustum.getPosition(), cube.calcCenter()) + MIN_VISIBLE_DISTANCE;
+                                apparentAngle = cube.getScale() / distance;
+                                if (!fullTraversal) {
+                                    // check for LOD truncation in the last traversal because
+                                    // we may need to traverse this element after all if the lastView skipped it for LOD
+                                    if (apparentAngle <= MIN_ELEMENT_APPARENT_ANGLE * lastView.lodScaleFactor) {
+                                        next.element = nextElement;
+                                        // element's intersection with lastView was effectively OUTSIDE
+                                        next.intersection = ViewFrustum::OUTSIDE;
+                                        return;
+                                    }
+                                } else {
+                                    // If it's a fullTraversal, we need to traverse all the children, but we may not need to scan them
+                                    // If we could see this element before, we don't need to scan it, so we mark it as INSIDE
+                                    next.element = nextElement;
+                                    next.intersection = apparentAngle > MIN_ELEMENT_APPARENT_ANGLE * lastView.lodScaleFactor ? ViewFrustum::INSIDE : ViewFrustum::OUTSIDE;
+                                    return;
+                                }
+                            }
                         }
                     }
                 }
@@ -181,8 +208,13 @@ DiffTraversal::Type DiffTraversal::prepareNewTraversal(const ViewFrustum& viewFr
         type = Type::Differential;
         _currentView.viewFrustum = viewFrustum;
         _currentView.lodScaleFactor = lodScaleFactor;
+        bool fullTraversal = !_completedView.viewFrustum.isPositionVerySimilar(viewFrustum) ||
+            lodScaleFactor < _completedView.lodScaleFactor;
         _getNextVisibleElementCallback = [&](DiffTraversal::VisibleElement& next) {
-            _path.back().getNextVisibleElementDifferential(next, _currentView, _completedView);
+            // If the view's position changed or the LOD scale factor decreased, it's possible that a child
+            // element is now close enough to not be LOD culled, so we need to we need to traverse all children
+            // of in view elements, but we might not need to scan them all
+            _path.back().getNextVisibleElementDifferential(next, _currentView, _completedView, fullTraversal);
         };
     }
 
