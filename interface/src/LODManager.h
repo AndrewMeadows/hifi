@@ -32,11 +32,14 @@ class LODManager : public QObject, public Dependency {
 public:
     static bool shouldRender(const RenderArgs* args, const AABox& bounds);
 
-    Q_INVOKABLE void setAutomaticLODAdjust(bool value) { _automaticLODAdjust = value; }
+    Q_INVOKABLE void setAutomaticLODAdjust(bool value);
     Q_INVOKABLE bool getAutomaticLODAdjust() const { return _automaticLODAdjust; }
 
     Q_INVOKABLE void setMinAngularDiameter(float valueDegrees); // takes degrees
     Q_INVOKABLE float getMinAngularDiameter() const; // returns degrees
+
+    Q_INVOKABLE float getAvgRenderTime() const { return _avgRenderTime; }
+    Q_INVOKABLE QString getRenderMode() const { return _renderMode; }
 
     Q_INVOKABLE QString getLODFeedbackText();
 
@@ -57,10 +60,11 @@ signals:
 private:
     LODManager();
 
+    QString _renderMode { "unknown" };
     uint64_t _lodAdjustExpiry { 0 }; // next timestamp to check for LOD adjustment
     float _minAngularDiameter { 0.0f }; // radians
     float _targetFPS { DEFAULT_TARGET_FPS };
-    float _avgRenderTime { 0.0f };
+    float _avgRenderTime { 0.0f }; // msec
     int _skippedRenderTimeSamples { 0 };
     bool _automaticLODAdjust = true;
 };

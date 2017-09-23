@@ -26,6 +26,8 @@ const float MIN_LOD_SCALE_FACTOR = 1.0f;
 const float SQRT_THREE = 1.7320508f;
 const float ABSOLUTE_MIN_ANGULAR_DIAMETER = SQRT_THREE / 400.0f; // radians
 
+Setting::Handle<bool> automaticallyAdjustLOD("automaticallyAdjustLOD", true);
+Setting::Handle<float> minimumAngularDiameter("minimumAngularDiameter", ABSOLUTE_MIN_ANGULAR_DIAMETER);
 
 void LODManager::setMinAngularDiameter(float valueDegrees) {
     float valueRadians = glm::radians(valueDegrees);
@@ -39,13 +41,17 @@ float LODManager::getMinAngularDiameter() const {
     return glm::degrees(_minAngularDiameter);
 }
 
+const uint64_t LOD_ADJUST_PERIOD = 1 * USECS_PER_SECOND;
+
 LODManager::LODManager() {
-    // preset_avgRenderTime to be on target
-    _avgRenderTime = 1.0f / _targetFPS;
     _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
+    // reset autoAdjust state
+    _avgRenderTime = 1.0f / _targetFPS;
+    _lodAdjustExpiry = usecTimestampNow() + LOD_ADJUST_PERIOD;
 }
 
 void LODManager::setLODScaleFactor(float value) {
+    // setting "lodScaleFactor" determines _minAngularDiameter
     _minAngularDiameter = value * ABSOLUTE_MIN_ANGULAR_DIAMETER;
     if (_minAngularDiameter < ABSOLUTE_MIN_ANGULAR_DIAMETER) {
         _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
@@ -53,10 +59,9 @@ void LODManager::setLODScaleFactor(float value) {
 }
 
 float LODManager::getLODScaleFactor() const {
+    // "lodScaleFactor" is determined by _minAngularDiameter
     return _minAngularDiameter / ABSOLUTE_MIN_ANGULAR_DIAMETER;
 }
-
-const uint64_t LOD_ADJUST_PERIOD = 1 * USECS_PER_SECOND;
 
 void LODManager::autoAdjustLOD(float batchTime, float engineRunTime, float deltaTimeSec) {
 
@@ -79,7 +84,6 @@ void LODManager::autoAdjustLOD(float batchTime, float engineRunTime, float delta
     _avgRenderTime = (1.0f - blend) * _avgRenderTime + blend * maxTime; // msec
 
     if (!_automaticLODAdjust) {
-        _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
         return;
     }
 
@@ -141,29 +145,46 @@ bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
     return glm::length2(bounds.getScale()) > distance2 * minAngle * minAngle;
 };
 
+void LODManager::setAutomaticLODAdjust(bool value) {
+    if (_automaticLODAdjust != value) {
+        _automaticLODAdjust = value;
+        if (!_automaticLODAdjust) {
+            _minAngularDiameter = ABSOLUTE_MIN_ANGULAR_DIAMETER;
+        }
+    }
+}
+
 void LODManager::loadSettings() {
-    /* TODO: andrew to implement this again
-    setDesktopLODDecreaseFPS(desktopLODDecreaseFPS.get());
-    setHMDLODDecreaseFPS(hmdLODDecreaseFPS.get());
+    /* these Settings are for debug purposes: don't load
+    _automaticLODAdjust = automaticallyAdjustLOD.get();
+    // minAngularDiameter would be saved in degrees so that it is "human readable"
+    // and agrees with the units used in the UI
+    _minAngularDiameter = glm::radians(minimumAngularDiameter.get());
     */
 }
 
 void LODManager::saveSettings() {
-    /* TODO: andrew to implement this again
-    desktopLODDecreaseFPS.set(getDesktopLODDecreaseFPS());
-    hmdLODDecreaseFPS.set(getHMDLODDecreaseFPS());
+    /* these Settings are for debug purposes: don't save
+    automaticallyAdjustLOD.set(_automaticLODAdjust);
+    // save minAngularDiameter in degrees so that it is "human readable"
+    // and agrees with the units used in the UI
+    setMinAngularDiameter(glm::degrees(_minAngularDiameter));
     */
 }
 
 void LODManager::setRenderMode(QString mode) {
-    // TODO: make mode FPS's configurable as Settings rather than use hard-coded defaults
-    if (mode == "HMD") {
+    // TODO: make mode FPS's configurable Settings rather than hard-coded defaults
+    _renderMode = mode.toLower();
+    if (_renderMode == "hmd") {
         _targetFPS = DEFAULT_HMD_TARGET_FPS;
-    } else if (mode == "Desktop") {
+    } else if (_renderMode == "desktop") {
         _targetFPS = DEFAULT_DESKTOP_TARGET_FPS;
     } else {
         _targetFPS = DEFAULT_TARGET_FPS;
     }
-    // preset_avgRenderTime to be on target
-    _avgRenderTime = 1.0f / _targetFPS;
+    if (_automaticLODAdjust) {
+        // reset autoAdjust state
+        _avgRenderTime = 1.0f / _targetFPS;
+        _lodAdjustExpiry = usecTimestampNow() + LOD_ADJUST_PERIOD;
+    }
 }

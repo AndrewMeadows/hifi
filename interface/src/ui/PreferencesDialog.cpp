@@ -148,29 +148,6 @@ void setupPreferences() {
         preferences->addPreference(new CheckPreference("Privacy", "Send data", getter, setter));
     }
 
-    /* TODO: andrew to reimplement this
-    static const QString LOD_TUNING("Level of Detail Tuning");
-    {
-        auto getter = []()->float { return DependencyManager::get<LODManager>()->getDesktopLODDecreaseFPS(); };
-        auto setter = [](float value) { DependencyManager::get<LODManager>()->setDesktopLODDecreaseFPS(value); };
-        auto preference = new SpinnerPreference(LOD_TUNING, "Minimum desktop FPS", getter, setter);
-        preference->setMin(0);
-        preference->setMax(120);
-        preference->setStep(1);
-        preferences->addPreference(preference);
-    }
-
-    {
-        auto getter = []()->float { return DependencyManager::get<LODManager>()->getHMDLODDecreaseFPS(); };
-        auto setter = [](float value) { DependencyManager::get<LODManager>()->setHMDLODDecreaseFPS(value); };
-        auto preference = new SpinnerPreference(LOD_TUNING, "Minimum HMD FPS", getter, setter);
-        preference->setMin(0);
-        preference->setMax(120);
-        preference->setStep(1);
-        preferences->addPreference(preference);
-    }
-    */
-
     static const QString AVATAR_TUNING { "Avatar Tuning" };
     {
         auto getter = [=]()->float { return myAvatar->getRealWorldFieldOfView(); };
