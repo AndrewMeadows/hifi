@@ -19,8 +19,6 @@
 
 #include "LODManager.h"
 
-const float MIN_LOD_SCALE_FACTOR = 1.0f;
-
 // In an attempt to maintain legacy behavior we set ABSOLUTE_MIN_ANGULAR_DIAMETER to be that of a
 // 1x1x1 cube at 400 meters (which corresponds to about 0.00433 radians or 0.25 degrees).
 const float SQRT_THREE = 1.7320508f;
