@@ -145,6 +145,6 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         }
     }
 
-    static const auto triCount = geometryCache->getShapeTriangleCount(geometryShape);
+    const auto triCount = geometryCache->getShapeTriangleCount(geometryShape);
     args->_details._trianglesRendered += (int)triCount;
 }
