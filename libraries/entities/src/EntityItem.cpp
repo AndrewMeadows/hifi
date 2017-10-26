@@ -1431,11 +1431,11 @@ const Transform EntityItem::getTransformToCenter(bool& success) const {
 }
 
 void EntityItem::setDimensions(const glm::vec3& value) {
-    if (value.x <= 0.0f || value.y <= 0.0f || value.z <= 0.0f) {
-        return;
-    }
-    if (_dimensions != value) {
-        _dimensions = value;
+    // NOTE: setDimensions() is used by internal calls whereas
+    // updateDimensions() is used for changes from external sources (scripts, network)
+    glm::vec3 newDimensions = glm::max(value, glm::vec3(MIN_ENTITY_DIMENSION));
+    if (_dimensions != newDimensions) {
+        _dimensions = newDimensions;
         locationChanged();
         dimensionsChanged();
     }
@@ -1750,11 +1750,18 @@ void EntityItem::updateParentID(const QUuid& value) {
 }
 
 void EntityItem::updateDimensions(const glm::vec3& value) {
-    if (getDimensions() != value) {
-        setDimensions(value);
+    // NOTE: updateDimensions() is used for external changes (scripts, network)
+    // and sets some flags to alert physics system of changes, whereas
+    // setDimensions() is used for internal calls
+    glm::vec3 newDimensions = glm::max(value, glm::vec3(MIN_ENTITY_DIMENSION));
+    if (getDimensions() != newDimensions) {
+        // we must pass through polymorphic setDimensions() overrides if they exist
+        // threfore we delegate to setDimensions()
+        // NOTE: setDimensions() must duplicate the clamping and diff-check above,
+        // which is unfortunate "extra work", but there is no helping that for now.
+        setDimensions(newDimensions);
         markDirtyFlags(Simulation::DIRTY_SHAPE | Simulation::DIRTY_MASS);
         _queryAACubeSet = false;
-        dimensionsChanged();
     }
 }
 
@@ -1763,7 +1770,7 @@ void EntityItem::updateRotation(const glm::quat& rotation) {
         setLocalOrientation(rotation);
         _dirtyFlags |= Simulation::DIRTY_ROTATION;
         forEachDescendant([&](SpatiallyNestablePointer object) {
-            if (object->getNestableType() == NestableType::Entity) {
+            if (obwject->getNestableType() == NestableType::Entity) {
                 EntityItemPointer entity = std::static_pointer_cast<EntityItem>(object);
                 entity->markDirtyFlags(Simulation::DIRTY_ROTATION | Simulation::DIRTY_POSITION);
             }

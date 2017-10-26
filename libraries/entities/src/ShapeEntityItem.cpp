@@ -22,10 +22,10 @@
 namespace entity {
     static const std::array<QString, Shape::NUM_SHAPES> shapeStrings { {
         "Triangle", 
-        "Quad", 
+        "Quad", // deprecated, use thin Cube instead
         "Hexagon",
         "Octagon",
-        "Circle", // use Cylinder instead
+        "Circle", // deprecated, use Cylinder instead
         "Cube", 
         "Sphere", 
         "Tetrahedron", 
@@ -105,8 +105,17 @@ void ShapeEntityItem::setShape(const entity::Shape& shape) {
             _type = EntityTypes::Sphere;
             break;
         case entity::Shape::Circle:
-            // Circle is no longer supported.  Use Cylinder instead.
+            // Circle deprecated, use Cylinder instead but before we override _shape
+            // reset dimensions just in case they're wrong
+            setDimensions(getDimensions());
             _shape = entity::Shape::Cylinder;
+            break;
+        case entity::Shape::Quad:
+            // Quad deprecated, use Cube instead but before we override _shape
+            // reset dimensions just in case they're wrong
+            setDimensions(getDimensions());
+            _shape = entity::Shape::Cube;
+            _type = EntityTypes::Box;
             break;
         default:
             _type = EntityTypes::Shape;
@@ -200,6 +209,19 @@ void ShapeEntityItem::setColor(const QColor& value) {
     setAlpha(value.alpha());
 }
 
+void ShapeEntityItem::setDimensions(const glm::vec3& value) {
+	// HACK for backward compatibility of Circle and Quad shapes (2017.10.26)
+	// Safe to remove this after these types transition from 'deprecated' to 'unsupported'
+	if ((_shape == entity::Shape::Circle || _shape == entity::Shape::Quad) && value.y > MIN_ENTITY_DIMENSION) {
+        // enforce flatness in Y in an attempt to support rendering of legacy objects
+        glm::vec3 newDimensions = value;
+        newDimensions.y = MIN_ENTITY_DIMENSION;
+        EntityItem::setDimensions(newDimensions);
+	} else {
+        EntityItem::setDimensions(value);
+    }
+}
+
 bool ShapeEntityItem::supportsDetailedRayIntersection() const {
     return _shape == entity::Sphere;
 }
@@ -253,13 +275,9 @@ void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
     const glm::vec3 entityDimensions = getDimensions();
 
     switch (_shape){
-        case entity::Shape::Quad: {
-            // Not in GeometryCache::buildShapes, unsupported.
-            _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
-            //TODO WL21389: Add a SHAPE_TYPE_QUAD ShapeType and treat 
-            // as a special box (later if desired support)
-        }
-        break;
+        case entity::Shape::Quad:
+            // Quads are deprecated, but just in case we get here
+            // fall through to Cylinder case
         case entity::Shape::Cube: {
             _collisionShapeType = SHAPE_TYPE_BOX;
         }
@@ -280,18 +298,10 @@ void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
         }
         break;
         case entity::Shape::Circle:
-            // Circle is no longer supported.  Use Cylinder instead.
-            _shape = entity::Shape::Cylinder;
-            // yes! FALL THROUGH to Cylinder case
+            // Circles are deprecated, but just in case we get here
+            // fall through to Cylinder case
         case entity::Shape::Cylinder: {
             _collisionShapeType = SHAPE_TYPE_CYLINDER_Y;
-            // TODO WL21389: determine if rotation is axis-aligned
-            //const Transform::Quat & rot = _transform.getRotation();
-
-            // TODO WL21389: some way to tell apart SHAPE_TYPE_CYLINDER_Y, _X, _Z based on rotation and
-            //       hull ( or dimensions, need circular cross section)
-            // Should allow for minor variance along axes?
-
         }
         break;
         case entity::Shape::Cone: {
@@ -334,7 +344,7 @@ void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
         case entity::Shape::Torus: {
             // Not in GeometryCache::buildShapes, unsupported.
             _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
-            //TODO WL21389: SHAPE_TYPE_SIMPLE_HULL and pointCollection (later if desired support)
+            //TODO handle this shape more correctly
         }
         break;
         default: {
