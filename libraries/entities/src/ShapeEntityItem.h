@@ -17,7 +17,7 @@ namespace entity {
         Quad,
         Hexagon,
         Octagon,
-        Circle,
+        Circle, // use Cylinder instead
         Cube,
         Sphere,
         Tetrahedron,

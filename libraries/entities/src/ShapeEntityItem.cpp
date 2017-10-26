@@ -25,7 +25,7 @@ namespace entity {
         "Quad", 
         "Hexagon",
         "Octagon",
-        "Circle",
+        "Circle", // use Cylinder instead
         "Cube", 
         "Sphere", 
         "Tetrahedron", 
@@ -103,6 +103,10 @@ void ShapeEntityItem::setShape(const entity::Shape& shape) {
             break;
         case entity::Shape::Sphere:
             _type = EntityTypes::Sphere;
+            break;
+        case entity::Shape::Circle:
+            // Circle is no longer supported.  Use Cylinder instead.
+            _shape = entity::Shape::Cylinder;
             break;
         default:
             _type = EntityTypes::Shape;
@@ -275,10 +279,10 @@ void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
             }
         }
         break;
-        case entity::Shape::Circle: {
-            _collisionShapeType = SHAPE_TYPE_CIRCLE;
-        }
-        break;
+        case entity::Shape::Circle:
+            // Circle is no longer supported.  Use Cylinder instead.
+            _shape = entity::Shape::Cylinder;
+            // yes! FALL THROUGH to Cylinder case
         case entity::Shape::Cylinder: {
             _collisionShapeType = SHAPE_TYPE_CYLINDER_Y;
             // TODO WL21389: determine if rotation is axis-aligned

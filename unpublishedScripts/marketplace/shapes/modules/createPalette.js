@@ -299,21 +299,6 @@ CreatePalette = function (side, leftInputs, rightInputs, uiCommandCallback) {
                     dimensions: ENTITY_CREATION_DIMENSIONS,
                     color: ENTITY_CREATION_COLOR
                 }
-            },
-            {
-                icon: {
-                    properties: {
-                        url: Script.resolvePath("../assets/create/circle.fbx"),
-                        dimensions: { x: 0.024, y: 0.0005, z: 0.024 },
-                        localRotation: Quat.fromVec3Degrees({ x: 90, y: 0, z: 0 })
-                    }
-                },
-                entity: {
-                    type: "Shape",
-                    shape: "Circle",
-                    dimensions: ENTITY_CREATION_DIMENSIONS,
-                    color: ENTITY_CREATION_COLOR
-                }
             }
         ],
 
