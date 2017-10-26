@@ -1770,7 +1770,7 @@ void EntityItem::updateRotation(const glm::quat& rotation) {
         setLocalOrientation(rotation);
         _dirtyFlags |= Simulation::DIRTY_ROTATION;
         forEachDescendant([&](SpatiallyNestablePointer object) {
-            if (obwject->getNestableType() == NestableType::Entity) {
+            if (object->getNestableType() == NestableType::Entity) {
                 EntityItemPointer entity = std::static_pointer_cast<EntityItem>(object);
                 entity->markDirtyFlags(Simulation::DIRTY_ROTATION | Simulation::DIRTY_POSITION);
             }
