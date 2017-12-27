@@ -12,11 +12,17 @@
 #include "ObjectActionTractor.h"
 
 #include "QVariantGLM.h"
+#include <PhysicsHelpers.h>
 
 #include "PhysicsLogging.h"
 
 const float TRACTOR_MAX_SPEED = 10.0f;
+const float MIN_TRACTOR_TIMESCALE = 2.0f * PHYSICS_ENGINE_FIXED_SUBSTEP;
 const float MAX_TRACTOR_TIMESCALE = 600.0f; // 10 min is a long time
+
+// below VELOCITY_TRACKED_TIMESCALE the full target velocity is added to offset velocity
+// (to reduce tracking lag at small timescales)
+const float VELOCITY_TRACKED_TIMESCALE = 0.1f;
 
 const uint16_t ObjectActionTractor::tractorVersion = 1;
 
@@ -139,9 +145,14 @@ bool ObjectActionTractor::prepareForTractorUpdate(btScalar deltaTimeStep) {
                 if (deltaTimeStep > EPSILON) {
                     if (_havePositionTargetHistory) {
                         // blend the new velocity with the old (low-pass filter)
-                        glm::vec3 newVelocity = (1.0f / deltaTimeStep) * (_positionalTarget - _lastPositionTarget);
+                        glm::vec3 newVelocity = (1.0f / deltaTimeStep) * (position - _lastPositionTarget);
                         const float blend = 0.25f;
                         _linearVelocityTarget = (1.0f - blend) * _linearVelocityTarget + blend * newVelocity;
+                        // cap the measured _linearVelocityTarget
+                        btScalar speed2 = glm::length2(_linearVelocityTarget);
+                        if (speed2 > TRACTOR_MAX_SPEED * TRACTOR_MAX_SPEED) {
+                            _linearVelocityTarget *= TRACTOR_MAX_SPEED / sqrtf(speed2);
+                        }
                     } else {
                         _havePositionTargetHistory = true;
                     }
@@ -185,18 +196,24 @@ void ObjectActionTractor::updateActionWorker(btScalar deltaTimeStep) {
 
         if (_linearTimeScale < MAX_TRACTOR_TIMESCALE) {
             btVector3 offsetVelocity(0.0f, 0.0f, 0.0f);
-            btVector3 offset = rigidBody->getCenterOfMassPosition() - glmToBullet(_positionalTarget);
+            btVector3 offset = glmToBullet(_positionalTarget) - rigidBody->getCenterOfMassPosition();
             float offsetLength = offset.length();
             if (offsetLength > FLT_EPSILON) {
                 float speed = glm::min(offsetLength / _linearTimeScale, TRACTOR_MAX_SPEED);
-                offsetVelocity = (-speed / offsetLength) * offset;
+                offsetVelocity = (speed / offsetLength) * offset;
                 if (speed > rigidBody->getLinearSleepingThreshold()) {
                     forceBodyNonStatic();
                     rigidBody->activate();
                 }
             }
-            // this action is aggresively critically damped and defeats the current velocity
-            rigidBody->setLinearVelocity(glmToBullet(_linearVelocityTarget) + offsetVelocity);
+            // to reduce lag at small timescales we blend into a behavior where
+            // we add the full measured velocity of the _positionalTarget
+            btScalar targetVelocityCoefficient = 1.0f;
+            if (_linearTimeScale > VELOCITY_TRACKED_TIMESCALE) {
+                targetVelocityCoefficient = VELOCITY_TRACKED_TIMESCALE / _linearTimeScale;
+            }
+            // NOTE: this action aggresively slams the velocity rather than blend with current value
+            rigidBody->setLinearVelocity(targetVelocityCoefficient * glmToBullet(_linearVelocityTarget) + offsetVelocity);
         }
 
         if (_angularTimeScale < MAX_TRACTOR_TIMESCALE) {
@@ -229,9 +246,6 @@ void ObjectActionTractor::updateActionWorker(btScalar deltaTimeStep) {
         }
     });
 }
-
-const float MIN_TIMESCALE = 0.1f;
-
 
 bool ObjectActionTractor::updateArguments(QVariantMap arguments) {
     glm::vec3 positionalTarget;
