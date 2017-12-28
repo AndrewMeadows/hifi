@@ -308,9 +308,9 @@ bool ObjectActionTractor::updateArguments(QVariantMap arguments) {
     if (needUpdate) {
         withWriteLock([&] {
             _desiredPositionalTarget = positionalTarget;
-            _linearTimeScale = glm::max(MIN_TIMESCALE, glm::abs(linearTimeScale));
+            _linearTimeScale = glm::max(MIN_TRACTOR_TIMESCALE, glm::abs(linearTimeScale));
             _desiredRotationalTarget = rotationalTarget;
-            _angularTimeScale = glm::max(MIN_TIMESCALE, glm::abs(angularTimeScale));
+            _angularTimeScale = glm::max(MIN_TRACTOR_TIMESCALE, glm::abs(angularTimeScale));
             _otherID = otherID;
             _active = true;
 
