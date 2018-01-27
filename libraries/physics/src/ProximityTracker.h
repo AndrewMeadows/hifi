@@ -23,7 +23,6 @@
 // be categorized as: "near", "mid", "far" or "very far".
 
 class ProximityTracker {
-public:
     class Object {
         friend class ProximityTracker;
     public:
@@ -38,6 +37,13 @@ public:
         uint8_t _type  { 0 };
         uint8_t _category { 0 };
         uint8_t _prevCategory { 0 };
+    };
+
+public:
+    enum RegionType {
+        REGION_1 = 1,
+        REGION_2 = 2,
+        REGION_3 = 4
     };
 
     using ObjectIndexMap = std::unordered_map<uint32_t, uint32_t>;
@@ -91,7 +97,11 @@ public:
     ProximityTracker() { _dispatcher.setObjectArray(&_objects); }
     ~ProximityTracker() {}
 
-    uint32_t addObject(const Object& object, int16_t group, int16_t mask);
+    uint32_t addRegion(const glm::vec3& position, float radius, RegionType type);
+    void removeRegion(uint32_t key);
+    void updateRegion(uint32_t key, const glm::vec3& position, float radius);
+
+    uint32_t addObject(const glm::vec3& position, float radius);
     void removeObject(uint32_t key);
     void updateObject(uint32_t key, const glm::vec3& position, float radius);
 
@@ -100,9 +110,10 @@ public:
     uint32_t getNumOverlaps() const;
     uint32_t countChanges() const;
     uint32_t countTouches() const;
-    void test(); // adebug
 
 private:
+    uint32_t createProxy(Object& object, int16_t group, int16_t mask);
+
     btDbvtBroadphase _broadphase;
     Dispatcher _dispatcher;
     ObjectIndexMap _objectMap;

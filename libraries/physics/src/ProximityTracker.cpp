@@ -19,11 +19,6 @@
 
 #include "BulletUtil.h"
 
-const uint8_t PROXIMITY_NEAR = 0;
-const uint8_t PROXIMITY_MID = 1;
-const uint8_t PROXIMITY_DISTANT = 2;
-const uint8_t PROXIMITY_TOO_FAR = 3;
-
 const int16_t COLLISION_GROUP_REGION_1 = 1 << 0;
 const int16_t COLLISION_GROUP_REGION_2 = 1 << 1;
 const int16_t COLLISION_GROUP_REGION_3 = 1 << 2;
@@ -121,42 +116,43 @@ void ProximityTracker::Dispatcher::setObjectArray(ProximityTracker::ObjectArray*
     _overlapCallback.setObjectArray(array);
 }
 
-uint32_t ProximityTracker::addObject(const Object& object, int16_t group, int16_t mask) {
-    // add a "proxy" for this object to the broadphase
-    btVector3 diagonal = object._radius * btVector3(1.0f, 1.0f, 1.0f);
-    btVector3 aabbMin = glmToBullet(object._position) - diagonal;
-    btVector3 aabbMax = aabbMin + 2.0f * diagonal;
-    int32_t shapeType = 0; // unsused by btBroadphase::createProxy()
-    void* clientObject = nullptr;
-    btDispatcher* dispatcher = nullptr; // unused by btBroadphase::createProxy()
-    void* multiSapProxy = nullptr; // unused by btBroadphase::createProxy()
-    btBroadphaseProxy* proxy = _broadphase.createProxy(aabbMin, aabbMax, shapeType,
-            clientObject, group, mask, dispatcher, multiSapProxy);
+uint32_t ProximityTracker::addRegion(const glm::vec3& position, float radius, ProximityTracker::RegionType type) {
+    // under the hood a "region" is just a ProximityTracker::Object with the right collision group+mask
+    ProximityTracker::Object region(position, radius);
+    uint16_t group = COLLISION_GROUP_REGION_1;
+    uint16_t mask = COLLISION_MASK_REGION_1;
+    switch(type) {
+        case REGION_1:
+            group = COLLISION_GROUP_REGION_1;
+            mask = COLLISION_MASK_REGION_1;
+            break;
+        case REGION_2:
+            group = COLLISION_GROUP_REGION_2;
+            mask = COLLISION_MASK_REGION_2;
+            break;
+        case REGION_3:
+            group = COLLISION_GROUP_REGION_3;
+            mask = COLLISION_MASK_REGION_3;
+            break;
+        default:
+            assert(false); // should never get here
+            break;
+    };
+    return createProxy(region, group, mask);
+}
 
-    // copy the Object, set its various members, and add it to the array
-    Object newObject = object;
-    newObject._proxy = proxy; // object remembers pointer to its proxy
-    uint32_t mapKey = _nextUniqueMapKey++;
-    newObject._mapKey = mapKey;
-    if (group != COLLISION_GROUP_OBJECT) {
-        // the object just be a "region" which means
-        // the type has same numerical value as group
-        newObject._type = (uint8_t)group;
-    }
-    uint32_t arrayIndex = _objects.size();
-    _objects.push_back(newObject);
+void ProximityTracker::removeRegion(uint32_t key) {
+    removeObject(key);
+}
 
-    // proxy stores the object's arrayIndex (in a void*) which will be used in OverlapCallback::processOverlap
-    // to access the Object when doing the narrow-phase collision check.  This means: when the Object moves
-    // within the array we MUST update the corresponding proxy->m_clientObject.
-    proxy->m_clientObject = (void*)((uint64_t)arrayIndex);
+void ProximityTracker::updateRegion(uint32_t key, const glm::vec3& position, float radius) {
+    updateObject(key, position, radius);
+}
 
-    // store the arrayIndex by unique mapKey so we can look it up quickly in a map
-    // Again, when the Object moves within the array we MUST update the map entry.
-    _objectMap[mapKey] = arrayIndex;
-
-    // return mapKey to the outside as unique identifier this object
-    return mapKey;
+uint32_t ProximityTracker::addObject(const glm::vec3& position, float radius) {
+    // under the hood an "object" is just a ProximityTracker::Object with the right collision group+mask
+    ProximityTracker::Object object(position, radius);
+    return createProxy(object, COLLISION_GROUP_OBJECT, COLLISION_MASK_OBJECT);
 }
 
 void ProximityTracker::removeObject(uint32_t key) {
@@ -201,7 +197,7 @@ void ProximityTracker::updateObject(uint32_t key, const glm::vec3& position, flo
         uint32_t index = itr->second;
         assert(index < _objects.size());
 
-        Object& object = _objects[index];
+        ProximityTracker::Object& object = _objects[index];
         object._position = position;
         object._radius = radius;
 
@@ -277,108 +273,39 @@ uint32_t ProximityTracker::countTouches() const {
     return numTouches;
 }
 
-#include <iostream> // adebug
-#include <StreamUtils.h> // adebug
-void ProximityTracker::test() {
-    std::cout << "adebug  test()" << std::endl;     // adebug
+uint32_t ProximityTracker::createProxy(ProximityTracker::Object& object, int16_t group, int16_t mask) {
+    // add a "proxy" for this object to the broadphase
+    btVector3 diagonal = object._radius * btVector3(1.0f, 1.0f, 1.0f);
+    btVector3 aabbMin = glmToBullet(object._position) - diagonal;
+    btVector3 aabbMax = aabbMin + 2.0f * diagonal;
+    int32_t shapeType = 0; // unsused by btBroadphase::createProxy()
+    void* clientObject = nullptr;
+    btDispatcher* dispatcher = nullptr; // unused by btBroadphase::createProxy()
+    void* multiSapProxy = nullptr; // unused by btBroadphase::createProxy()
+    btBroadphaseProxy* proxy = _broadphase.createProxy(aabbMin, aabbMax, shapeType,
+            clientObject, group, mask, dispatcher, multiSapProxy);
 
-    std::function<void (ProximityTracker*)> printResults = [](ProximityTracker* bounds) {
-        std::cout << "adebug  "
-            << "  numOverlaps = " << bounds->getNumOverlaps()
-            << "  numTouches = " << bounds->countTouches()
-            << "  numChanges = " << bounds->countChanges()
-            << std::endl; // adebug
-        std::cout << "adebug" << std::endl;     // adebug
-    };
-
-    glm::vec3 position1(0.0f, 0.0f, 0.0f);
-    float radius1 = 1.0f;
-    glm::vec3 positionA(0.0f, 1.0f, 0.0f);
-    glm::vec3 positionB(0.0f, 1.0f, 0.0f);
-    float radiusA = 1.0f;
-    float radiusB = radiusA;
-    Object region1(position1, radius1);
-    //glm::vec3 positionA = position1 + (radius1 + radiusA - 0.1f) * glm::vec3(1.0f);
-    Object objectA(positionA, radiusA);
-    Object objectB(positionB, radiusB);
-
-    // add overlapping objects
-    std::cout << "adebug  add region and objects in overlap" << std::endl;     // adebug
-    uint32_t key1 = addObject(region1, COLLISION_GROUP_REGION_1, COLLISION_MASK_REGION_1);
-    uint32_t keyA = addObject(objectA, COLLISION_GROUP_OBJECT, COLLISION_MASK_OBJECT);
-    uint32_t keyB = addObject(objectB, COLLISION_GROUP_OBJECT, COLLISION_MASK_OBJECT);
-    //std::cout << "adebug  keys = " << key1 << ", " << keyA << std::endl;     // adebug
-    std::cout << "adebug  keys = " << key1 << ", " << keyA << ", " << keyB << std::endl;     // adebug
-    // verify they touch
-    collide();
-    printResults(this);
-    rollCategories();
-
-    { // move A but keep it barely in overlap
-        std::cout << "adebug  move object inside overlap" << std::endl;     // adebug
-        positionA = position1 + (0.99f * (radius1 + radiusA)) * (positionA - position1);
-        updateObject(keyA, positionA, radiusA);
-        // verify A still overlaps region
-        collide();
-        printResults(this);
-        rollCategories();
+    // set its various members, and add it to the array
+    object._proxy = proxy; // object remembers pointer to its proxy
+    uint32_t mapKey = _nextUniqueMapKey++;
+    object._mapKey = mapKey;
+    if (group != COLLISION_GROUP_OBJECT) {
+        // the object just be a "region" which means
+        // the type has same numerical value as group
+        object._type = (uint8_t)group;
     }
+    uint32_t arrayIndex = _objects.size();
+    _objects.push_back(object);
 
-    { // shrink the region a little bit
-        std::cout << "adebug  shrink the region" << std::endl;     // adebug
-        radius1 *= 0.8f;
-        updateObject(key1, position1, radius1);
-        // verify region no longer overlaps A
-        collide();
-        printResults(this);
-        rollCategories();
-    }
+    // proxy stores the object's arrayIndex (in a void*) which will be used in OverlapCallback::processOverlap
+    // to access the Object when doing the narrow-phase collision check.  This means: when the Object moves
+    // within the array we MUST update the corresponding proxy->m_clientObject.
+    proxy->m_clientObject = (void*)((uint64_t)arrayIndex);
 
-    { // move B out of overlap
-        std::cout << "adebug  move object out of overlap" << std::endl;     // adebug
-        positionB = position1 + (1.5f * (radius1 + radiusB)) * (positionB - position1);
-        updateObject(keyB, positionB, radiusB);
-        // verify they no longer overlap
-        collide();
-        printResults(this);
-        rollCategories();
-    }
+    // store the arrayIndex by unique mapKey so we can look it up quickly in a map
+    // Again, when the Object moves within the array we MUST update the map entry.
+    _objectMap[mapKey] = arrayIndex;
 
-    { // grow the region a lot
-        std::cout << "adebug  grow the region" << std::endl;     // adebug
-        float distanceA = glm::distance(position1, positionA) - radiusA;
-        float distanceB = glm::distance(position1, positionB) - radiusB;
-        radius1 = glm::max(distanceA, distanceB) + 0.001f;
-        updateObject(key1, position1, radius1);
-        // verify objects overlap again
-        collide();
-        printResults(this);
-        rollCategories();
-    }
-
-    { // move A to corner overlap just barely touching
-        std::cout << "adebug  move A into corner overlap just barely touching" << std::endl;
-        float invSqrt3 = 1.0f / sqrtf(3.0f);
-        float distanceA = (radius1 + radiusA - 0.001f);
-        glm::vec3 offsetA(invSqrt3);
-        positionA = position1 + distanceA * offsetA;
-        updateObject(keyA, positionA, radiusA);
-        // verify objects overlap but don't touch
-        collide();
-        printResults(this);
-        rollCategories();
-    }
-
-    { // move A to corner overlap just barely touching
-        std::cout << "adebug  move A into corner overlap but not touching" << std::endl;
-        float invSqrt3 = 1.0f / sqrtf(3.0f);
-        float distanceA = (radius1 + radiusA + 0.01f);
-        glm::vec3 offsetA(invSqrt3);
-        positionA = position1 + distanceA * offsetA;
-        updateObject(keyA, positionA, radiusA);
-        // verify objects overlap but don't touch
-        collide();
-        printResults(this);
-        rollCategories();
-    }
+    // return mapKey to the outside as unique identifier this object
+    return mapKey;
 }
