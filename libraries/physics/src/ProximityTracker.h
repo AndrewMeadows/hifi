@@ -93,6 +93,14 @@ public:
         OverlapCallback _overlapCallback;
     };
 
+    class Change {
+    public:
+        Change(uint32_t k, uint8_t newC, uint8_t oldC) : key(k), newCategory(newC), oldCategory(oldC) {}
+        uint32_t key { 0 };
+        uint8_t newCategory { 0 };
+        uint8_t oldCategory { 0 };
+    };
+
 
     ProximityTracker() { _dispatcher.setObjectArray(&_objects); }
     ~ProximityTracker() {}
@@ -110,6 +118,7 @@ public:
     uint32_t getNumOverlaps() const;
     uint32_t countChanges() const;
     uint32_t countTouches() const;
+    void getChanges(std::vector<Change>& changes) const;
 
 private:
     uint32_t createProxy(Object& object, int16_t group, int16_t mask);

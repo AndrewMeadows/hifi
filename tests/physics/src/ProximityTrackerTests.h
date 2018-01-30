@@ -22,7 +22,8 @@ class ProximityTrackerTests : public QObject {
 private slots:
     void testOverlaps();
 #ifdef MANUAL_TEST
-    void benchmarkConstruction();
+    void benchmark();
+    void benchmarkDeadSimple();
 #endif // MANUAL_TEST
 };
 

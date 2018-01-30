@@ -17,6 +17,7 @@
 
 #include <ProximityTracker.h>
 #include <StreamUtils.h>
+#include <SharedUtil.h>
 
 
 const float INV_SQRT_3 = 1.0f / sqrtf(3.0f);
@@ -33,7 +34,7 @@ void ProximityTrackerTests::testOverlaps() {
             << "  numTouches = " << bounds->countTouches()
             << "  numChanges = " << bounds->countChanges()
             << std::endl;
-        std::cout << "debug" << std::endl;     // adebug
+        std::cout << "debug" << std::endl;
     };
     */
 
@@ -179,33 +180,248 @@ void generateRadiuses(uint32_t numRadiuses, std::vector<float>& radiuses) {
 }
 
 #ifdef MANUAL_TEST
-void ProximityTrackerTests::benchmarkConstruction() {
-    uint32_t numObjects[] = { 100, 1000, 10000, 100000, 200000, 400000 };
-    uint32_t numSteps = 6;
-    std::cout << "[numObjects, timeToConstruct] = [" << std::endl;
-    for (uint32_t i = 0; i < numSteps; ++i) {
-        uint32_t n = numObjects[i];
-        std::vector<glm::vec3> positions;
-        std::vector<float> radiuses;
-
-        generatePositions(n, positions);
-        generateRadiuses(n, radiuses);
+void ProximityTrackerTests::benchmark() {
+    uint32_t numObjects[] = { 100, 1000, 10000, 100000 };
+    uint32_t numTests = 4;
+    std::vector<uint64_t> timeToAddAll;
+    std::vector<uint64_t> timeToRemoveAll;
+    std::vector<uint64_t> timeToMoveView;
+    std::vector<uint64_t> timeToMoveObjects;
+    for (uint32_t i = 0; i < numTests; ++i) {
 
         ProximityTracker tracker;
-        glm::vec3 position1(0.0f, 0.0f, 0.0f);
-        float radius1 = 0.25f * WORLD_WIDTH;
-        float radius2 = 0.50f * WORLD_WIDTH;
-        float radius3 = 0.75f * WORLD_WIDTH;
-        tracker.addRegion(position1, radius1, ProximityTracker::REGION_1);
-        tracker.addRegion(position1, radius2, ProximityTracker::REGION_2);
-        tracker.addRegion(position1, radius3, ProximityTracker::REGION_3);
 
-        btClock timer;
-        for (uint32_t j = 0; j < n; ++j) {
-            tracker.addObject(positions[j], radiuses[j]);
+        // build the regions
+        float pathRadius = WORLD_WIDTH / 10.0f;
+        glm::vec3 regionPosition = pathRadius * glm::vec3(1.0f, 0.0f, 0.0f);
+        std::vector<uint32_t> regionKeys;
+        std::vector<float> regionRadiuses;
+        uint32_t numRegions = 0;
+        {
+            std::vector<ProximityTracker::RegionType> regionTypes;
+            regionTypes.push_back(ProximityTracker::REGION_1);
+            regionTypes.push_back(ProximityTracker::REGION_2);
+            regionTypes.push_back(ProximityTracker::REGION_3);
+
+            numRegions = regionTypes.size();
+            float radiusStep = (1.0f / (float)(numRegions + 1)) * WORLD_WIDTH;
+            for (uint32_t j = 0; j < numRegions; ++j) {
+                float radius = (float)(j + 1) * radiusStep;
+                regionRadiuses.push_back(radius);
+                uint32_t key = tracker.addRegion(regionPosition, regionRadiuses[j], regionTypes[j]);
+                regionKeys.push_back(key);
+            }
         }
-        uint64_t msec = timer.getTimeMilliseconds();
-        std::cout << "    " << n << ", " << ((float)msec / 1000.0f) << std::endl;
+
+        // build the objects
+        uint32_t n = numObjects[i];
+        std::vector<glm::vec3> objectPositions;
+        std::vector<float> objectRadiuses;
+        generatePositions(n, objectPositions);
+        generateRadiuses(n, objectRadiuses);
+        std::vector<uint32_t> objectKeys;
+        objectKeys.reserve(n);
+
+        // measure time to put objects in the tracker
+        uint64_t startTime = usecTimestampNow();
+        for (uint32_t j = 0; j < n; ++j) {
+            uint32_t key = tracker.addObject(objectPositions[j], objectRadiuses[j]);
+            objectKeys.push_back(key);
+        }
+        uint64_t usec = usecTimestampNow() - startTime;
+        timeToAddAll.push_back(usec);
+
+        // move regions around: ~1m steps in a circle
+        float perStepAngle = 1.0f / pathRadius;
+        uint32_t numPathSteps = 100;
+        std::vector<glm::vec3> pathPositions;
+        pathPositions.reserve(numPathSteps);
+        glm::vec3 x(pathRadius, 0.0f, 0.0f);
+        glm::vec3 z(0.0f, 0.0f, pathRadius);
+        float angle = perStepAngle;
+        for (uint32_t j = 0; j < numPathSteps; ++j) {
+            angle += perStepAngle;
+            glm::vec3 newPosition = cosf(angle) * x + sinf(angle) * z;
+            pathPositions.push_back(newPosition);
+        }
+        std::vector<ProximityTracker::Change> changes;
+        startTime = usecTimestampNow();
+        for (uint32_t j = 0; j < numPathSteps; ++j) {
+            for (uint32_t k = 0; k < numRegions; ++k) {
+                tracker.updateRegion(regionKeys[k], pathPositions[j], regionRadiuses[k]);
+            }
+            tracker.collide();
+            changes.clear();
+            tracker.getChanges(changes);
+        }
+        usec = usecTimestampNow() - startTime;
+        timeToMoveView.push_back(usec / numPathSteps);
+
+        // move every 10th object around
+        const float objectSpeed = 1.0f;
+        std::vector<glm::vec3> newPositions;
+        uint32_t numMovingObjects = n / 10;
+        uint32_t jstep = n / numMovingObjects;
+        uint32_t maxJ = numMovingObjects * jstep - 1;
+        glm::vec3 direction;
+        for (uint32_t j = 0; j < maxJ - jstep; j += jstep) {
+            direction = glm::normalize(objectPositions[j + jstep] - objectPositions[j]);
+            newPositions.push_back(objectPositions[j] + objectSpeed * direction);
+        }
+        direction = glm::normalize(objectPositions[0] - objectPositions[maxJ - jstep]);
+        newPositions.push_back(objectPositions[maxJ - jstep] + objectSpeed * direction);
+        uint32_t k = 0;
+        changes.clear();
+        startTime = usecTimestampNow();
+        for (uint32_t j = 0; j < maxJ; j += jstep) {
+            tracker.updateObject(objectKeys[j], newPositions[++k], objectRadiuses[j]);
+        }
+        tracker.collide();
+        tracker.getChanges(changes);
+        usec = usecTimestampNow() - startTime;
+        timeToMoveObjects.push_back(usec);
+
+        // measure time to remove objects from tracker
+        startTime = usecTimestampNow();
+        for (uint32_t j = 0; j < n; ++j) {
+            tracker.removeObject(objectKeys[j]);
+        }
+        usec = usecTimestampNow() - startTime;
+        timeToRemoveAll.push_back(usec);
+    }
+
+    std::cout << "[numObjects, timeToAddAll] = [" << std::endl;
+    for (uint32_t i = 0; i < timeToAddAll.size(); ++i) {
+        uint32_t n = numObjects[i];
+        std::cout << "    " << n << ", " << timeToAddAll[i] << std::endl;
+    }
+    std::cout << "];" << std::endl;
+
+    std::cout << "[numObjects, timeToMoveView] = [" << std::endl;
+    for (uint32_t i = 0; i < timeToMoveView.size(); ++i) {
+        uint32_t n = numObjects[i];
+        std::cout << "    " << n << ", " << timeToMoveView[i] << std::endl;
+    }
+    std::cout << "];" << std::endl;
+
+    std::cout << "[numObjects, timeToMoveObjects] = [" << std::endl;
+    for (uint32_t i = 0; i < timeToMoveObjects.size(); ++i) {
+        uint32_t n = numObjects[i];
+        std::cout << "    " << n << "/10, " << timeToMoveObjects[i] << std::endl;
+    }
+    std::cout << "];" << std::endl;
+
+    std::cout << "[numObjects, timeToRemoveAll] = [" << std::endl;
+    for (uint32_t i = 0; i < timeToRemoveAll.size(); ++i) {
+        uint32_t n = numObjects[i];
+        std::cout << "    " << n << ", " << timeToRemoveAll[i] << std::endl;
+    }
+    std::cout << "];" << std::endl;
+}
+
+void ProximityTrackerTests::benchmarkDeadSimple() {
+    uint32_t numObjects[] = { 100, 1000, 10000, 100000 };
+    uint32_t numTests = 4;
+    std::vector<uint64_t> timeToAddAll;
+    std::vector<uint64_t> timeToRemoveAll;
+    std::vector<uint64_t> timeToMoveView;
+    for (uint32_t i = 0; i < numTests; ++i) {
+
+        // build the regions
+        float pathRadius = WORLD_WIDTH / 10.0f;
+        glm::vec3 regionPosition = pathRadius * glm::vec3(1.0f, 0.0f, 0.0f);
+        std::vector<float> regionRadiuses;
+        uint32_t numRegions = 0;
+        {
+            std::vector<ProximityTracker::RegionType> regionTypes;
+            regionTypes.push_back(ProximityTracker::REGION_1);
+            regionTypes.push_back(ProximityTracker::REGION_2);
+            regionTypes.push_back(ProximityTracker::REGION_3);
+
+            numRegions = regionTypes.size();
+            float radiusStep = (1.0f / (float)(numRegions + 1)) * WORLD_WIDTH;
+            for (uint32_t j = 0; j < numRegions; ++j) {
+                float radius = (float)(j + 1) * radiusStep;
+                regionRadiuses.push_back(radius);
+            }
+        }
+
+        // build the objects
+        uint32_t n = numObjects[i];
+        std::vector<glm::vec3> objectPositions;
+        std::vector<float> objectRadiuses;
+        generatePositions(n, objectPositions);
+        generateRadiuses(n, objectRadiuses);
+
+        // measure time to categorize all objects
+        std::vector<uint8_t> categories;
+        categories.resize(n);
+        uint64_t startTime = usecTimestampNow();
+        for (uint32_t j = 0; j < n; ++j) {
+            float distance2 = glm::distance2(regionPosition, objectPositions[j]);
+            uint8_t k;
+            for (k = 0; k < 3; ++k) {
+                float touchingDistance = regionRadiuses[k] + objectRadiuses[j];
+                if (distance2 < touchingDistance * touchingDistance) {
+                    break;
+                }
+            }
+            categories[j] = k;
+        }
+        uint64_t usec = usecTimestampNow() - startTime;
+        timeToAddAll.push_back(usec);
+
+        // move regions around: ~1m steps in a circle
+        float perStepAngle = 1.0f / pathRadius;
+        uint32_t numPathSteps = 100;
+        std::vector<glm::vec3> pathPositions;
+        pathPositions.reserve(numPathSteps);
+        glm::vec3 x(pathRadius, 0.0f, 0.0f);
+        glm::vec3 z(0.0f, 0.0f, pathRadius);
+        float angle = perStepAngle;
+        for (uint32_t j = 0; j < numPathSteps; ++j) {
+            angle += perStepAngle;
+            glm::vec3 newPosition = cosf(angle) * x + sinf(angle) * z;
+            pathPositions.push_back(newPosition);
+        }
+        std::vector<uint32_t> changes;
+        std::vector<uint8_t> oldCategories;
+        oldCategories.resize(n);
+        startTime = usecTimestampNow();
+        for (uint32_t j = 0; j < numPathSteps; ++j) {
+            changes.clear();
+            regionPosition = pathPositions[j];
+            oldCategories.swap(categories);
+            for (uint32_t k = 0; k < n; ++k) {
+                float distance2 = glm::distance2(regionPosition, objectPositions[k]);
+                uint8_t c;
+                for (c = 0; c < 3; ++c) {
+                    float touchingDistance = regionRadiuses[c] + objectRadiuses[k];
+                    if (distance2 < touchingDistance * touchingDistance) {
+                        break;
+                    }
+                }
+                categories[k] = c;
+                if (categories[k] != oldCategories[k]) {
+                    changes.push_back(k);
+                }
+            }
+        }
+        usec = usecTimestampNow() - startTime;
+        timeToMoveView.push_back(usec / numPathSteps);
+    }
+
+    std::cout << "simple [numObjects, timeToAddAll] = [" << std::endl;
+    for (uint32_t i = 0; i < timeToAddAll.size(); ++i) {
+        uint32_t n = numObjects[i];
+        std::cout << "    " << n << ", " << timeToAddAll[i] << std::endl;
+    }
+    std::cout << "];" << std::endl;
+
+    std::cout << "simple [numObjects, timeToMoveView] = [" << std::endl;
+    for (uint32_t i = 0; i < timeToMoveView.size(); ++i) {
+        uint32_t n = numObjects[i];
+        std::cout << "    " << n << ", " << timeToMoveView[i] << std::endl;
     }
     std::cout << "];" << std::endl;
 }

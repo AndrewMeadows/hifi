@@ -273,6 +273,14 @@ uint32_t ProximityTracker::countTouches() const {
     return numTouches;
 }
 
+void ProximityTracker::getChanges(std::vector<ProximityTracker::Change>& changes) const {
+    for (uint32_t i = 0; i < _objects.size(); ++i) {
+        if (_objects[i]._category != _objects[i]._prevCategory) {
+            changes.push_back(ProximityTracker::Change(_objects[i]._mapKey, _objects[i]._category, _objects[i]._prevCategory));
+        }
+    }
+}
+
 uint32_t ProximityTracker::createProxy(ProximityTracker::Object& object, int16_t group, int16_t mask) {
     // add a "proxy" for this object to the broadphase
     btVector3 diagonal = object._radius * btVector3(1.0f, 1.0f, 1.0f);
