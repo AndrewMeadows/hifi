@@ -33,7 +33,7 @@ size_t FileCacheTests::getCacheDirectorySize() const {
     return result;
 }
 
-FileCachePointer makeFileCache(QString& location) {
+FileCachePointer makeFileCache(QString location) {
     auto result = std::make_shared<FileCache>(location.toStdString(), "tmp");
     result->initialize();
     result->setMaxSize(MAX_UNUSED_SIZE);
