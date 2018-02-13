@@ -2209,6 +2209,7 @@ Application::~Application() {
     // shutdown render engine
     _main3DScene = nullptr;
     _renderEngine = nullptr;
+    _infinityEngine = nullptr;
 
     DependencyManager::destroy<Preferences>();
 
@@ -4096,6 +4097,9 @@ void Application::idle() {
         qFatal("Unable to make main thread context current");
     }
 
+    {
+        _infinityEngine->run();
+    }
     {
         PerformanceTimer perfTimer("update");
         PerformanceWarning warn(showWarnings, "Application::idle()... update()");
