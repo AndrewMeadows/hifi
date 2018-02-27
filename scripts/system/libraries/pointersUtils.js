@@ -7,7 +7,7 @@
 
 /* jslint bitwise: true */
 
-/* global Script, Entities, Overlays, Controller, Vec3, Quat, getControllerWorldLocation, RayPick,
+/* global Script, Entities, Overlays, Controller, Vec3, Quat, getControllerWorldLocation,
    controllerDispatcherPlugins:true, controllerDispatcherPluginsNeedSort:true,
    LEFT_HAND, RIGHT_HAND, NEAR_GRAB_PICK_RADIUS, DEFAULT_SEARCH_SPHERE_DISTANCE, DISPATCHER_PROPERTIES,
    getGrabPointSphereOffset, HMD, MyAvatar, Messages, findHandChildEntities, Pointers, PickType, COLORS_GRAB_SEARCHING_HALF_SQUEEZE
