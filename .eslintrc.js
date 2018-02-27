@@ -31,6 +31,8 @@ module.exports = {
         "Overlays": false,
         "OverlayWebWindow": false,
         "Paths": false,
+        "Picks": false,
+        "Pointers": false,
         "Quat": false,
         "Rates": false,
         "Recording": false,
@@ -55,8 +57,6 @@ module.exports = {
         "XMLHttpRequest": false,
         "location": false,
         "print": false,
-        "RayPick": false,
-        "LaserPointers": false,
         "ContextOverlay": false,
         "module": false
     },
