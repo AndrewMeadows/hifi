@@ -202,8 +202,6 @@
 
 #include <PickManager.h>
 #include <PointerManager.h>
-#include <raypick/RayPickScriptingInterface.h>
-#include <raypick/LaserPointerScriptingInterface.h>
 #include <raypick/PickScriptingInterface.h>
 #include <raypick/PointerScriptingInterface.h>
 #include <raypick/MouseRayPick.h>
@@ -772,8 +770,6 @@ bool setupEssentials(int& argc, char** argv, bool runningMarkerExisted) {
     // Set dependencies
     DependencyManager::set<PickManager>();
     DependencyManager::set<PointerManager>();
-    DependencyManager::set<LaserPointerScriptingInterface>();
-    DependencyManager::set<RayPickScriptingInterface>();
     DependencyManager::set<PointerScriptingInterface>();
     DependencyManager::set<PickScriptingInterface>();
     DependencyManager::set<Cursor::Manager>();
@@ -6058,8 +6054,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptEnginePointe
     scriptEngine->registerGlobalObject("AvatarBookmarks", DependencyManager::get<AvatarBookmarks>().data());
     scriptEngine->registerGlobalObject("LocationBookmarks", DependencyManager::get<LocationBookmarks>().data());
 
-    scriptEngine->registerGlobalObject("RayPick", DependencyManager::get<RayPickScriptingInterface>().data());
-    scriptEngine->registerGlobalObject("LaserPointers", DependencyManager::get<LaserPointerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Picks", DependencyManager::get<PickScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Pointers", DependencyManager::get<PointerScriptingInterface>().data());
 
