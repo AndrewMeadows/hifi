@@ -258,7 +258,7 @@ function Grabber() {
     this.liftKey = false; // SHIFT
     this.rotateKey = false; // CONTROL
 
-    this.mouseRayOverlays = Picks.createRayPick({
+    this.mouseRayOverlays = Picks.createPick(PickType.Ray, {
         joint: "Mouse",
         filter: Picks.PICK_OVERLAYS,
         enabled: true
@@ -328,7 +328,7 @@ Grabber.prototype.pressEvent = function(event) {
         return;
     }
 
-    var overlayResult = Picks.getPrevRayPickResult(this.mouseRayOverlays);
+    var overlayResult = Picks.getPrevPickResult(this.mouseRayOverlays);
     if (overlayResult.type != Picks.INTERSECTED_NONE) {
         return;
     }
@@ -599,7 +599,7 @@ Grabber.prototype.keyPressEvent = function(event) {
 
 Grabber.prototype.cleanup = function() {
     Pointers.removePointer(this.mouseRayEntities);
-    Picks.removeRayPick(this.mouseRayOverlays);
+    Picks.removePick(this.mouseRayOverlays);
 };
 
 var grabber = new Grabber();
