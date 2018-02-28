@@ -451,7 +451,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                         data = JSON.parse(message);
                         var action = data.action;
                         var id = data.id;
-                        var index = _this.blacklis.indexOf(id);
+                        var index = _this.blacklist.indexOf(id);
 
                         if (action === 'add' && index === -1) {
                             _this.blacklist.push(id);
