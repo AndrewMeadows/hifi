@@ -378,8 +378,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         };
 
         this.setBlacklist = function() {
-            Picks.setIgnoreItems(_this.leftPointer, this.blacklist);
-            Picks.setIgnoreItems(_this.rightPointer, this.blacklist);
+            Pointers.setIgnoreItems(_this.leftPointer, this.blacklist);
+            Pointers.setIgnoreItems(_this.rightPointer, this.blacklist);
         };
 
         var MAPPING_NAME = "com.highfidelity.controllerDispatcher";
