@@ -22,6 +22,9 @@
 
 namespace workload {
 
+using IndexList = std::vector<int32_t>;
+using IndexVectors = std::vector<IndexList>;
+
 class Space {
 public:
     static const int32_t NUM_CLASSIFICATIONS = 4;
@@ -89,6 +92,7 @@ private:
     std::vector<Proxy> _proxies;
     std::vector<View> _views;
     std::vector<int32_t> _freeIndices;
+    std::vector<float> _priorities;
 };
 
 inline int32_t Space::computeTransitionIndex(int32_t prevIndex, int32_t newIndex) {
@@ -128,7 +132,6 @@ inline int32_t Space::computeTransitionIndex(int32_t prevIndex, int32_t newIndex
 
 using SpacePointer = std::shared_ptr<Space>;
 using Changes = std::vector<Space::Change>;
-using SortedChanges = std::vector<std::vector<int32_t>>;
 
 } // namespace workload
 

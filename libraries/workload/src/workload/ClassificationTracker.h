@@ -29,15 +29,13 @@ namespace workload {
     class ClassificationTracker {
     public:
         using Config = ClassificationTrackerConfig;
-        using Outputs = SortedChanges;
+        using Outputs = IndexLists;
         using JobModel = workload::Job::ModelO<ClassificationTracker, Outputs, Config>;
 
         ClassificationTracker() {}
 
         void configure(const Config& config);
         void run(const workload::WorkloadContextPointer& renderContext, Outputs& outputs);
-
-    protected:
     };
 
 } // namespace workload

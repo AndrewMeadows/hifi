@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "ClassificationTracker.h"
+#include "Prioritizer.h"
 
 namespace workload {
 
@@ -29,6 +30,7 @@ namespace workload {
         using JobModel = Task::Model<EngineModel>;
         void build(EngineModel& model, const Varying& in, Varying& out) {
             auto classifications = model.addJob<ClassificationTracker>("classificationTracker");
+            auto foo = model.addJob<Prioritizer>("Prioritizer", classifications);
         }
     };
 
