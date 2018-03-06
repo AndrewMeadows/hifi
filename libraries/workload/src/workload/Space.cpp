@@ -114,6 +114,27 @@ uint32_t Space::copyProxyValues(Proxy* proxies, uint32_t numDestProxies) {
     return numCopied;
 }
 
+/* EXPERIMENTAL: keep around until we're sure we don't need it
+void Space::computePriorities() {
+    if (_priorities.size() < _proxies.size()) {
+        _priorities.resize(_proxies.size());
+    }
+
+    for (uint32_t i = 0; i < _proxies.size(); ++i) {
+        float priority = -1.0f;
+        if (_proxies[i].region != Space::REGION_INVALID) {
+            glm::vec3 sphere = _proxies[i].sphere;
+            float radiusSquared = _proxies[i].sphere.w;
+            radiusSquared *= radiusSquared;
+            for (uint32_t j = 0; j < _views.size(); ++j) {
+                float newPriority = radiusSquared / glm::distance2(sphere, _views[j].center);
+                priority = glm::max(priority, newPriority);
+            }
+        }
+        _priorities[i] = priority;
+    }
+}
+*/
 
 // private
 void Space::updateProxy(int32_t proxyId, const Space::Sphere& newSphere) {
