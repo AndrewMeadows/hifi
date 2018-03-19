@@ -273,14 +273,14 @@ int main(int argc, const char* argv[]) {
         qCDebug(interfaceapp, "Created QT Application.");
         exitCode = app.exec();
         server.close();
-    }
 
-    Application::shutdownPlugins();
+        Application::shutdownPlugins();
 
-    qCDebug(interfaceapp, "Normal exit.");
+        qCDebug(interfaceapp, "Normal exit.");
 #if !defined(DEBUG) && !defined(Q_OS_LINUX)
-    // HACK: exit immediately (don't handle shutdown callbacks) for Release build
-    _exit(exitCode);
+        // HACK: exit immediately (don't handle shutdown callbacks) for Release build
+        _exit(exitCode);
 #endif
+    }
     return exitCode;
 }
