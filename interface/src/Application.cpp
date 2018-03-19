@@ -2338,7 +2338,7 @@ void Application::cleanupBeforeQuit() {
     qCDebug(interfaceapp) << "Application::cleanupBeforeQuit() complete";
 }
 
-Application::~Application() {
+void Application::teardown() {
     // remove avatars from physics engine
     DependencyManager::get<AvatarManager>()->clearOtherAvatars();
     VectorOfMotionStates motionStates;
@@ -2405,6 +2405,12 @@ Application::~Application() {
 
     // Can't log to file passed this point, FileLogger about to be deleted
     qInstallMessageHandler(LogHandler::verboseMessageHandler);
+}
+
+Application::~Application() {
+    if (_renderEngine) {
+        teardown();
+    }
 }
 
 void Application::initializeGL() {

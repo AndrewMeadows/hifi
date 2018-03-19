@@ -134,6 +134,7 @@ public:
 
     Application(int& argc, char** argv, QElapsedTimer& startup_time, bool runningMarkerExisted);
     ~Application();
+    void teardown();
 
     void postLambdaEvent(std::function<void()> f) override;
 

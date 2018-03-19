@@ -277,8 +277,10 @@ int main(int argc, const char* argv[]) {
         Application::shutdownPlugins();
 
         qCDebug(interfaceapp, "Normal exit.");
+        app.teardown();
 #if !defined(DEBUG) && !defined(Q_OS_LINUX)
-        // HACK: exit immediately (don't handle shutdown callbacks) for Release build
+        // HACK: delete runningMarker then exit immediately (don't handle shutdown callbacks) for Release build
+        runningMarker.deleteRunningMarkerFile();
         _exit(exitCode);
 #endif
     }
