@@ -53,6 +53,8 @@ public:
     const QString& addRepeatedMessageRegex(const QString& regexString);
     const QString& addOnlyOnceMessageRegex(const QString& regexString);
 
+    static void shutdown() { _shuttingDown = true; }
+
 private slots:
     void setupRepeatedMessageFlusher();
 
@@ -74,6 +76,7 @@ private:
     QHash<QString, int> _onlyOnceMessageCountHash;
 
     static QMutex _mutex;
+    static bool _shuttingDown;
 };
 
 #endif // hifi_LogHandler_h

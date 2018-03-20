@@ -2228,6 +2228,10 @@ void Application::onAboutToQuit() {
 }
 
 void Application::cleanupBeforeQuit() {
+    // shutdown scripts ASAP
+    DependencyManager::get<ScriptEngines>()->shutdownScripting();
+    DependencyManager::destroy<ScriptEngines>();
+
     // add a logline indicating if QTWEBENGINE_REMOTE_DEBUGGING is set or not
     QString webengineRemoteDebugging = QProcessEnvironment::systemEnvironment().value("QTWEBENGINE_REMOTE_DEBUGGING", "false");
     qCDebug(interfaceapp) << "QTWEBENGINE_REMOTE_DEBUGGING =" << webengineRemoteDebugging;
@@ -2273,9 +2277,6 @@ void Application::cleanupBeforeQuit() {
     // Clear any queued processing (I/O, FBX/OBJ/Texture parsing)
     QThreadPool::globalInstance()->clear();
 
-    DependencyManager::get<ScriptEngines>()->shutdownScripting(); // stop all currently running global scripts
-    DependencyManager::destroy<ScriptEngines>();
-
     _displayPlugin.reset();
     PluginManager::getInstance()->shutdown();
 
@@ -2312,9 +2313,8 @@ void Application::cleanupBeforeQuit() {
     // stop QML
     DependencyManager::destroy<TabletScriptingInterface>();
     DependencyManager::destroy<ToolbarScriptingInterface>();
-    DependencyManager::destroy<OffscreenUi>();
-
     DependencyManager::destroy<OffscreenQmlSurfaceCache>();
+    DependencyManager::destroy<OffscreenUi>();
 
     if (_snapshotSoundInjector != nullptr) {
         _snapshotSoundInjector->stop();
@@ -2405,6 +2405,8 @@ void Application::teardown() {
 
     // Can't log to file passed this point, FileLogger about to be deleted
     qInstallMessageHandler(LogHandler::verboseMessageHandler);
+    // HACK: shutdown LogHandler to avoid tangles as multiple threads collapse
+    LogHandler::shutdown();
 }
 
 Application::~Application() {

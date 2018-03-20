@@ -27,6 +27,7 @@
 #include <QtCore/QTimer>
 
 QMutex LogHandler::_mutex;
+bool LogHandler::_shuttingDown = false;
 
 LogHandler& LogHandler::getInstance() {
     static LogHandler staticInstance;
@@ -111,6 +112,11 @@ void LogHandler::flushRepeatedMessages() {
 }
 
 QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& context, const QString& message) {
+    if (_shuttingDown) {
+        // HACK: during shutdown we need to skip printMessages to prevent
+        // multiple threads from locking up
+        return QString();
+    }
     QMutexLocker lock(&_mutex);
     if (message.isEmpty()) {
         return QString();
