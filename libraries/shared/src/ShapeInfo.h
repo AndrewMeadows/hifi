@@ -12,7 +12,7 @@
 #ifndef hifi_ShapeInfo_h
 #define hifi_ShapeInfo_h
 
-#include <QVector>
+#include <vector>
 #include <QString>
 #include <QUrl>
 #include <glm/glm.hpp>
@@ -54,9 +54,9 @@ class ShapeInfo {
 
 public:
 
-    using PointList = QVector<glm::vec3>;
-    using PointCollection = QVector<PointList>;
-    using TriangleIndices = QVector<int32_t>;
+    using PointList = std::vector<glm::vec3>;
+    using PointCollection = std::vector<PointList>;
+    using TriangleIndices = std::vector<int32_t>;
 
     static QString getNameForShapeType(ShapeType type);
 

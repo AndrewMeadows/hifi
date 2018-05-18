@@ -371,12 +371,23 @@ bool RenderableModelEntityItem::isReadyToComputeShape() const {
     return true;
 }
 
+const uint32_t NUM_QUANTIZATION_STATES = 512;
+uint32_t hashVec3(const glm::vec3& point, float scaleFactor) {
+    const uint32_t primes[] { 521, 523 }; // first two primes larger than NUM_QUANTIZATION_STATES
+    const float offset = 0.5f * (float)(NUM_QUANTIZATION_STATES);
+    return (uint32_t)(point.x * scaleFactor + offset) + primes[0] * ((uint32_t)(point.y * scaleFactor + offset) + primes[1] * (uint32_t)(point.z * scaleFactor + offset));
+}
+
 void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
     const uint32_t TRIANGLE_STRIDE = 3;
     const uint32_t QUAD_STRIDE = 4;
 
     ShapeType type = getShapeType();
     glm::vec3 dimensions = getScaledDimensions();
+
+    float maxDimension = glm::max(glm::max(dimensions.x, dimensions.y), dimensions.z);
+    float quantizationScale = (float)(NUM_QUANTIZATION_STATES) / maxDimension;
+
     auto model = getModel();
     if (type == SHAPE_TYPE_COMPOUND) {
         updateModelBounds();
@@ -395,8 +406,9 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
         foreach (const FBXMesh& mesh, collisionGeometry.meshes) {
             // each meshPart is a convex hull
             foreach (const FBXMeshPart &meshPart, mesh.parts) {
-                pointCollection.push_back(QVector<glm::vec3>());
+                pointCollection.push_back(std::vector<glm::vec3>());
                 ShapeInfo::PointList& pointsInPart = pointCollection[i];
+                std::unordered_set<uint32_t> pointHashes;
 
                 // run through all the triangles and (uniquely) add each point to the hull
                 uint32_t numIndices = (uint32_t)meshPart.triangleIndices.size();
@@ -404,7 +416,17 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
                 //assert(numIndices % TRIANGLE_STRIDE == 0);
                 numIndices -= numIndices % TRIANGLE_STRIDE; // WORKAROUND lack of sanity checking in FBXReader
 
+                const float QUANTIZATION = 0.001f; // 1mm
                 for (uint32_t j = 0; j < numIndices; j += TRIANGLE_STRIDE) {
+                    for (uint32_t k = 0; k < TRIANGLE_STRIDE; ++k) {
+                        glm::vec3 point = mesh.vertices[meshPart.triangleIndices[j + k]];
+                        uint32_t hash = hashVec3(point, quantizationScale);
+                        if (pointHashes.find(hash) == pointHashes.end()) {
+                            pointHashes.insert(hash);
+                            pointsInPart.push_back(point);
+                        }
+                    }
+                    /*
                     glm::vec3 p0 = mesh.vertices[meshPart.triangleIndices[j]];
                     glm::vec3 p1 = mesh.vertices[meshPart.triangleIndices[j + 1]];
                     glm::vec3 p2 = mesh.vertices[meshPart.triangleIndices[j + 2]];
@@ -416,7 +438,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
                     }
                     if (!pointsInPart.contains(p2)) {
                         pointsInPart << p2;
-                    }
+                    } */
                 }
 
                 // run through all the quads and (uniquely) add each point to the hull
@@ -426,6 +448,15 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
                 numIndices -= numIndices % QUAD_STRIDE; // WORKAROUND lack of sanity checking in FBXReader
 
                 for (uint32_t j = 0; j < numIndices; j += QUAD_STRIDE) {
+                    for (uint32_t k = 0; k < QUAD_STRIDE; ++k) {
+                        glm::vec3 point = mesh.vertices[meshPart.triangleIndices[j + k]];
+                        uint32_t hash = hashVec3(point, quantizationScale);
+                        if (pointHashes.find(hash) == pointHashes.end()) {
+                            pointHashes.insert(hash);
+                            pointsInPart.push_back(point);
+                        }
+                    }
+                    /*
                     glm::vec3 p0 = mesh.vertices[meshPart.quadIndices[j]];
                     glm::vec3 p1 = mesh.vertices[meshPart.quadIndices[j + 1]];
                     glm::vec3 p2 = mesh.vertices[meshPart.quadIndices[j + 2]];
@@ -442,9 +473,10 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
                     if (!pointsInPart.contains(p3)) {
                         pointsInPart << p3;
                     }
+                    */
                 }
 
-                if (pointsInPart.size() == 0) {
+                if (pointsInPart.empty()) {
                     qCDebug(entitiesrenderer) << "Warning -- meshPart has no faces";
                     pointCollection.pop_back();
                     continue;

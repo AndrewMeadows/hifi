@@ -109,7 +109,7 @@ btConvexHullShape* createConvexHull(const ShapeInfo::PointList& points) {
     glm::vec3 center = points[0];
     glm::vec3 maxCorner = center;
     glm::vec3 minCorner = center;
-    for (int i = 1; i < points.size(); i++) {
+    for (uint32_t i = 1; i < points.size(); i++) {
         center += points[i];
         maxCorner = glm::max(maxCorner, points[i]);
         minCorner = glm::min(minCorner, points[i]);
@@ -136,7 +136,7 @@ btConvexHullShape* createConvexHull(const ShapeInfo::PointList& points) {
     smallestDimension = glm::min(smallestDimension, diagonal[2]);
     const float MIN_DIMENSION = 2.0f * MIN_MARGIN + 0.001f;
     if (smallestDimension < MIN_DIMENSION) {
-        for (int i = 0; i < 3; ++i) {
+        for (uint32_t i = 0; i < 3; ++i) {
             if (diagonal[i] < MIN_DIMENSION) {
                 diagonal[i] = MIN_DIMENSION;
             }
@@ -149,7 +149,7 @@ btConvexHullShape* createConvexHull(const ShapeInfo::PointList& points) {
     // add the points, correcting for margin
     glm::vec3 relativeScale = (diagonal - glm::vec3(2.0f * margin)) / diagonal;
     glm::vec3 correctedPoint;
-    for (int i = 0; i < points.size(); ++i) {
+    for (uint32_t i = 0; i < points.size(); ++i) {
         correctedPoint = (points[i] - center) * relativeScale + center;
         hull->addPoint(btVector3(correctedPoint[0], correctedPoint[1], correctedPoint[2]), false);
     }
@@ -217,7 +217,7 @@ btTriangleIndexVertexArray* createStaticMeshArray(const ShapeInfo& info) {
     }
 
     const ShapeInfo::TriangleIndices& triangleIndices = info.getTriangleIndices();
-    int32_t numIndices = triangleIndices.size();
+    uint32_t numIndices = triangleIndices.size();
     if (numIndices < 3) {
         // not enough indices to make a single triangle
         return nullptr;
@@ -225,7 +225,7 @@ btTriangleIndexVertexArray* createStaticMeshArray(const ShapeInfo& info) {
 
     // allocate mesh buffers
     btIndexedMesh mesh;
-    const int32_t VERTICES_PER_TRIANGLE = 3;
+    const uint32_t VERTICES_PER_TRIANGLE = 3;
     mesh.m_numTriangles = numIndices / VERTICES_PER_TRIANGLE;
     if (numIndices < std::numeric_limits<int16_t>::max()) {
         // small number of points so we can use 16-bit indices
@@ -245,7 +245,7 @@ btTriangleIndexVertexArray* createStaticMeshArray(const ShapeInfo& info) {
     // copy data into buffers
     btScalar* vertexData = static_cast<btScalar*>((void*)(mesh.m_vertexBase));
     for (int32_t i = 0; i < mesh.m_numVertices; ++i) {
-        int32_t j = i * VERTICES_PER_TRIANGLE;
+        uint32_t j = i * VERTICES_PER_TRIANGLE;
         const glm::vec3& point = pointList[i];
         vertexData[j] = point.x;
         vertexData[j + 1] = point.y;
@@ -253,12 +253,12 @@ btTriangleIndexVertexArray* createStaticMeshArray(const ShapeInfo& info) {
     }
     if (numIndices < std::numeric_limits<int16_t>::max()) {
         int16_t* indices = static_cast<int16_t*>((void*)(mesh.m_triangleIndexBase));
-        for (int32_t i = 0; i < numIndices; ++i) {
+        for (uint32_t i = 0; i < numIndices; ++i) {
             indices[i] = (int16_t)triangleIndices[i];
         }
     } else {
         int32_t* indices = static_cast<int32_t*>((void*)(mesh.m_triangleIndexBase));
-        for (int32_t i = 0; i < numIndices; ++i) {
+        for (uint32_t i = 0; i < numIndices; ++i) {
             indices[i] = triangleIndices[i];
         }
     }
@@ -272,7 +272,8 @@ btTriangleIndexVertexArray* createStaticMeshArray(const ShapeInfo& info) {
 
 const btCollisionShape* ShapeFactory::createShapeFromInfo(const ShapeInfo& info) {
     btCollisionShape* shape = nullptr;
-    int type = info.getType();
+    btCollisionShape* shape = NULL;
+    int32_t type = info.getType();
     switch(type) {
         case SHAPE_TYPE_BOX: {
             shape = new btBoxShape(glmToBullet(info.getHalfExtents()));
@@ -349,7 +350,7 @@ const btCollisionShape* ShapeFactory::createShapeFromInfo(const ShapeInfo& info)
             const ShapeInfo::PointCollection& pointCollection = info.getPointCollection();
             uint32_t numSubShapes = info.getNumSubShapes();
             if (numSubShapes == 1) {
-                if (!pointCollection.isEmpty()) {
+                if (!pointCollection.empty()) {
                     shape = createConvexHull(pointCollection[0]);
                 }
             } else {
@@ -430,7 +431,7 @@ const btCollisionShape* ShapeFactory::createShapeFromInfo(const ShapeInfo& info)
             offset.setIdentity();
             offset.setOrigin(glmToBullet(info.getOffset()));
 
-            if (shape->getShapeType() == (int)COMPOUND_SHAPE_PROXYTYPE) {
+            if (shape->getShapeType() == (int32_t)COMPOUND_SHAPE_PROXYTYPE) {
                 // this shape is already compound
                 // walk through the child shapes and adjust their transforms
                 btCompoundShape* compound = static_cast<btCompoundShape*>(shape);
@@ -455,12 +456,12 @@ void ShapeFactory::deleteShape(const btCollisionShape* shape) {
     // ShapeFactory is responsible for deleting all shapes, even the const ones that are stored
     // in the ShapeManager, so we must cast to non-const here when deleting.
     btCollisionShape* nonConstShape = const_cast<btCollisionShape*>(shape);
-    if (nonConstShape->getShapeType() == (int)COMPOUND_SHAPE_PROXYTYPE) {
+    if (nonConstShape->getShapeType() == (int32_t)COMPOUND_SHAPE_PROXYTYPE) {
         btCompoundShape* compoundShape = static_cast<btCompoundShape*>(nonConstShape);
-        const int numChildShapes = compoundShape->getNumChildShapes();
-        for (int i = 0; i < numChildShapes; i ++) {
+        const int32_t numChildShapes = compoundShape->getNumChildShapes();
+        for (int32_t i = 0; i < numChildShapes; i ++) {
             btCollisionShape* childShape = compoundShape->getChildShape(i);
-            if (childShape->getShapeType() == (int)COMPOUND_SHAPE_PROXYTYPE) {
+            if (childShape->getShapeType() == (int32_t)COMPOUND_SHAPE_PROXYTYPE) {
                 // recurse
                 ShapeFactory::deleteShape(childShape);
             } else {

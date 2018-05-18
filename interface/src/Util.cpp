@@ -403,11 +403,15 @@ void shapeInfoCalculator(const ShapeEntityItem * const shapeEntity, ShapeInfo &s
         return;
     }
 
-    ShapeInfo::PointCollection pointCollection;
-    ShapeInfo::PointList points;
-    pointCollection.push_back(points);
+    QVector<glm::vec3> points;
+    GeometryCache::computeSimpleHullPointListForShape((int)shapeEntity->getShape(), shapeEntity->getScaledDimensions(), points);
 
-    GeometryCache::computeSimpleHullPointListForShape((int)shapeEntity->getShape(), shapeEntity->getScaledDimensions(), pointCollection.back());
+    ShapeInfo::PointCollection pointCollection;
+    pointCollection.resize(1);
+    ShapeInfo::PointList& points2 = pointCollection.back();
+    for (int32_t i = 0; i < points.size(); ++i) {
+        points2.push_back(points[i]);
+    }
     shapeInfo.setPointCollection(pointCollection);
 }
 
