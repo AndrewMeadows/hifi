@@ -23,6 +23,7 @@
 #include <DeferredLightingEffect.h>
 
 #include "EntityTreeRenderer.h"
+#include "GJK.h"
 
 // Sphere entities should fit inside a cube entity of the same size, so a sphere that has dimensions 1x1x1
 // is a half unit sphere.  However, the geometry cache renders a UNIT sphere, so we need to scale down.
