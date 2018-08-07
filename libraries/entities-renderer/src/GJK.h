@@ -28,13 +28,11 @@ class ConvexHull {
 
     glm::vec3 getCentroid() const;
     glm::vec3 getSupportVertex(const glm::vec3& direction) const;
-    glm::vec3 getSmoothedSupportVertex(const glm::vec3& direction) const;
     bool containsPoint(const glm::vec3& point) const;
 
     // these getVertex() methods are for debug/test purposes only
-    glm::vec3 getVertex(uint32_t index) const { return _vertices[index]; } // debug/test
-    glm::vec3 getVertexWorldFrame(uint32_t index) const { return _translation + _rotation * _vertices[index]; } // debug/test
-    void printVerticesWorldFrame() const;
+    glm::vec3 getVertexLocalFrame(uint32_t index) const { return _vertices[index]; } // debug/test
+    glm::vec3 getVertex(uint32_t index) const { return _translation + _rotation * _vertices[index]; } // debug/test
 
 protected:
     void computeCentroid();

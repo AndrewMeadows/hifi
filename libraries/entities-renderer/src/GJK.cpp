@@ -10,6 +10,8 @@
 //
 
 #include "GJK.h"
+#include <iostream> // adebug
+#include <StreamUtils.h> // adebug
 
 #include <glm/gtx/norm.hpp>
 
@@ -35,6 +37,7 @@ void ConvexHull::setWorldTransform(const glm::vec3& translation, const glm::quat
 
 glm::vec3 ConvexHull::getCentroid() const {
     // centroid is cached at the end of _vertices
+    // return value is in the world-frame
     return _translation + _rotation * _vertices[_vertices.size() - 1];
 }
 
@@ -56,52 +59,11 @@ glm::vec3 ConvexHull::getSupportVertex(const glm::vec3& direction) const {
     return _translation + _rotation * _vertices[j];
 }
 
-// experimental
-glm::vec3 ConvexHull::getSmoothedSupportVertex(const glm::vec3& direction) const {
-    // transform direction into local frame
-    glm::vec3 dir = glm::inverse(_rotation) * direction;
-
-    float totalWeight = 0.0f;
-    glm::vec3 weightedSum(0.0f);
-    float maxDot = glm::dot(dir, _vertices[0]);
-    if (maxDot > 0.0f) {
-        totalWeight = maxDot;
-        weightedSum = (maxDot * maxDot) * _vertices[0];
-    }
-    float j = 0;
-    uint32_t numVertices = _vertices.size() - 1; // avoid centroid at end
-    for (uint32_t i = 1; i < numVertices; ++i) {
-        float dot = glm::dot(dir, _vertices[i]);
-        if (dot > 0.0f) {
-            totalWeight += dot;
-            weightedSum += (dot * dot) * _vertices[i];
-        } else if (totalWeight == 0.0f && dot > maxDot) {
-            j = i;
-            maxDot = dot;
-        }
-    }
-    // transform result into world-frame
-    if (totalWeight > 0.0f) {
-        return _translation + _rotation * ((1.0f / totalWeight) * weightedSum);
-    } else {
-        return _translation + _rotation * _vertices[j];
-    }
-}
-
 bool ConvexHull::containsPoint(const glm::vec3& point) const {
     std::vector<glm::vec3> vertices;
     vertices.push_back(point);
     ConvexHull pointHull(vertices);
     return intersect(*this, pointHull);
-}
-
-void ConvexHull::printVerticesWorldFrame() const {
-#ifdef FOO
-    uint32_t numVertices = _vertices.size() - 1;
-    for (uint32_t i = 0; i < numVertices; ++i) {
-        std::cout << "adebug  " << i << "  " << getVertexWorldFrame(i) << std::endl;     // adebug
-    }
-#endif // FOO
 }
 
 void ConvexHull::computeCentroid() {
@@ -221,6 +183,8 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
                     break;
                 }
                 if (glm::dot(triangleNormal, -A) < 0.0f) {
+                    glm::vec3 nn = glm::normalize(triangleNormal);
+                    float ndot = glm::dot(nn, -A);
                     // reverse triangle winding so normal (ABC) points toward origin
                     triangleNormal = -triangleNormal;
                     dir = simplex[0];
@@ -229,7 +193,21 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
                 }
                 //handleTriangleSimplex(simplex, dir);
                 dir = -(simplex[0] + simplex[1] + simplex[2]);
-                simplex.push_back(hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir));
+                A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+                if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
+                    dir = -A;
+                    A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+                    if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
+                        dir = triangleNormal;
+                        A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+                        if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
+                            running = false;
+                            simplex.clear();
+                            break;
+                        }
+                    }
+                }
+                simplex.push_back(A);
             }
             break;
             case 4: {
@@ -240,7 +218,8 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
                     glm::vec3 B = simplex[j];
                     glm::vec3 C = simplex[i];
                     glm::vec3 triangleCenter = A + B + C;
-                    float thisDot = glm::dot(glm::cross(B - A, C - A), -triangleCenter);
+                    glm::vec3 triangleNormal = glm::cross(B - A, C - A);
+                    float thisDot = glm::dot(triangleNormal, -triangleCenter);
                     if (thisDot < 0.0f) {
                         continue;
                     }
@@ -248,13 +227,28 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
                     simplex[1] = B;
                     simplex[2] = A;
                     simplex.pop_back();
-                    dir = -(simplex[0] + simplex[1] + simplex[2]);
-                    simplex.push_back(hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir));
+                    dir = -triangleCenter;
+
+                    A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+                    if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
+                        dir = -A;
+                        A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+                        if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
+                            dir = triangleNormal;
+                            A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+                            if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
+                                running = false;
+                                simplex.clear();
+                                break;
+                            }
+                        }
+                    }
+                    simplex.push_back(A);
+                    break;
                 }
                 if (i == 3) {
                     running = false;
                 }
-                break;
             }
             break;
             default: {
@@ -265,7 +259,7 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
         }
         ++loopCount;
         if (loopCount > 10) {
-            simplex.clear();
+            //simplex.clear();
             break;
         }
     }
