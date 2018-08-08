@@ -1,21 +1,18 @@
 //
 //  GJKTests.cpp
-//  tests/physics/src
+//  tests/entities-renderer/src
 //
-//  Created by Virendra Singh on 2015.03.02
-//  Copyright 2014 High Fidelity, Inc.
+//  Created by Andrew Meadows 2018.08.06
+//  Copyright 2018 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 #include "GJKTests.h"
+#include <test-utils/QTestExtensions.h>
 
 #include <GJK.h>
-
-// Add additional qtest functionality (the include order is important!)
-#include "GJKTests.h"
-#include <test-utils/QTestExtensions.h>
 
 
 QTEST_MAIN(GJKTests)
@@ -69,6 +66,9 @@ std::vector<glm::vec3> CUBE_VERTICES_AND_FACES = {
 };
 
 void GJKTests::intersectCubes() {
+    // create two cubes and move them into intersection (or not) and verify the GJK algorithm
+    // correctly distinquishes the two cases.
+
     const float CUBE_SIDE = 1.0f;
     std::vector<glm::vec3> scaledCube;
     scaledCube.reserve(CUBE_VERTICES.size());
@@ -143,10 +143,11 @@ void GJKTests::intersectCubes() {
     }
 }
 
-void GJKTests::intersectSemiRandomHulls() {
+void GJKTests::intersectIrregularOctagons() {
+    // we accept a larger DELTA for these tests
     const float DELTA = 3.0e-2f;
 
-    // make two semi-random octagonal hulls (one point per cubic face)
+    // make two slightly irregular random octagonal hulls (one point per cubic face)
     std::vector<glm::vec3> scaledHull;
     scaledHull.reserve(CUBE_FACES.size());
     scaledHull.push_back(12.3f * CUBE_FACES[0]);
@@ -177,28 +178,28 @@ void GJKTests::intersectSemiRandomHulls() {
     uint32_t numFaces = OCTAGON_TRIANGLE_INDICES.size() / POINTS_PER_TRIANGLE;
     // for each face of hullB:
     for (uint32_t i = 0; i < numFaces; ++i) {
-        // select a semi-random point on the face
+        // select a the center of each the face
         uint32_t triangleIndex = i * POINTS_PER_TRIANGLE;
         glm::vec3 point0 = hullB.getVertex(OCTAGON_TRIANGLE_INDICES[triangleIndex]);
         glm::vec3 point1 = hullB.getVertex(OCTAGON_TRIANGLE_INDICES[triangleIndex + 1]);
         glm::vec3 point2 = hullB.getVertex(OCTAGON_TRIANGLE_INDICES[triangleIndex + 2]);
-        //glm::vec3 facePoint = 0.1f * point0 + 0.2f * point1 + 0.7f * point2;
-        glm::vec3 facePoint = (point0 + point1 + point2) / 3.0f;
+        glm::vec3 faceCenter = (point0 + point1 + point2) / 3.0f;
+
         // compute the face normal
         glm::vec3 faceNormal = glm::normalize(glm::cross(point1 - point0, point2 - point0));
 
         // make sure we computed the faceNormals correct: they should all point away from shape's centroid
-        QVERIFY(glm::dot(faceNormal, facePoint - centroidB) > 0.0f);
+        QVERIFY(glm::dot(faceNormal, faceCenter - centroidB) > 0.0f);
 
-        // for each vertex of hullA
+        // for each vertex of hullA:
         uint32_t numVertices = scaledHull.size();
         for (uint32_t j = 0; j < numVertices; ++j) {
             glm::vec3 vertexJ = hullA.getVertexLocalFrame(j);
             float distanceJ = glm::length(vertexJ);
-            // compute the linear offset to hullA
-            linearOffset = facePoint + (1.0f - DELTA) * distanceJ * faceNormal;
+            // compute the linear offset to hullA such that its vertex will touch (or not) faceCenter
+            linearOffset = faceCenter + (1.0f - DELTA) * distanceJ * faceNormal;
 
-            // compute the angularOffset to bring vertexJ around to facePoint
+            // compute the angularOffset to bring vertexJ around to faceCenter
             angularOffset = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
             float vertexDotNormal = glm::dot(vertexJ, faceNormal) / distanceJ;
             if (fabsf(vertexDotNormal) > 1.0e-9f) {
@@ -213,9 +214,9 @@ void GJKTests::intersectSemiRandomHulls() {
             QVERIFY(gjk::intersect(hullB, hullA));
 
             // transform hullA such that its vertex is just barely NOT intersecting hullB's face
-            linearOffset = facePoint + (1.0f + DELTA) * distanceJ * faceNormal;
+            linearOffset = faceCenter + (1.0f + DELTA) * distanceJ * faceNormal;
             glm::vec3 tipA = linearOffset - distanceJ * faceNormal;
-            QVERIFY(glm::dot(tipA - facePoint, faceNormal) > 0.0f);
+            QVERIFY(glm::dot(tipA - faceCenter, faceNormal) > 0.0f);
             hullA.setWorldTransform(linearOffset, angularOffset);
             QVERIFY(!gjk::intersect(hullB, hullA));
         }
