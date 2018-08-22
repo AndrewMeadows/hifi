@@ -123,6 +123,11 @@ void CharacterController::setDynamicsWorld(btDynamicsWorld* world) {
             _rigidBody->setGravity(_currentGravity * _currentUp);
             // set flag to enable custom contactAddedCallback
             _rigidBody->setCollisionFlags(btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+
+            // enable CCD
+            _rigidBody->setCcdSweptSphereRadius(_radius);
+            _rigidBody->setCcdMotionThreshold(_radius);
+
             btCollisionShape* shape = _rigidBody->getCollisionShape();
             assert(shape && shape->getShapeType() == CONVEX_HULL_SHAPE_PROXYTYPE);
             _ghost.setCharacterShape(static_cast<btConvexHullShape*>(shape));
@@ -449,6 +454,12 @@ void CharacterController::setLocalBoundingBox(const glm::vec3& minCorner, const 
         }
         _pendingFlags |= PENDING_FLAG_UPDATE_SHAPE;
         _pendingFlags |= PENDING_FLAG_ADD_TO_SIMULATION;
+
+        if (_rigidBody) {
+            // enable CCD
+            _rigidBody->setCcdSweptSphereRadius(_radius);
+            _rigidBody->setCcdMotionThreshold(_radius);
+        }
     }
 
     // it's ok to change offset immediately -- there are no thread safety issues here
