@@ -18,8 +18,9 @@
 class GJKTests : public QObject {
     Q_OBJECT
 private slots:
-    void intersectCubes();
-    void intersectIrregularOctagons();
+    void intersectCubes() const;
+    void intersectIrregularOctagons() const;
+    void intersectPoints() const;
 };
 
 #endif // hifi_GJKTests_h

@@ -65,7 +65,7 @@ std::vector<glm::vec3> CUBE_VERTICES_AND_FACES = {
     {  0.0f,  0.0f, -1.0f }
 };
 
-void GJKTests::intersectCubes() {
+void GJKTests::intersectCubes() const {
     // create two cubes and move them into intersection (or not) and verify the GJK algorithm
     // correctly distinquishes the two cases.
 
@@ -143,7 +143,7 @@ void GJKTests::intersectCubes() {
     }
 }
 
-void GJKTests::intersectIrregularOctagons() {
+void GJKTests::intersectIrregularOctagons() const {
     // we accept a larger DELTA for these tests
     const float DELTA = 3.0e-2f;
 
@@ -221,5 +221,9 @@ void GJKTests::intersectIrregularOctagons() {
             QVERIFY(!gjk::intersect(hullB, hullA));
         }
     }
+}
+
+void GJKTests::intersectPoints() const {
+    // TODO: write test for ConvexHull::containsPoint()
 }
 
