@@ -20,7 +20,7 @@ class GJKTests : public QObject {
 private slots:
     void intersectCubes() const;
     void intersectIrregularOctagons() const;
-    void intersectPoints() const;
+    void containsPoint() const;
 };
 
 #endif // hifi_GJKTests_h
