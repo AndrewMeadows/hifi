@@ -76,30 +76,20 @@ void ConvexHull::computeCentroid() {
 }
 
 bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const ConvexHull& hullA, const ConvexHull& hullB) {
-    // The GJK algorithm works as follows:
-    //
-    // When two convex shapes overlap their Minkowski sum contains the origin.  So the problem becomes:
-    // try to find volume defined by points on the Minkowski sum surface that contains the origin.  If
-    // we succeed then the shapes overlap, otherwise they don't.
-
-    // The 'simplex' is the list of points that define the volume.
     // The most recent addition to the simplex is always the last element and we call this point 'A'.
     glm::vec3 A = simplex.back();
 
     // Each new point on the simplex must extend past the origin along the search direction,
-    // else the two shapes cannot possibly overlap.
+    // else the two hulls cannot possibly overlap.
     if (glm::dot(direction, A) < 0.0f) {
         // latest point on simplex is not beyond origin along direction
         // we clear simplex to signal NO INTERSECTION
         simplex.clear();
+        // and return false to end while-looped search
         return false;
     }
 
-    // The simplex can have from one to four points.  We add a new point by searching the Minkowski surface
-    // for values that are on the other side of the origin from the current simplex.  We discard points
-    // when we find better ones.  Ultimately we hope to find a tetrahedron that contains the origin,
-    // or prove that such doesn't exist.
-
+    // we assume we already have at least two points in the simplex at this point
     uint32_t n = simplex.size();
     switch (n) {
         case 2: {
@@ -140,31 +130,9 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
                 simplex[1] = direction;
             }
 
-            // the simplest search direction is toward the origin from the center of the triangle
-            direction = -(simplex[0] + simplex[1] + simplex[2]);
+            // search along triangleNormal
+            direction = triangleNormal;
             A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
-
-            // However each search may supply a point that duplicates one already in the simplex.
-            // (The more continous the search on the Minkowski sum the less likely this is to happen.
-            // In other words: this happens more often when the shapes involved have a small number of
-            // "support points".)
-            // When this happens we try alternate search directions hoping to find a "new" point.
-            if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
-                // search toward origin
-                direction = -A;
-                A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
-                if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
-                    // search along triangle normal
-                    direction = triangleNormal;
-                    A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
-                    if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
-                        // give up!
-                        // we clear simplex to signal NO INTERSECTION
-                        simplex.clear();
-                        return false;
-                    }
-                }
-            }
             simplex.push_back(A);
         }
         break;
@@ -191,29 +159,15 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
                 simplex[2] = A;
                 simplex.pop_back();
 
-                // search for a new point but avoid adding duplicates
-                direction = -triangleCenter;
+                // searh along triangleNormal
+                direction = triangleNormal;
                 A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
-                if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
-                    direction = -A;
-                    A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
-                    if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
-                        direction = triangleNormal;
-                        A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
-                        if (A == simplex[0] || A == simplex[1] || A == simplex[2]) {
-                            // give up!
-                            // clear simplex to signal NO INTERSECTION
-                            simplex.clear();
-                            return false;
-                        }
-                    }
-                }
                 simplex.push_back(A);
                 break;
             }
             if (i == 3) {
-                // origin was behind ALL new faces
-                return true;
+                // origin is inside tetrahedron
+                return false;
             }
         }
         break;
@@ -229,6 +183,19 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
 }
 
 bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
+    // The GJK algorithm works as follows:
+    //
+    // When two convex hulls overlap: the surface of their Minkowski sum contains the origin.
+    // So the problem becomes: How to find a sub-volume of the Minkowski sum that contains the origin?
+    // If such a sub-volume exists then the hulls overlap, otherwise they don't.
+    //
+    // The 'simplex' is a list of points on the Minkowski surface that define the sub-volume.
+    // It starts with a single point.  We search toward the origin for a new point on the Minkowski surface and
+    // check to see if the origin is inside the sub-volume.  We continue to grow the simplex, starting with
+    // a single point to make a line-segment (2 points), then a triangle (3), and finally a tetrahedron (4).
+    // Each new point is obtained by searching the Minkowski surface toward the origin, and each time we get
+    // a new simplex we check to see if we can prove the origin is inside or outside.
+
     glm::vec3 dir = hullA.getCentroid() - hullB.getCentroid();
     const float MIN_CENTROID_SEPARATION_SQUARED = 1.0e-10f;
     float distance2 = glm::length2(dir);
@@ -238,6 +205,8 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
 
     glm::vec3 B = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
     if (glm::dot(dir, B) < 0.0f) {
+        // when the new point on the Minkowski surface is not on the other side of the origin
+        // along the direction of the search --> we immediately know the two hulls cannot possibly overlap
         return false;
     }
     dir = -dir;
@@ -251,19 +220,13 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
     simplex.push_back(A);
 
     const uint32_t MAX_NUM_LOOPS = 10;
-    uint32_t loopCount = 0;
+    uint32_t numLoops = 0;
     while (evolveSimplex(simplex, dir, hullA, hullB)) {
-        ++loopCount;
-        if (loopCount > MAX_NUM_LOOPS) {
-            // When the GJK algorithm fails to find a solution quickly the most likely case
-            // is the search algorithm is having trouble identifying positive intersection,
-            // so we assume this case.  This assumption only fails for near-miss intersections
-            // which means we are accepting approximate shapes that is are slightly larger than
-            // their true bounds.
-            break;
+        if (++numLoops > MAX_NUM_LOOPS) {
+            // could not find origin inside Minkowski surface
+            return false;
         }
     }
-
     // an empty simplex is used to signal NO intersection
     return !simplex.empty();
 }

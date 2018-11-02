@@ -20,7 +20,7 @@ namespace gjk {
     // The GJK algorithm is a fast way to determine whether two convex shapes overlap or not.
 
 class ConvexHull {
- public:
+public:
     ConvexHull() { }
     ConvexHull(const std::vector<glm::vec3>& localVertices);
 
