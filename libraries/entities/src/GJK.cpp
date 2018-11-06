@@ -75,12 +75,12 @@ void ConvexHull::computeCentroid() {
     }
 }
 
-bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const ConvexHull& hullA, const ConvexHull& hullB) {
+bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const Shape& shapeA, const Shape& shapeB) {
     // The most recent addition to the simplex is always the last element and we call this point 'A'.
     glm::vec3 A = simplex.back();
 
     // Each new point on the simplex must extend past the origin along the search direction,
-    // else the two hulls cannot possibly overlap.
+    // else the two shapes cannot possibly overlap.
     if (glm::dot(direction, A) < 0.0f) {
         // latest point on simplex is not beyond origin along direction
         // we clear simplex to signal NO INTERSECTION
@@ -110,7 +110,7 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
                 // origin is on line
                 return false;
             }
-            simplex.push_back(hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction));
+            simplex.push_back(shapeA.getSupportVertex(direction) - shapeB.getSupportVertex(-direction));
         }
         break;
         case 3: {
@@ -132,7 +132,7 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
 
             // search along triangleNormal
             direction = triangleNormal;
-            A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
+            A = shapeA.getSupportVertex(direction) - shapeB.getSupportVertex(-direction);
             simplex.push_back(A);
         }
         break;
@@ -161,7 +161,7 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
 
                 // searh along triangleNormal
                 direction = triangleNormal;
-                A = hullA.getSupportVertex(direction) - hullB.getSupportVertex(-direction);
+                A = shapeA.getSupportVertex(direction) - shapeB.getSupportVertex(-direction);
                 simplex.push_back(A);
                 break;
             }
@@ -182,12 +182,12 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const 
     return true;
 }
 
-bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
+bool gjk::intersect(const Shape& shapeA, const Shape& shapeB) {
     // The GJK algorithm works as follows:
     //
-    // When two convex hulls overlap: the surface of their Minkowski sum contains the origin.
+    // When two convex shapes overlap: the surface of their Minkowski sum contains the origin.
     // So the problem becomes: How to find a sub-volume of the Minkowski sum that contains the origin?
-    // If such a sub-volume exists then the hulls overlap, otherwise they don't.
+    // If such a sub-volume exists then the shapes overlap, otherwise they don't.
     //
     // The 'simplex' is a list of points on the Minkowski surface that define the sub-volume.
     // It starts with a single point.  We search toward the origin for a new point on the Minkowski surface and
@@ -196,21 +196,21 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
     // Each new point is obtained by searching the Minkowski surface toward the origin, and each time we get
     // a new simplex we check to see if we can prove the origin is inside or outside.
 
-    glm::vec3 dir = hullA.getCentroid() - hullB.getCentroid();
+    glm::vec3 dir = shapeA.getCentroid() - shapeB.getCentroid();
     const float MIN_CENTROID_SEPARATION_SQUARED = 1.0e-10f;
     float distance2 = glm::length2(dir);
     if (distance2 < MIN_CENTROID_SEPARATION_SQUARED) {
         return true;
     }
 
-    glm::vec3 B = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+    glm::vec3 B = shapeA.getSupportVertex(dir) - shapeB.getSupportVertex(-dir);
     if (glm::dot(dir, B) < 0.0f) {
         // when the new point on the Minkowski surface is not on the other side of the origin
-        // along the direction of the search --> we immediately know the two hulls cannot possibly overlap
+        // along the direction of the search --> we immediately know the two shapes cannot possibly overlap
         return false;
     }
     dir = -dir;
-    glm::vec3 A = hullA.getSupportVertex(dir) - hullB.getSupportVertex(-dir);
+    glm::vec3 A = shapeA.getSupportVertex(dir) - shapeB.getSupportVertex(-dir);
     if (glm::dot(dir, A) < 0.0f) {
         return false;
     }
@@ -221,7 +221,7 @@ bool gjk::intersect(const ConvexHull& hullA, const ConvexHull& hullB) {
 
     const uint32_t MAX_NUM_LOOPS = 10;
     uint32_t numLoops = 0;
-    while (evolveSimplex(simplex, dir, hullA, hullB)) {
+    while (evolveSimplex(simplex, dir, shapeA, shapeB)) {
         if (++numLoops > MAX_NUM_LOOPS) {
             // could not find origin inside Minkowski surface
             return false;

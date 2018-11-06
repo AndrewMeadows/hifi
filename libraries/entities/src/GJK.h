@@ -25,6 +25,7 @@ public:
     void setWorldTransform(const glm::vec3& translation, const glm::quat& rotation);
     virtual glm::vec3 getSupportVertex(const glm::vec3& direction) const = 0; // in world-frame
     virtual bool containsPoint(const glm::vec3& point) const = 0; // in world-frame
+    virtual glm::vec3 getCentroid() const = 0; // in world-frame
 protected:
     glm::quat _rotation { 1.0f, 0.0f, 0.0f, 0.0f };
     glm::vec3 _translation { 0.0f, 0.0f, 0.0f };
@@ -36,9 +37,8 @@ public:
     ConvexHull(const std::vector<glm::vec3>& localVertices);
 
     void setVertices(const std::vector<glm::vec3>& localVertices);
-    //void setWorldTransform(const glm::vec3& translation, const glm::quat& rotation);
 
-    glm::vec3 getCentroid() const; // in world-frame
+    glm::vec3 getCentroid() const override; // in world-frame
     glm::vec3 getSupportVertex(const glm::vec3& direction) const override; // in world-frame
     bool containsPoint(const glm::vec3& point) const override; // in world-frame
 
@@ -54,7 +54,7 @@ private:
 };
 
 
-bool intersect(const ConvexHull& hullA, const ConvexHull& hullB);
+bool intersect(const Shape& hullA, const Shape& hullB);
 
 } // namespace gjk
 
