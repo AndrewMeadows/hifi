@@ -275,20 +275,32 @@ void ZoneEntityItem::debugDump() const {
     _bloomProperties.debugDump();
 }
 
+void ZoneEntityItem::setShapeType(ShapeType type) {
+    withWriteLock([&] {
+        if (type == SHAPE_TYPE_NONE) {
+            // Zones are not allowed to have a SHAPE_TYPE_NONE
+            type = DEFAULT_SHAPE_TYPE;
+        }
+        if (type != _shapeType) {
+            // TODO: trigger new convexHull generation if necessary
+            _shapeType = type;
+        }
+    });
+}
+
 ShapeType ZoneEntityItem::getShapeType() const {
-    // Zones are not allowed to have a SHAPE_TYPE_NONE... they are always at least a SHAPE_TYPE_BOX
-    if (_shapeType == SHAPE_TYPE_COMPOUND) {
-        return hasCompoundShapeURL() ? SHAPE_TYPE_COMPOUND : DEFAULT_SHAPE_TYPE;
-    } else {
-        return _shapeType == SHAPE_TYPE_NONE ? DEFAULT_SHAPE_TYPE : _shapeType;
-    }
+    return _shapeType;
 }
 
 void ZoneEntityItem::setCompoundShapeURL(const QString& url) {
     withWriteLock([&] {
-        _compoundShapeURL = url;
-        if (_compoundShapeURL.isEmpty() && _shapeType == SHAPE_TYPE_COMPOUND) {
-            _shapeType = DEFAULT_SHAPE_TYPE;
+        if (_compoundShapeURL != url) {
+            _compoundShapeURL = url;
+            if (_compoundShapeURL.isEmpty()) {
+                _shapeType == DEFAULT_SHAPE_TYPE;
+            } else {
+                _shapeType == SHAPE_TYPE_COMPOUND;
+            }
         }
     });
 }
@@ -324,10 +336,6 @@ QString ZoneEntityItem::getFilterURL() const {
         result = _filterURL;
     });
     return result;
-}
-
-bool ZoneEntityItem::hasCompoundShapeURL() const { 
-    return !getCompoundShapeURL().isEmpty();
 }
 
 QString ZoneEntityItem::getCompoundShapeURL() const { 
@@ -369,6 +377,42 @@ void ZoneEntityItem::setBloomMode(const uint32_t value) {
 
 uint32_t ZoneEntityItem::getBloomMode() const {
     return _bloomMode;
+}
+
+bool ZoneEntityItem::contains(const glm::vec3& point) const {
+    switch (_shapeType) {
+        case SHAPE_TYPE_SPHERE:
+        case SHAPE_TYPE_HULL:
+        case SHAPE_TYPE_COMPOUND:
+        case SHAPE_TYPE_SIMPLE_HULL:
+        case SHAPE_TYPE_SIMPLE_COMPOUND:
+        {
+            for (const auto& shape : _shapes) {
+                if (shape.containsPoint(point)) {
+                    return true;
+                }
+            }
+            return false;
+            break;
+        }
+        // various unsupported SHAPE_TYPE's resort to BOX,
+        // which is what the base EntityItem::contains() provides
+        case SHAPE_TYPE_STATIC_MESH:
+        case SHAPE_TYPE_ELLIPSOID:
+        case SHAPE_TYPE_PLANE:
+        case SHAPE_TYPE_NONE:
+        case SHAPE_TYPE_CAPSULE_X:
+        case SHAPE_TYPE_CAPSULE_Y:
+        case SHAPE_TYPE_CAPSULE_Z:
+        case SHAPE_TYPE_CYLINDER_X:
+        case SHAPE_TYPE_CYLINDER_Y:
+        case SHAPE_TYPE_CYLINDER_Z:
+        case SHAPE_TYPE_CIRCLE:
+        case SHAPE_TYPE_BOX:
+        default:
+            return EntityItem::contains(point);
+    }
+    return false;
 }
 
 void ZoneEntityItem::setKeyLightMode(const uint32_t value) {

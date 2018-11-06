@@ -12,13 +12,16 @@
 #ifndef hifi_ZoneEntityItem_h
 #define hifi_ZoneEntityItem_h
 
-#include "KeyLightPropertyGroup.h"
+#include <vector>
+
 #include "AmbientLightPropertyGroup.h"
+#include "BloomPropertyGroup.h"
 #include "EntityItem.h"
 #include "EntityTree.h"
-#include "SkyboxPropertyGroup.h"
+#include "GJK.h"
 #include "HazePropertyGroup.h"
-#include "BloomPropertyGroup.h"
+#include "KeyLightPropertyGroup.h"
+#include "SkyboxPropertyGroup.h"
 #include <ComponentMode.h>
 
 class ZoneEntityItem : public EntityItem {
@@ -58,10 +61,9 @@ public:
     static void setDrawZoneBoundaries(bool value) { _drawZoneBoundaries = value; }
 
     virtual bool isReadyToComputeShape() const override { return false; }
-    void setShapeType(ShapeType type) override { withWriteLock([&] { _shapeType = type; }); }
+    void setShapeType(ShapeType type) override;
     virtual ShapeType getShapeType() const override;
 
-    virtual bool hasCompoundShapeURL() const;
     QString getCompoundShapeURL() const;
     virtual void setCompoundShapeURL(const QString& url);
 
@@ -87,6 +89,8 @@ public:
     
     const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
     const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
+
+    bool contains(const glm::vec3& point) const override;
 
     bool getFlyingAllowed() const { return _flyingAllowed; }
     void setFlyingAllowed(bool value) { _flyingAllowed = value; }
@@ -126,6 +130,8 @@ public:
 protected:
     KeyLightPropertyGroup _keyLightProperties;
     AmbientLightPropertyGroup _ambientLightProperties;
+
+    std::vector<gjk::Shape> _shapes;
 
     ShapeType _shapeType = DEFAULT_SHAPE_TYPE;
     QString _compoundShapeURL;
