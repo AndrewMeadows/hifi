@@ -380,39 +380,15 @@ uint32_t ZoneEntityItem::getBloomMode() const {
 }
 
 bool ZoneEntityItem::contains(const glm::vec3& point) const {
-    switch (_shapeType) {
-        case SHAPE_TYPE_SPHERE:
-        case SHAPE_TYPE_HULL:
-        case SHAPE_TYPE_COMPOUND:
-        case SHAPE_TYPE_SIMPLE_HULL:
-        case SHAPE_TYPE_SIMPLE_COMPOUND:
-        {
-            for (const auto& shape : _shapes) {
-                if (shape.containsPoint(point)) {
-                    return true;
-                }
+    if (_shapes.size() > 0) {
+        for (const auto& shape : _shapes) {
+            if (shape.containsPoint(point)) {
+                return true;
             }
-            return false;
-            break;
         }
-        // various unsupported SHAPE_TYPE's resort to BOX,
-        // which is what the base EntityItem::contains() provides
-        case SHAPE_TYPE_STATIC_MESH:
-        case SHAPE_TYPE_ELLIPSOID:
-        case SHAPE_TYPE_PLANE:
-        case SHAPE_TYPE_NONE:
-        case SHAPE_TYPE_CAPSULE_X:
-        case SHAPE_TYPE_CAPSULE_Y:
-        case SHAPE_TYPE_CAPSULE_Z:
-        case SHAPE_TYPE_CYLINDER_X:
-        case SHAPE_TYPE_CYLINDER_Y:
-        case SHAPE_TYPE_CYLINDER_Z:
-        case SHAPE_TYPE_CIRCLE:
-        case SHAPE_TYPE_BOX:
-        default:
-            return EntityItem::contains(point);
+        return false;
     }
-    return false;
+    return EntityItem::contains(point);
 }
 
 void ZoneEntityItem::setKeyLightMode(const uint32_t value) {

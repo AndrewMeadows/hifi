@@ -98,6 +98,7 @@ public:
 
     virtual void computeShapeInfo(ShapeInfo& info) override;
     virtual ShapeType getShapeType() const override;
+    bool contains(const glm::vec3& point) const override;
 
     std::shared_ptr<graphics::Material> getMaterial() { return _material; }
 
