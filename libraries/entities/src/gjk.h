@@ -1,5 +1,5 @@
 //
-//  GJK.h
+//  gjk.h
 //  libraries/physics/src
 //
 //  Created by Andrew Meadows 2018.08.03
@@ -9,8 +9,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_GJK_h
-#define hifi_GJK_h
+#ifndef hifi_gjk_h
+#define hifi_gjk_h
 
 #include <vector>
 #include <glm/glm.hpp>
@@ -58,4 +58,4 @@ bool intersect(const Shape& hullA, const Shape& hullB);
 
 } // namespace gjk
 
-#endif // hifi_GJK_h
+#endif // hifi_gjk_h

@@ -1,5 +1,5 @@
 //
-//  GJK.h
+//  gjk.h
 //  libraries/physics/src
 //
 //  Created by Andrew Meadows 2018.08.03
@@ -9,9 +9,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "GJK.h"
-#include <iostream> // adebug
-#include <StreamUtils.h> // adebug
+#include "gjk.h"
 
 #include <glm/gtx/norm.hpp>
 

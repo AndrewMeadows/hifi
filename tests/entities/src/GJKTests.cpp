@@ -1,5 +1,5 @@
 //
-//  GJKTests.cpp
+//  gjkTests.cpp
 //  tests/entities-renderer/src
 //
 //  Created by Andrew Meadows 2018.08.06
@@ -9,13 +9,13 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "GJKTests.h"
+#include "gjkTests.h"
 #include <test-utils/QTestExtensions.h>
 
-#include <GJK.h>
+#include <gjk.h>
 
 
-QTEST_MAIN(GJKTests)
+QTEST_MAIN(gjkTests)
 
 std::vector<glm::vec3> CUBE_VERTICES {
     { -1.0f, -1.0f, -1.0f },

@@ -18,7 +18,7 @@
 #include "BloomPropertyGroup.h"
 #include "EntityItem.h"
 #include "EntityTree.h"
-#include "GJK.h"
+#include "gjk.h"
 #include "HazePropertyGroup.h"
 #include "KeyLightPropertyGroup.h"
 #include "SkyboxPropertyGroup.h"
