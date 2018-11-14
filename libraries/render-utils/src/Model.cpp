@@ -614,7 +614,15 @@ bool Model::findParabolaIntersectionAgainstSubMeshes(const glm::vec3& origin, co
     return intersectedSomething;
 }
 
+glm::mat4 Model::getWorldToHFMMatrix() const {
+    glm::mat4 hfmToModelMatrix = glm::scale(_scale) * glm::translate(_offset);
+    glm::mat4 modelToWorldMatrix = createMatFromQuatAndPos(_rotation, _translation);
+    glm::mat4 worldToHFMMatrix = glm::inverse(modelToWorldMatrix * hfmToModelMatrix);
+    return worldToHFMMatrix;
+}
+
 bool Model::convexHullContains(glm::vec3 point) {
+    // TODO: delegate this to HFMModel::convexHullContains()
     // if we aren't active, we can't compute that yet...
     if (!isActive()) {
         return false;
