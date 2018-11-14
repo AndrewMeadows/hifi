@@ -75,31 +75,41 @@ bool ConvexHullShape::containsPoint(const glm::vec3& point) const {
     return intersect(identity, *this, identity, sphere);
 }
 
-// helper class
+// MinkowskiSurface is a helper class for gjk::intersect()
 class MinkowskiSurface {
 public:
     MinkowskiSurface() = delete;
-    MinkowskiSurface(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB)
-    : _shapeA(shapeA), _shapeB(shapeB) {
-        assert(_shapeA);
-        assert(_shapeB);
-        // Note: to simplify the code we compute the MinkowskiSurface in shapeA's local-frame,
-        // hence we compute _transformBtoA and _transformAtoB to help us do that
-        Transform::inverseMult(_transformBtoA, transformA, transformB);
-        _transformBtoA.evalInverse(_transformAtoB);
-    }
-    glm::vec3 getStartDirection() const {
-        return _shapeA->getCentroid() - _transformBtoA.transform(_shapeB->getCentroid());
-    }
-    glm::vec3 getSupportVertex(const glm::vec3& direction) const {
-        return _shapeA->getSupportVertex(direction) - _transformBtoA.transform(_shapeB->getSupportVertex(_transformAtoB.transformDirection(-direction)));
-    }
+    MinkowskiSurface(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB);
+    glm::vec3 getStartDirection() const;
+    glm::vec3 getSupportVertex(const glm::vec3& direction) const;
 private:
     Transform _transformBtoA;
     Transform _transformAtoB;
     const Shape* _shapeA;
     const Shape* _shapeB;
 };
+
+MinkowskiSurface::MinkowskiSurface(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB)
+: _shapeA(shapeA), _shapeB(shapeB) {
+    assert(_shapeA);
+    assert(_shapeB);
+    // Note: to simplify the code we compute the MinkowskiSurface in shapeA's local-frame,
+    // we compute _transformBtoA and _transformAtoB to help us do that
+    Transform::inverseMult(_transformBtoA, transformA, transformB);
+    _transformBtoA.evalInverse(_transformAtoB);
+}
+
+glm::vec3 MinkowskiSurface::getStartDirection() const {
+    return _shapeA->getCentroid() - _transformBtoA.transform(_shapeB->getCentroid());
+}
+
+glm::vec3 MinkowskiSurface::getSupportVertex(const glm::vec3& direction) const {
+    glm::vec3 supportA = _shapeA->getSupportVertex(direction);
+    glm::vec3 directionB = _transformAtoB.transformDirection(-direction);
+    glm::vec3 supportB = _shapeB->getSupportVertex(directionB);
+    glm::vec3 transformedB = _transformBtoA.transform(supportB);
+    return _shapeA->getSupportVertex(direction) - _transformBtoA.transform(_shapeB->getSupportVertex(_transformAtoB.transformDirection(-direction)));
+}
 
 //bool evolveSimplex(std::vector<glm::vec3>& simplex, glm::vec3& direction, const Shape& shapeA, const Shape& shapeB) {
 bool evolveSimplex(std::vector<glm::vec3>& simplex, const MinkowskiSurface& minkowskiSurface) {
@@ -203,6 +213,14 @@ bool evolveSimplex(std::vector<glm::vec3>& simplex, const MinkowskiSurface& mink
     simplex.push_back(A);
     return true;
 }
+
+#ifdef GJK_DEBUG
+void printSimplex(const std::vector<glm::vec3>& points) {
+    for (uint32_t i = 0; i < points.size(); ++i) {
+        std::cout << i << " : " << points[i] << std::endl;
+    }
+}
+#endif // GJK_DEBUG
 
 bool gjk::intersect(const Transform& transformA, const Shape& shapeA, const Transform& transformB, const Shape& shapeB) {
     // The GJK algorithm works as follows:
