@@ -12,6 +12,7 @@
 #include "HFM.h"
 
 #include "ModelFormatLogging.h"
+#include "ModelShape.h"
 
 void HFMMaterial::getTextureNames(QSet<QString>& textureList) const {
     if (!normalTexture.isNull()) {
@@ -169,6 +170,13 @@ static void _createBlendShapeTangents(HFMMesh& mesh, bool generateFromTexCoords,
     });
 }
 
+HFMModel::~HFMModel () {
+    if (_gjkShape) {
+        delete _gjkShape;
+        _gjkShape = nullptr;
+    }
+}
+
 QStringList HFMModel::getJointNames() const {
     QStringList names;
     foreach (const HFMJoint& joint, joints) {
@@ -200,8 +208,18 @@ Extents HFMModel::getUnscaledMeshExtents() const {
     return scaledExtents;
 }
 
-// TODO: Move to graphics::Mesh when Sam's ready
 bool HFMModel::convexHullContains(const glm::vec3& point) const {
+    if (!_gjkShape) {
+        _gjkShape = new gjk::ModelShape(this);
+    }
+    if (!getUnscaledMeshExtents().containsPoint(point)) {
+        return false;
+    }
+    return _gjkShape->containsPoint(point);
+}
+
+// temporarily keep this old implementation for performance/correctness comparison
+bool HFMModel::convexHullContainsOld(const glm::vec3& point) const {
     if (!getUnscaledMeshExtents().containsPoint(point)) {
         return false;
     }
