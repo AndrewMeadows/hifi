@@ -1671,16 +1671,9 @@ void EntityItem::adjustShapeInfoByRegistration(ShapeInfo& info) const {
 }
 
 bool EntityItem::contains(const glm::vec3& point) const {
-    if (getShapeType() == SHAPE_TYPE_COMPOUND) {
-        bool success;
-        bool result = getAABox(success).contains(point);
-        return result && success;
-    } else {
-        ShapeInfo info;
-        info.setParams(getShapeType(), glm::vec3(0.5f));
-        adjustShapeInfoByRegistration(info);
-        return info.contains(worldToEntity(point));
-    }
+    bool success;
+    bool result = getAABox(success).contains(point);
+    return result && success;
 }
 
 void EntityItem::computeShapeInfo(ShapeInfo& info) {
