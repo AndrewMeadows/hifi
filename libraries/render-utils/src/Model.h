@@ -193,7 +193,6 @@ public:
     bool didCollisionGeometryRequestFail() const { return _collisionGeometryRequestFailed; }
 
     glm::mat4 getWorldToHFMMatrix() const;
-    bool convexHullContains(glm::vec3 point);
 
     QStringList getJointNames() const;
 
