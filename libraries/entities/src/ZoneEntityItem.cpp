@@ -297,9 +297,9 @@ void ZoneEntityItem::setCompoundShapeURL(const QString& url) {
         if (_compoundShapeURL != url) {
             _compoundShapeURL = url;
             if (_compoundShapeURL.isEmpty()) {
-                _shapeType == DEFAULT_SHAPE_TYPE;
+                _shapeType = DEFAULT_SHAPE_TYPE;
             } else {
-                _shapeType == SHAPE_TYPE_COMPOUND;
+                _shapeType = SHAPE_TYPE_COMPOUND;
             }
         }
     });
