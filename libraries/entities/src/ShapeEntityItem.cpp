@@ -416,9 +416,8 @@ ShapeType ShapeEntityItem::getShapeType() const {
 }
 
 bool ShapeEntityItem::contains(const glm::vec3& point) const {
-    glm::mat4 entityToWorldMatrix = getEntityToWorldMatrix();
-    glm::mat4 worldToEntityMatrix = glm::inverse(entityToWorldMatrix);
-    glm::vec3 localPoint = glm::vec3(worldToEntityMatrix * glm::vec4(point, 1.0f));
+    // TODO: need to verify behavior of entityToWorldMatrix (does it scale to normalized space?)
+    glm::vec3 localPoint = glm::vec3(glm::inverse(getEntityToWorldMatrix()) * glm::vec4(point, 1.0f));
     switch (_shape) {
         case entity::Shape::Cube: {
             localPoint = glm::abs(localPoint);

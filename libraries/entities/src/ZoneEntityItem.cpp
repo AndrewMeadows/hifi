@@ -379,18 +379,6 @@ uint32_t ZoneEntityItem::getBloomMode() const {
     return _bloomMode;
 }
 
-bool ZoneEntityItem::contains(const glm::vec3& point) const {
-    if (_shapes.size() > 0) {
-        for (const auto& shape : _shapes) {
-            if (shape.containsPoint(point)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    return EntityItem::contains(point);
-}
-
 void ZoneEntityItem::setKeyLightMode(const uint32_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _keyLightMode) {
         _keyLightMode = value;

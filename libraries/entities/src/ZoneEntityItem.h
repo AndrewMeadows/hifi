@@ -12,18 +12,14 @@
 #ifndef hifi_ZoneEntityItem_h
 #define hifi_ZoneEntityItem_h
 
-#include <vector>
-
-#include <hfm/gjk.h>
-#include <ComponentMode.h>
-
+#include "KeyLightPropertyGroup.h"
 #include "AmbientLightPropertyGroup.h"
-#include "BloomPropertyGroup.h"
 #include "EntityItem.h"
 #include "EntityTree.h"
-#include "HazePropertyGroup.h"
-#include "KeyLightPropertyGroup.h"
 #include "SkyboxPropertyGroup.h"
+#include "HazePropertyGroup.h"
+#include "BloomPropertyGroup.h"
+#include <ComponentMode.h>
 
 class ZoneEntityItem : public EntityItem {
 public:
@@ -91,8 +87,6 @@ public:
     const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
     const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
 
-    bool contains(const glm::vec3& point) const override;
-
     bool getFlyingAllowed() const { return _flyingAllowed; }
     void setFlyingAllowed(bool value) { _flyingAllowed = value; }
     bool getGhostingAllowed() const { return _ghostingAllowed; }
@@ -131,8 +125,6 @@ public:
 protected:
     KeyLightPropertyGroup _keyLightProperties;
     AmbientLightPropertyGroup _ambientLightProperties;
-
-    std::vector<gjk::Shape> _shapes;
 
     ShapeType _shapeType = DEFAULT_SHAPE_TYPE;
     QString _compoundShapeURL;

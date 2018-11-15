@@ -25,8 +25,6 @@
 #include <graphics/Geometry.h>
 #include <graphics/Material.h>
 
-#include "gjk.h"
-
 const int MAX_NUM_PIXELS_FOR_FBX_TEXTURE = 2048 * 2048;
 
 // High Fidelity Model namespace
@@ -255,7 +253,6 @@ public:
 /// The runtime model format.
 class Model {
 public:
-    ~Model();
     using Pointer = std::shared_ptr<Model>;
 
     QString originalURL;
@@ -307,7 +304,6 @@ public:
     Extents getUnscaledMeshExtents() const;
 
     bool convexHullContains(const glm::vec3& point) const;
-    bool convexHullContainsOld(const glm::vec3& point) const; // temporarily keep for performance comparison
 
     QHash<int, QString> meshIndicesToModelNames;
 
@@ -315,7 +311,6 @@ public:
     QString getModelNameOfMesh(int meshIndex) const;
 
     QList<QString> blendshapeChannelNames;
-    mutable gjk::Shape* _gjkShape { nullptr };
 };
 
 };
