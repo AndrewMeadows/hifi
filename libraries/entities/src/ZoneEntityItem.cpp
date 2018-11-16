@@ -275,20 +275,32 @@ void ZoneEntityItem::debugDump() const {
     _bloomProperties.debugDump();
 }
 
+void ZoneEntityItem::setShapeType(ShapeType type) {
+    withWriteLock([&] {
+        if (type == SHAPE_TYPE_NONE) {
+            // Zones are not allowed to have a SHAPE_TYPE_NONE
+            type = DEFAULT_SHAPE_TYPE;
+        }
+        if (type != _shapeType) {
+            // TODO: trigger new convexHull generation if necessary
+            _shapeType = type;
+        }
+    });
+}
+
 ShapeType ZoneEntityItem::getShapeType() const {
-    // Zones are not allowed to have a SHAPE_TYPE_NONE... they are always at least a SHAPE_TYPE_BOX
-    if (_shapeType == SHAPE_TYPE_COMPOUND) {
-        return hasCompoundShapeURL() ? SHAPE_TYPE_COMPOUND : DEFAULT_SHAPE_TYPE;
-    } else {
-        return _shapeType == SHAPE_TYPE_NONE ? DEFAULT_SHAPE_TYPE : _shapeType;
-    }
+    return _shapeType;
 }
 
 void ZoneEntityItem::setCompoundShapeURL(const QString& url) {
     withWriteLock([&] {
-        _compoundShapeURL = url;
-        if (_compoundShapeURL.isEmpty() && _shapeType == SHAPE_TYPE_COMPOUND) {
-            _shapeType = DEFAULT_SHAPE_TYPE;
+        if (_compoundShapeURL != url) {
+            _compoundShapeURL = url;
+            if (_compoundShapeURL.isEmpty()) {
+                _shapeType = DEFAULT_SHAPE_TYPE;
+            } else {
+                _shapeType = SHAPE_TYPE_COMPOUND;
+            }
         }
     });
 }
@@ -324,10 +336,6 @@ QString ZoneEntityItem::getFilterURL() const {
         result = _filterURL;
     });
     return result;
-}
-
-bool ZoneEntityItem::hasCompoundShapeURL() const { 
-    return !getCompoundShapeURL().isEmpty();
 }
 
 QString ZoneEntityItem::getCompoundShapeURL() const { 
