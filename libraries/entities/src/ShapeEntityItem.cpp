@@ -414,31 +414,3 @@ void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
 ShapeType ShapeEntityItem::getShapeType() const {
     return _collisionShapeType;
 }
-
-bool ShapeEntityItem::contains(const glm::vec3& point) const {
-    // TODO: need to verify behavior of entityToWorldMatrix (does it scale to normalized space?)
-    glm::vec3 localPoint = glm::vec3(glm::inverse(getEntityToWorldMatrix()) * glm::vec4(point, 1.0f));
-    switch (_shape) {
-        case entity::Shape::Cube: {
-            localPoint = glm::abs(localPoint);
-            const float LOCAL_CUBE_HALF_SIDE = 0.5f;
-            return localPoint.x <= LOCAL_CUBE_HALF_SIDE && localPoint.y <= LOCAL_CUBE_HALF_SIDE && localPoint.z <= LOCAL_CUBE_HALF_SIDE;
-        }
-        break;
-        case entity::Shape::Sphere: {
-            const float LOCAL_RADIUS_SQUARED = 0.25f;
-            return glm::length2(localPoint) <= LOCAL_RADIUS_SQUARED;
-        }
-        break;
-        case entity::Shape::Circle:
-        case entity::Shape::Cylinder:
-        case entity::Shape::Tetrahedron:
-        case entity::Shape::Octahedron:
-        case entity::Shape::Dodecahedron:
-        case entity::Shape::Icosahedron:
-        // TODO: handle these cases
-        default:
-            break;
-    }
-    return EntityItem::contains(point);
-}
