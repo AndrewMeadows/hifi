@@ -28,6 +28,7 @@
 #include <GLMHelpers.h>
 #include <RegisteredMetaTypes.h>
 #include <Extents.h>
+#include <VariantMapToScriptValue.h>
 
 #include "EntitiesLogging.h"
 #include "EntityItem.h"
@@ -1823,6 +1824,18 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     _lastEdited = usecTimestampNow();
 }
 
+void EntityItemProperties::copyFromJSONString(QScriptEngine& scriptEngine, const QString& jsonString) {
+    // DANGER: this method is expensive
+    QJsonDocument propertiesDoc = QJsonDocument::fromJson(jsonString.toUtf8());
+    QJsonObject propertiesObj = propertiesDoc.object();
+    QVariant propertiesVariant(propertiesObj);
+    QVariantMap propertiesMap = propertiesVariant.toMap();
+    QScriptValue propertiesScriptValue = variantMapToScriptValue(propertiesMap, scriptEngine);
+    bool honorReadOnly = true;
+    copyFromScriptValue(propertiesScriptValue, honorReadOnly);
+}
+
+
 void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(lastEditedBy);
     COPY_PROPERTY_IF_CHANGED(position);
@@ -2004,7 +2017,6 @@ void EntityItemPropertiesFromScriptValueIgnoreReadOnly(const QScriptValue &objec
 void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue &object, EntityItemProperties& properties) {
     properties.copyFromScriptValue(object, true);
 }
-
 
 QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags) {
     return EntityItemProperties::entityPropertyFlagsToScriptValue(engine, flags);
