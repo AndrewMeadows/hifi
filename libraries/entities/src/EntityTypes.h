@@ -103,6 +103,7 @@ public:
         LAST = Material
     } EntityType;
 
+    static bool typeIsValid(EntityType type);
     static const QString& getEntityTypeName(EntityType entityType);
     static EntityTypes::EntityType getEntityTypeFromName(const QString& name);
     static bool registerEntityType(EntityType entityType, const char* name, EntityTypeFactory factoryMethod);

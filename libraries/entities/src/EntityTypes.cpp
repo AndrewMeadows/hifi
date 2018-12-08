@@ -54,6 +54,10 @@ REGISTER_ENTITY_TYPE_WITH_FACTORY(Box, ShapeEntityItem::boxFactory)
 REGISTER_ENTITY_TYPE_WITH_FACTORY(Sphere, ShapeEntityItem::sphereFactory)
 REGISTER_ENTITY_TYPE(Material)
 
+bool EntityTypes::typeIsValid(EntityType type) {
+    return type > EntityType::Unknown && type <= EntityType::LAST;
+}
+
 const QString& EntityTypes::getEntityTypeName(EntityType entityType) {
     QMap<EntityType, QString>::iterator matchedTypeName = _typeToNameMap.find(entityType);
     if (matchedTypeName != _typeToNameMap.end()) {
