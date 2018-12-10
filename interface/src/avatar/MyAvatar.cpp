@@ -1350,7 +1350,6 @@ void MyAvatar::saveAvatarEntityDataToSettings() {
     // find set of things that changed
     std::set<QUuid> entitiesToSave;
     _avatarEntitiesLock.withWriteLock([&] {
-        // TODO: save these to settings.
         entitiesToSave = std::move(_entitiesToSaveToSettings);
         for (const auto& id : _entitiesToRemoveFromSettings) {
             // remove
