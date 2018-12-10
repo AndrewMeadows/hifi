@@ -1549,6 +1549,12 @@ void MyAvatar::updateAvatarEntities() {
 }
 
 
+void MyAvatar::rememberToReloadAvatarEntityDataFromSettings() {
+    AvatarEntityMap emptyMap;
+    setAvatarEntityData(emptyMap);
+    _reloadAvatarEntityDataFromSettings = true;
+}
+
 void MyAvatar::loadData() {
     getHead()->setBasePitch(_headPitchSetting.get());
 

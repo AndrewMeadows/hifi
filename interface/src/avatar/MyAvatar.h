@@ -1172,7 +1172,7 @@ public:
 
     glm::vec3 getNextPosition() { return _goToPending ? _goToPosition : getWorldPosition(); }
     void updateAvatarEntities() override;
-    void rememberToReloadOfAvatarEntityDataFromSettings() { _reloadAvatarEntityDataFromSettings = true; }
+    void rememberToReloadAvatarEntityDataFromSettings();
 
 public slots:
 
