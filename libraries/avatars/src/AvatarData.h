@@ -61,6 +61,7 @@ using AvatarSharedPointer = std::shared_ptr<AvatarData>;
 using AvatarWeakPointer = std::weak_ptr<AvatarData>;
 using AvatarHash = QHash<QUuid, AvatarSharedPointer>;
 using AvatarEntityMap = QMap<QUuid, QByteArray>;
+using PackedAvatarEntityMap = QMap<QUuid, QByteArray>; // similar to AvatarEntityMap, but different internal format
 using AvatarEntityIDs = QSet<QUuid>;
 
 using AvatarDataSequenceNumber = uint16_t;
@@ -952,7 +953,8 @@ public:
      * @param {Uuid} entityID
      * @param {object} entityData
      */
-    Q_INVOKABLE virtual void updateAvatarEntity(const QUuid& id, const QScriptValue& data);
+    Q_INVOKABLE virtual void updateAvatarEntity(const QUuid& id, const QScriptValue& scriptValue);
+    virtual void updateAvatarEntityData(const QUuid& id, const QByteArray& data);
 
     /**jsdoc
      * @function MyAvatar.clearAvatarEntity
@@ -1119,6 +1121,7 @@ public:
     TransformPointer getRecordingBasis() const;
     void setRecordingBasis(TransformPointer recordingBasis = TransformPointer());
     void createRecordingIDs();
+    void avatarEntityDataToJson(QJsonObject& root) const;
     QJsonObject toJson() const;
     void fromJson(const QJsonObject& json, bool useFrameSkeleton = true);
 
@@ -1133,11 +1136,10 @@ public:
     Q_INVOKABLE AvatarEntityMap getAvatarEntityData() const;
 
     /**jsdoc
-     * Temporarily disabled.  Use updateAvatarEntity(id, properties) in the meantime.
      * @function MyAvatar.setAvatarEntityData
      * @param {object} avatarEntityData
      */
-    void setAvatarEntityData(const AvatarEntityMap& avatarEntityData);
+    Q_INVOKABLE void setAvatarEntityData(const AvatarEntityMap& avatarEntityData);
 
     virtual void setAvatarEntityDataChanged(bool value) { _avatarEntityDataChanged = value; }
     void insertDetachedEntityID(const QUuid entityID);
@@ -1451,7 +1453,7 @@ protected:
     mutable ReadWriteLockable _avatarEntitiesLock;
     AvatarEntityIDs _avatarEntityDetached; // recently detached from this avatar
     AvatarEntityIDs _avatarEntityForRecording; // create new entities id for avatar recording
-    AvatarEntityMap _avatarEntityData;
+    PackedAvatarEntityMap _packedAvatarEntityData;
     bool _avatarEntityDataChanged { false };
 
     // used to transform any sensor into world space, including the _hmdSensorMat, or hand controllers.
