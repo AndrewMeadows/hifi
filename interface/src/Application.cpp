@@ -2459,7 +2459,7 @@ void Application::updateHeartbeat() const {
 
 void Application::onAboutToQuit() {
     // quickly save AvatarEntityData before the EntityTree is dismantled
-    getMyAvatar()->saveAvatarDataToSettings();
+    getMyAvatar()->saveAvatarEntityDataToSettings();
 
     emit beforeAboutToQuit();
 
