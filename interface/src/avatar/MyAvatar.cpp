@@ -1494,38 +1494,6 @@ void MyAvatar::clearAvatarEntity(const QUuid& entityID, bool requiresRemovalFrom
     });
 }
 
-bool blobToProperties(QScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
-    // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
-    QJsonDocument jsonProperties = QJsonDocument::fromBinaryData(blob);
-    if (!jsonProperties.isObject()) {
-        qCDebug(interfaceapp) << "bad avatarEntityData json" << QString(blob.toHex());
-        return false;
-    }
-    QVariant variant = jsonProperties.toVariant();
-    QVariantMap variantMap = variant.toMap();
-    QScriptValue scriptValue = variantMapToScriptValue(variantMap, scriptEngine);
-    EntityItemPropertiesFromScriptValueHonorReadOnly(scriptValue, properties);
-    // end recipe
-    return true;
-}
-
-void propertiesToBlob(QScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties, QByteArray& blob) {
-    // begin recipe for extracting unfortunately-formatted-binary-blob from EntityItem
-    QScriptValue scriptValue = EntityItemNonDefaultPropertiesToScriptValue(&scriptEngine, properties);
-    QVariant variantProperties = scriptValue.toVariant();
-    QJsonDocument jsonProperties = QJsonDocument::fromVariant(variantProperties);
-    // the ID of the parent/avatar changes from session to session.  use a special UUID to indicate the avatar
-    QJsonObject jsonObject = jsonProperties.object();
-    if (jsonObject.contains("parentID")) {
-        if (QUuid(jsonObject["parentID"].toString()) == myAvatarID) {
-            jsonObject["parentID"] = AVATAR_SELF_ID.toString();
-        }
-    }
-    jsonProperties = QJsonDocument(jsonObject);
-    blob = jsonProperties.toBinaryData();
-    // end recipe
-}
-
 void MyAvatar::sanitizeAvatarEntityProperties(EntityItemProperties& properties) const {
     properties.setEntityHostType(entity::HostType::AVATAR);
     properties.setOwningAvatarID(getID());
@@ -1639,7 +1607,7 @@ void MyAvatar::updateAvatarEntities() {
                 blobFailed = true; // blob doesn't exist
                 return;
             }
-            if (!blobToProperties(*_myScriptEngine, itr.value(), properties)) {
+            if (!EntityItemProperties::blobToProperties(*_myScriptEngine, itr.value(), properties)) {
                 blobFailed = true; // blob is corrupt
             }
         });
@@ -1668,7 +1636,7 @@ void MyAvatar::updateAvatarEntities() {
                 skip = true;
                 return;
             }
-            if (!blobToProperties(*_myScriptEngine, itr.value(), properties)) {
+            if (!EntityItemProperties::blobToProperties(*_myScriptEngine, itr.value(), properties)) {
                 skip = true;
             }
         });
@@ -1774,7 +1742,7 @@ bool MyAvatar::updateStaleAvatarEntityBlobs() const {
         if (found) {
             ++numFound;
             QByteArray blob;
-            propertiesToBlob(*_myScriptEngine, getID(), properties, blob);
+            EntityItemProperties::propertiesToBlob(*_myScriptEngine, getID(), properties, blob);
             _avatarEntitiesLock.withWriteLock([&] {
                 _cachedAvatarEntityBlobs[id] = blob;
             });
@@ -1801,7 +1769,7 @@ AvatarEntityMap MyAvatar::getAvatarEntityData() const {
 
 void MyAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityData) {
     // Note: this is an invokable Script call
-    // The argument is expected to be a map of QByteArrays that represent EntityItemProperties objects from JavaScript,
+    // avatarEntityData is expected to be a map of QByteArrays that represent EntityItemProperties objects from JavaScript,
     // aka: unfortunately-formatted-binary-blobs because we store them in non-human-readable format in Settings.
     //
     if (avatarEntityData.size() > MAX_NUM_AVATAR_ENTITIES) {
@@ -1822,13 +1790,10 @@ void MyAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityData) {
     _avatarEntitiesLock.withWriteLock([&] {
         // find new and updated IDs
         AvatarEntityMap::const_iterator constItr = avatarEntityData.begin();
-        std::vector<QUuid> blobsToCache;
-        blobsToCache.reserve(avatarEntityData.size());
         while (constItr != avatarEntityData.end()) {
             QUuid id = constItr.key();
             if (_cachedAvatarEntityBlobs.find(id) == _cachedAvatarEntityBlobs.end()) {
                 _entitiesToAdd.push_back(id);
-                blobsToCache.push_back(id);
             } else {
                 _entitiesToUpdate.push_back(id);
             }
@@ -1846,7 +1811,7 @@ void MyAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityData) {
                 ++itr;
             }
         }
-        // now that we've 'deleted' unknown ids, copy over the new ones
+        // copy new data
         constItr = avatarEntityData.begin();
         while (constItr != avatarEntityData.end()) {
             _cachedAvatarEntityBlobs.insert(constItr.key(), constItr.value());
