@@ -2338,8 +2338,11 @@ void MyAvatar::clearAvatarEntities() {
     auto treeRenderer = DependencyManager::get<EntityTreeRenderer>();
     EntityTreePointer entityTree = treeRenderer ? treeRenderer->getTree() : nullptr;
 
-    AvatarEntityMap avatarEntities = getAvatarEntityData();
-    for (auto entityID : avatarEntities.keys()) {
+    QList<QUuid> avatarEntityIDs;
+    _avatarEntitiesLock.withReadLock([&] {
+            avatarEntityIDs = _packedAvatarEntityData.keys();
+    });
+    for (const auto& entityID : avatarEntityIDs) {
         entityTree->withWriteLock([&entityID, &entityTree] {
             // remove this entity first from the entity tree
             entityTree->deleteEntity(entityID, true, true);
@@ -2354,10 +2357,12 @@ void MyAvatar::clearAvatarEntities() {
 void MyAvatar::removeWearableAvatarEntities() {
     auto treeRenderer = DependencyManager::get<EntityTreeRenderer>();
     EntityTreePointer entityTree = treeRenderer ? treeRenderer->getTree() : nullptr;
-    
     if (entityTree) {
-        AvatarEntityMap avatarEntities = getAvatarEntityData();
-        for (auto entityID : avatarEntities.keys()) {
+        QList<QUuid> avatarEntityIDs;
+        _avatarEntitiesLock.withReadLock([&] {
+                avatarEntityIDs = _packedAvatarEntityData.keys();
+        });
+        for (const auto& entityID : avatarEntityIDs) {
             auto entity = entityTree->findEntityByID(entityID);
             if (entity && isWearableEntity(entity)) {
                 entityTree->withWriteLock([&entityID, &entityTree] {
@@ -2379,8 +2384,11 @@ QVariantList MyAvatar::getAvatarEntitiesVariant() {
     auto treeRenderer = DependencyManager::get<EntityTreeRenderer>();
     EntityTreePointer entityTree = treeRenderer ? treeRenderer->getTree() : nullptr;
     if (entityTree) {
-        AvatarEntityMap avatarEntities = getAvatarEntityData();
-        for (auto entityID : avatarEntities.keys()) {
+        QList<QUuid> avatarEntityIDs;
+        _avatarEntitiesLock.withReadLock([&] {
+                avatarEntityIDs = _packedAvatarEntityData.keys();
+        });
+        for (const auto& entityID : avatarEntityIDs) {
             auto entity = entityTree->findEntityByID(entityID);
             if (!entity) {
                 continue;
@@ -2780,17 +2788,17 @@ void MyAvatar::setAttachmentData(const QVector<AttachmentData>& attachmentData) 
 }
 
 QVector<AttachmentData> MyAvatar::getAttachmentData() const {    
-    QVector<AttachmentData> avatarData;
-    auto avatarEntities = getAvatarEntityData();
-    AvatarEntityMap::const_iterator dataItr = avatarEntities.begin();
-    while (dataItr != avatarEntities.end()) {
-        QUuid entityID = dataItr.key();
+    QVector<AttachmentData> attachmentData;
+    QList<QUuid> avatarEntityIDs;
+    _avatarEntitiesLock.withReadLock([&] {
+        avatarEntityIDs = _packedAvatarEntityData.keys();
+    });
+    for (const auto& entityID : avatarEntityIDs) {
         auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID);
         AttachmentData data = entityPropertiesToAttachmentData(properties);
-        avatarData.append(data);
-        dataItr++;
+        attachmentData.append(data);
     }
-    return avatarData;
+    return attachmentData;
 }
 
 QVariantList MyAvatar::getAttachmentsVariant() const {
@@ -2819,16 +2827,16 @@ void MyAvatar::setAttachmentsVariant(const QVariantList& variant) {
 }
 
 bool MyAvatar::findAvatarEntity(const QString& modelURL, const QString& jointName, QUuid& entityID) {
-    auto avatarEntities = getAvatarEntityData();
-    AvatarEntityMap::const_iterator dataItr = avatarEntities.begin();
-    while (dataItr != avatarEntities.end()) {
-        entityID = dataItr.key();
+    QList<QUuid> avatarEntityIDs;
+    _avatarEntitiesLock.withReadLock([&] {
+            avatarEntityIDs = _packedAvatarEntityData.keys();
+    });
+    for (const auto& entityID : avatarEntityIDs) {
         auto props = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID);
         if (props.getModelURL() == modelURL &&
             (jointName.isEmpty() || props.getParentJointIndex() == getJointIndex(jointName))) {
             return true;
         }
-        dataItr++;
     }
     return false;
 }
