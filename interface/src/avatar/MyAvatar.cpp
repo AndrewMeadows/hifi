@@ -277,6 +277,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     connect(&(_skeletonModel->getRig()), SIGNAL(onLoadComplete()), this, SIGNAL(onLoadComplete()));
 
     _characterController.setDensity(_density);
+    _isClientAvatar = true;
 }
 
 MyAvatar::~MyAvatar() {

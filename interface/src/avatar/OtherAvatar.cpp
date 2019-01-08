@@ -41,6 +41,7 @@ OtherAvatar::OtherAvatar(QThread* thread) : Avatar(thread) {
 
     // add the purple orb
     createOrb();
+    _isClientAvatar = true;
 }
 
 OtherAvatar::~OtherAvatar() {
