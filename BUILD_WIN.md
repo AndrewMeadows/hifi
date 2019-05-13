@@ -1,7 +1,7 @@
 This is a stand-alone guide for creating your first High Fidelity build for Windows 64-bit.
 
 ## Building High Fidelity
-Note: We are now using Visual Studio 2017 and Qt 5.10.1. If you are upgrading from Visual Studio 2013 and Qt 5.6.2, do a clean uninstall of those versions before going through this guide.
+Note: We are now using Visual Studio 2017 and Qt 5.12.3. If you are upgrading from Visual Studio 2013, do a clean uninstall of those versions before going through this guide.
 
 Note: The prerequisites will require about 10 GB of space on your drive. You will also need a system with at least 8GB of main memory.
 
