@@ -82,12 +82,40 @@ void setupPreferences() {
         preferences->addPreference(new CheckPreference(GRAPHICS_QUALITY, "Show Shadows", getterShadow, setterShadow));
     }
 
+    {
+        auto getter = []()->QString {
+            RefreshRateManager::RefreshRateProfile refreshRateProfile = qApp->getRefreshRateManager().getRefreshRateProfile();
+            return QString::fromStdString(RefreshRateManager::refreshRateProfileToString(refreshRateProfile));
+        };
+
+        auto setter = [](QString value) {
+            std::string profileName = value.toStdString();
+            RefreshRateManager::RefreshRateProfile refreshRateProfile = RefreshRateManager::refreshRateProfileFromString(profileName);
+            qApp->getRefreshRateManager().setRefreshRateProfile(refreshRateProfile);
+        };
+
+        auto preference = new ComboBoxPreference(GRAPHICS_QUALITY, "Refresh Rate", getter, setter);
+        QStringList refreshRateProfiles
+            { QString::fromStdString(RefreshRateManager::refreshRateProfileToString(RefreshRateManager::RefreshRateProfile::ECO)),
+              QString::fromStdString(RefreshRateManager::refreshRateProfileToString(RefreshRateManager::RefreshRateProfile::INTERACTIVE)),
+              QString::fromStdString(RefreshRateManager::refreshRateProfileToString(RefreshRateManager::RefreshRateProfile::REALTIME)) };
+
+        preference->setItems(refreshRateProfiles);
+        preferences->addPreference(preference);
+    }
+
     // UI
     static const QString UI_CATEGORY { "User Interface" };
     {
         auto getter = []()->bool { return qApp->getSettingConstrainToolbarPosition(); };
         auto setter = [](bool value) { qApp->setSettingConstrainToolbarPosition(value); };
         preferences->addPreference(new CheckPreference(UI_CATEGORY, "Constrain Toolbar Position to Horizontal Center", getter, setter));
+    }
+	
+    {
+        auto getter = []()->bool { return qApp->getAwayStateWhenFocusLostInVREnabled(); };
+        auto setter = [](bool value) { qApp->setAwayStateWhenFocusLostInVREnabled(value); };
+        preferences->addPreference(new CheckPreference(UI_CATEGORY, "Go into away state when interface window loses focus in VR", getter, setter));
     }
 
     {
@@ -276,6 +304,12 @@ void setupPreferences() {
         auto setter = [myAvatar](bool value) { myAvatar->setFlyingHMDPref(value); };
         auto preference = new CheckPreference(VR_MOVEMENT, "Jumping and flying", getter, setter);
         preference->setIndented(true);
+        preferences->addPreference(preference);
+    }
+    {
+        auto getter = [myAvatar]() -> bool { return myAvatar->hoverWhenUnsupported(); };
+        auto setter = [myAvatar](bool value) { myAvatar->setHoverWhenUnsupported(value); };
+        auto preference = new CheckPreference(VR_MOVEMENT, "Hover When Unsupported", getter, setter);
         preferences->addPreference(preference);
     }
     {

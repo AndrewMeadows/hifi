@@ -58,6 +58,7 @@
 #include "gpu/Context.h"
 #include "LoginStateManager.h"
 #include "Menu.h"
+#include "RefreshRateManager.h"
 #include "octree/OctreePacketProcessor.h"
 #include "render/Engine.h"
 #include "scripting/ControllerScriptingInterface.h"
@@ -203,11 +204,14 @@ public:
     CompositorHelper& getApplicationCompositor() const;
 
     Overlays& getOverlays() { return _overlays; }
+    RefreshRateManager& getRefreshRateManager() { return _refreshRateManager; }
 
     size_t getRenderFrameCount() const { return _graphicsEngine.getRenderFrameCount(); }
     float getRenderLoopRate() const { return _graphicsEngine.getRenderLoopRate(); }
     float getNumCollisionObjects() const;
     float getTargetRenderFrameRate() const; // frames/second
+
+    static void setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties);
 
     float getFieldOfView() { return _fieldOfView.get(); }
     void setFieldOfView(float fov);
@@ -236,6 +240,9 @@ public:
 
     float getSettingConstrainToolbarPosition() { return _constrainToolbarPosition.get(); }
     void setSettingConstrainToolbarPosition(bool setting);
+
+    float getAwayStateWhenFocusLostInVREnabled() { return _awayStateWhenFocusLostInVREnabled.get(); }
+    void setAwayStateWhenFocusLostInVREnabled(bool setting);
 
     Q_INVOKABLE void setMinimumGPUTextureMemStabilityCount(int stabilityCount) { _minimumGPUTextureMemSizeStabilityCount = stabilityCount; }
 
@@ -345,6 +352,12 @@ public:
     void toggleAwayMode();
     #endif
 
+    using SnapshotOperator = std::tuple<std::function<void(const QImage&)>, float, bool>;
+    void addSnapshotOperator(const SnapshotOperator& snapshotOperator);
+    bool takeSnapshotOperators(std::queue<SnapshotOperator>& snapshotOperators);
+
+    void openDirectory(const QString& path);
+
 signals:
     void svoImportRequested(const QString& url);
 
@@ -361,6 +374,7 @@ signals:
     void loginDialogFocusDisabled();
 
     void miniTabletEnabledChanged(bool enabled);
+    void awayStateWhenFocusLostInVRChanged(bool enabled);
 
 public slots:
     QVector<EntityItemID> pasteEntities(float x, float y, float z);
@@ -403,8 +417,6 @@ public slots:
     void readArgumentsFromLocalSocket() const;
 
     static void packageModel();
-
-    void openUrl(const QUrl& url) const;
 
     void resetSensors(bool andReload = false);
     void setActiveFaceTracker() const;
@@ -471,6 +483,9 @@ public slots:
     void changeViewAsNeeded(float boomLength);
 
     QString getGraphicsCardType();
+
+    bool gpuTextureMemSizeStable();
+    void showUrlHandler(const QUrl& url);
 
 private slots:
     void onDesktopRootItemCreated(QQuickItem* qmlContext);
@@ -566,7 +581,6 @@ private:
     bool importFromZIP(const QString& filePath);
     bool importImage(const QString& urlString);
 
-    bool gpuTextureMemSizeStable();
     int processOctreeStats(ReceivedMessage& message, SharedNodePointer sendingNode);
     void trackIncomingOctreePacket(ReceivedMessage& message, SharedNodePointer sendingNode, bool wasStatsPacket);
 
@@ -596,7 +610,6 @@ private:
     void maybeToggleMenuVisible(QMouseEvent* event) const;
     void toggleTabletUI(bool shouldOpen = false) const;
 
-    static void setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties);
     void userKickConfirmation(const QUuid& nodeID);
 
     MainWindow* _window;
@@ -664,6 +677,7 @@ private:
     Setting::Handle<bool> _preferStylusOverLaserSetting;
     Setting::Handle<bool> _preferAvatarFingerOverStylusSetting;
     Setting::Handle<bool> _constrainToolbarPosition;
+    Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
@@ -717,6 +731,7 @@ private:
     QUuid _loginDialogID;
     QUuid _avatarInputsBarID;
     LoginStateManager _loginStateManager;
+    RefreshRateManager _refreshRateManager;
 
     quint64 _lastFaceTrackerUpdate;
 
@@ -789,6 +804,9 @@ private:
     AudioInjectorPointer _snapshotSoundInjector;
     SharedSoundPointer _snapshotSound;
     SharedSoundPointer _sampleSound;
+    std::mutex _snapshotMutex;
+    std::queue<SnapshotOperator> _snapshotOperators;
+    bool _hasPrimarySnapshot { false };
 
     DisplayPluginPointer _autoSwitchDisplayModeSupportedHMDPlugin;
     QString _autoSwitchDisplayModeSupportedHMDPluginName;
@@ -811,5 +829,6 @@ private:
 
     bool _resumeAfterLoginDialogActionTaken_WasPostponed { false };
     bool _resumeAfterLoginDialogActionTaken_SafeToRun { false };
+    bool _startUpFinished { false };
 };
 #endif // hifi_Application_h

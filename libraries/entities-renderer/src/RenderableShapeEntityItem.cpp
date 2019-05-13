@@ -280,7 +280,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
         outColor.a *= _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) : 1.0f;
         render::ShapePipelinePointer pipeline;
-        if (renderLayer == RenderLayer::WORLD) {
+        if (renderLayer == RenderLayer::WORLD && args->_renderMethod != Args::RenderMethod::FORWARD) {
             pipeline = outColor.a < 1.0f ? geometryCache->getTransparentShapePipeline() : geometryCache->getOpaqueShapePipeline();
         } else {
             pipeline = outColor.a < 1.0f ? geometryCache->getForwardTransparentShapePipeline() : geometryCache->getForwardOpaqueShapePipeline();
@@ -291,8 +291,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
         }
     } else {
-        if (args->_renderMode != render::Args::RenderMode::SHADOW_RENDER_MODE) {
-            RenderPipelines::bindMaterials(materials, batch, args->_enableTexturing);
+        if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }
 

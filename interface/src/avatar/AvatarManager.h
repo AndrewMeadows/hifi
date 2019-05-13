@@ -262,8 +262,19 @@ public slots:
      */
     void updateAvatarRenderStatus(bool shouldRenderAvatars);
 
+    /**jsdoc
+    * Displays other avatars skeletons debug graphics.
+    * @function AvatarManager.setEnableDebugDrawOtherSkeletons
+    * @param {boolean} enabled - <code>true</code> to show the debug graphics, <code>false</code> to hide.
+    */
+    void setEnableDebugDrawOtherSkeletons(bool isEnabled) {
+        _drawOtherAvatarSkeletons = isEnabled;
+    }
+
 protected:
     AvatarSharedPointer addAvatar(const QUuid& sessionUUID, const QWeakPointer<Node>& mixerWeakPointer) override;
+    DetailedMotionState* createDetailedMotionState(OtherAvatarPointer avatar, int32_t jointIndex);
+    void rebuildAvatarPhysics(PhysicsEngine::Transaction& transaction, OtherAvatarPointer avatar);
 
 private:
     explicit AvatarManager(QObject* parent = 0);
@@ -279,7 +290,7 @@ private:
     void handleTransitAnimations(AvatarTransit::Status status);
 
     using SetOfOtherAvatars = std::set<OtherAvatarPointer>;
-    SetOfOtherAvatars _avatarsToChangeInPhysics;
+    SetOfOtherAvatars _otherAvatarsToChangeInPhysics;
 
     std::shared_ptr<MyAvatar> _myAvatar;
     quint64 _lastSendAvatarDataTime = 0; // Controls MyAvatar send data rate.
@@ -299,6 +310,7 @@ private:
     workload::SpacePointer _space;
 
     AvatarTransit::TransitConfig  _transitConfig;
+    bool _drawOtherAvatarSkeletons { false };
 };
 
 #endif // hifi_AvatarManager_h

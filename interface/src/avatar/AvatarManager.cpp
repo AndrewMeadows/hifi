@@ -46,6 +46,7 @@
 #include "MyAvatar.h"
 #include "DebugDraw.h"
 #include "SceneScriptingInterface.h"
+#include "ui/AvatarCertifyBanner.h"
 
 // 50 times per second - target is 45hz, but this helps account for any small deviations
 // in the update loop - this also results in ~30hz when in desktop mode which is essentially
@@ -100,7 +101,7 @@ AvatarSharedPointer AvatarManager::addAvatar(const QUuid& sessionUUID, const QWe
 }
 
 AvatarManager::~AvatarManager() {
-    assert(_avatarsToChangeInPhysics.empty());
+    assert(_otherAvatarsToChangeInPhysics.empty());
 }
 
 void AvatarManager::init() {
@@ -120,6 +121,8 @@ void AvatarManager::init() {
         _myAvatar->addToScene(_myAvatar, scene, transaction);
         scene->enqueueTransaction(transaction);
     }
+
+    setEnableDebugDrawOtherSkeletons(Menu::getInstance()->isOptionChecked(MenuOption::AnimDebugDrawOtherSkeletons));
 }
 
 void AvatarManager::setSpace(workload::SpacePointer& space ) {
@@ -175,6 +178,13 @@ void AvatarManager::updateMyAvatar(float deltaTime) {
         _myAvatar->sendAvatarDataPacket();
         _lastSendAvatarDataTime = now;
         _myAvatarSendRate.increment();
+    }
+
+    static AvatarCertifyBanner theftBanner;
+    if (_myAvatar->isCertifyFailed()) {
+        theftBanner.show(_myAvatar->getSessionUUID());
+    } else {
+        theftBanner.clear();
     }
 }
 
@@ -285,7 +295,7 @@ void AvatarManager::updateOtherAvatars(float deltaTime) {
 
     render::Transaction renderTransaction;
     workload::Transaction workloadTransaction;
- 
+
     for (int p = kHero; p < NumVariants; p++) {
         auto& priorityQueue = avatarPriorityQueues[p];
         // Sorting the current queue HERE as part of the measured timing.
@@ -304,7 +314,7 @@ void AvatarManager::updateOtherAvatars(float deltaTime) {
                 // remove the orb if it is there
                 avatar->removeOrb();
                 if (avatar->needsPhysicsUpdate()) {
-                    _avatarsToChangeInPhysics.insert(avatar);
+                    _otherAvatarsToChangeInPhysics.insert(avatar);
                 }
             } else {
                 avatar->updateOrbPosition();
@@ -334,9 +344,14 @@ void AvatarManager::updateOtherAvatars(float deltaTime) {
                 if (avatar->getSkeletonModel()->isLoaded() && avatar->getWorkloadRegion() == workload::Region::R1) {
                     _myAvatar->addAvatarHandsToFlow(avatar);
                 }
+                if (_drawOtherAvatarSkeletons) {
+                    avatar->debugJointData();
+                }
+                avatar->setEnableMeshVisible(!_drawOtherAvatarSkeletons);
                 avatar->updateRenderItem(renderTransaction);
                 avatar->updateSpaceProxy(workloadTransaction);
                 avatar->setLastRenderUpdateTime(startTime);
+
             } else {
                 // we've spent our time budget for this priority bucket
                 // let's deal with the reminding avatars if this pass and BREAK from the for loop
@@ -404,69 +419,111 @@ AvatarSharedPointer AvatarManager::newSharedAvatar(const QUuid& sessionUUID) {
 }
 
 void AvatarManager::queuePhysicsChange(const OtherAvatarPointer& avatar) {
-    _avatarsToChangeInPhysics.insert(avatar);
+    _otherAvatarsToChangeInPhysics.insert(avatar);
+}
+
+DetailedMotionState* AvatarManager::createDetailedMotionState(OtherAvatarPointer avatar, int32_t jointIndex) {
+    bool isBound = false;
+    std::vector<int32_t> boundJoints;
+    const btCollisionShape* shape = avatar->createCollisionShape(jointIndex, isBound, boundJoints);
+    if (shape) {
+        DetailedMotionState* motionState = new DetailedMotionState(avatar, shape, jointIndex);
+        motionState->setMass(0.0f); // DetailedMotionState has KINEMATIC MotionType, so zero mass is ok
+        motionState->setIsBound(isBound, boundJoints);
+        return motionState;
+    }
+    return nullptr;
+}
+
+void AvatarManager::rebuildAvatarPhysics(PhysicsEngine::Transaction& transaction, OtherAvatarPointer avatar) {
+    if (!avatar->_motionState) {
+        avatar->_motionState = new AvatarMotionState(avatar, nullptr);
+    }
+    AvatarMotionState* motionState = avatar->_motionState;
+    ShapeInfo shapeInfo;
+    avatar->computeShapeInfo(shapeInfo);
+    const btCollisionShape* shape = ObjectMotionState::getShapeManager()->getShape(shapeInfo);
+    assert(shape);
+    motionState->setShape(shape);
+    motionState->setMass(avatar->computeMass());
+    if (motionState->getRigidBody()) {
+        transaction.objectsToReinsert.push_back(motionState);
+    } else {
+        transaction.objectsToAdd.push_back(motionState);
+    }
+    motionState->clearIncomingDirtyFlags();
+
+    // Rather than reconcile numbers of joints after change to model or LOD
+    // we blow away old detailedMotionStates and create anew all around.
+
+    // delete old detailedMotionStates
+    auto& detailedMotionStates = avatar->getDetailedMotionStates();
+    if (detailedMotionStates.size() != 0) {
+        for (auto& detailedMotionState : detailedMotionStates) {
+            transaction.objectsToRemove.push_back(detailedMotionState);
+        }
+        avatar->resetDetailedMotionStates();
+    }
+
+    // build new detailedMotionStates
+    OtherAvatar::BodyLOD lod = avatar->getBodyLOD();
+    if (lod == OtherAvatar::BodyLOD::Sphere) {
+        auto dMotionState = createDetailedMotionState(avatar, -1);
+        if (dMotionState) {
+            detailedMotionStates.push_back(dMotionState);
+            transaction.objectsToAdd.push_back(dMotionState);
+        }
+    } else {
+        int32_t numJoints = avatar->getJointCount();
+        for (int32_t i = 0; i < numJoints; i++) {
+            auto dMotionState = createDetailedMotionState(avatar, i);
+            if (dMotionState) {
+                detailedMotionStates.push_back(dMotionState);
+                transaction.objectsToAdd.push_back(dMotionState);
+            }
+        }
+    }
+    avatar->_needsReinsertion = false;
 }
 
 void AvatarManager::buildPhysicsTransaction(PhysicsEngine::Transaction& transaction) {
-    SetOfOtherAvatars failedShapeBuilds;
-    for (auto avatar : _avatarsToChangeInPhysics) {
+    _myAvatar->getCharacterController()->buildPhysicsTransaction(transaction);
+    for (auto avatar : _otherAvatarsToChangeInPhysics) {
         bool isInPhysics = avatar->isInPhysicsSimulation();
         if (isInPhysics != avatar->shouldBeInPhysicsSimulation()) {
             if (isInPhysics) {
                 transaction.objectsToRemove.push_back(avatar->_motionState);
                 avatar->_motionState = nullptr;
                 auto& detailedMotionStates = avatar->getDetailedMotionStates();
-                for (auto& mState : detailedMotionStates) {
-                    transaction.objectsToRemove.push_back(mState);
+                for (auto& motionState : detailedMotionStates) {
+                    transaction.objectsToRemove.push_back(motionState);
                 }
                 avatar->resetDetailedMotionStates();
             } else {
-                if (avatar->getDetailedMotionStates().size() == 0) {
-                    avatar->createDetailedMotionStates(avatar);
-                    for (auto dMotionState : avatar->getDetailedMotionStates()) {
-                        transaction.objectsToAdd.push_back(dMotionState);
-                    }
-                }
-                if (avatar->getDetailedMotionStates().size() > 0) {
-                    ShapeInfo shapeInfo;
-                    avatar->computeShapeInfo(shapeInfo);
-                    btCollisionShape* shape = const_cast<btCollisionShape*>(ObjectMotionState::getShapeManager()->getShape(shapeInfo));
-                    if (shape) {
-                        AvatarMotionState* motionState = new AvatarMotionState(avatar, shape);
-                        motionState->setMass(avatar->computeMass());
-                        avatar->_motionState = motionState;
-                        transaction.objectsToAdd.push_back(motionState);
-                    } else {
-                        failedShapeBuilds.insert(avatar);
-                    }
-                } else {
-                    failedShapeBuilds.insert(avatar);
-                }
+                rebuildAvatarPhysics(transaction, avatar);
             }
         } else if (isInPhysics) {
-            transaction.objectsToChange.push_back(avatar->_motionState);
-            
-            auto& detailedMotionStates = avatar->getDetailedMotionStates();
-            for (auto& mState : detailedMotionStates) {
-                if (mState) {
-                    transaction.objectsToChange.push_back(mState);
-                }
+            AvatarMotionState* motionState = avatar->_motionState;
+            uint32_t flags = motionState->getIncomingDirtyFlags();
+            if (flags & EASY_DIRTY_PHYSICS_FLAGS) {
+                motionState->handleEasyChanges(flags);
             }
-            
+            // NOTE: we don't call detailedMotionState->handleEasyChanges() here because they are KINEMATIC
+            // and Bullet will automagically call DetailedMotionState::getWorldTransform() on all that are active.
+
+            if (motionState->needsNewShape()) {
+                rebuildAvatarPhysics(transaction, avatar);
+            } else {
+                if (flags & (Simulation::DIRTY_MOTION_TYPE | Simulation::DIRTY_COLLISION_GROUP)) {
+                    transaction.objectsToReinsert.push_back(motionState);
+                }
+                motionState->clearIncomingDirtyFlags();
+            }
         }
     }
-    _avatarsToChangeInPhysics.swap(failedShapeBuilds);
 }
 
 void AvatarManager::handleProcessedPhysicsTransaction(PhysicsEngine::Transaction& transaction) {
-    // things on objectsToChange correspond to failed changes
-    // so we push them back onto _avatarsToChangeInPhysics
-    for (auto object : transaction.objectsToChange) {
-        AvatarMotionState* motionState = static_cast<AvatarMotionState*>(object);
-        assert(motionState);
-        assert(motionState->_avatar);
-        _avatarsToChangeInPhysics.insert(motionState->_avatar);
-    }
     // things on objectsToRemove are ready for delete
     for (auto object : transaction.objectsToRemove) {
         delete object;
@@ -521,14 +578,20 @@ void AvatarManager::handleRemovedAvatar(const AvatarSharedPointer& removedAvatar
 
         workload::SpacePointer space = _space;
         transaction.transitionFinishedOperator(avatar->getRenderItemID(), [space, avatar]() {
-            const render::ScenePointer& scene = qApp->getMain3DScene();
-            render::Transaction transaction;
-            avatar->removeFromScene(avatar, scene, transaction);
-            scene->enqueueTransaction(transaction);
+            if (avatar->getLastFadeRequested() != render::Transition::Type::USER_LEAVE_DOMAIN) {
+                // The avatar is using another transition besides the fade-out transition, which means it is still in use.
+                // Deleting the avatar now could cause state issues, so abort deletion and show message.
+                qCWarning(interfaceapp) << "An ending fade-out transition wants to delete an avatar, but the avatar is still in use. Avatar deletion has aborted. (avatar ID: " << avatar->getSessionUUID() << ")";
+            } else {
+                const render::ScenePointer& scene = qApp->getMain3DScene();
+                render::Transaction transaction;
+                avatar->removeFromScene(avatar, scene, transaction);
+                scene->enqueueTransaction(transaction);
 
-            workload::Transaction workloadTransaction;
-            workloadTransaction.remove(avatar->getSpaceIndex());
-            space->enqueueTransaction(workloadTransaction);
+                workload::Transaction workloadTransaction;
+                workloadTransaction.remove(avatar->getSpaceIndex());
+                space->enqueueTransaction(workloadTransaction);
+            }
         });
         scene->enqueueTransaction(transaction);
     }
@@ -555,7 +618,7 @@ void AvatarManager::clearOtherAvatars() {
                 ++avatarIterator;
             }
         }
-    }    
+    }
 
     for (auto& av : removedAvatars) {
         handleRemovedAvatar(av);
@@ -563,7 +626,7 @@ void AvatarManager::clearOtherAvatars() {
 }
 
 void AvatarManager::deleteAllAvatars() {
-    assert(_avatarsToChangeInPhysics.empty());
+    assert(_otherAvatarsToChangeInPhysics.empty());
     QReadLocker locker(&_hashLock);
     AvatarHash::iterator avatarIterator = _avatarHash.begin();
     while (avatarIterator != _avatarHash.end()) {
@@ -573,7 +636,7 @@ void AvatarManager::deleteAllAvatars() {
         if (avatar != _myAvatar) {
             auto otherAvatar = std::static_pointer_cast<OtherAvatar>(avatar);
             assert(!otherAvatar->_motionState);
-            assert(otherAvatar->getDetailedMotionStates().size() == 0);            
+            assert(otherAvatar->getDetailedMotionStates().size() == 0);
         }
     }
 }
@@ -727,7 +790,7 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersectionVector(const Pic
                     boxHit._distance = FLT_MAX;
 
                     for (size_t i = 0; i < hit._boundJoints.size(); i++) {
-                        assert(hit._boundJoints[i] < multiSpheres.size());
+                        assert(hit._boundJoints[i] < (int)multiSpheres.size());
                         auto &mSphere = multiSpheres[hit._boundJoints[i]];
                         if (mSphere.isValid()) {
                             float boundDistance = FLT_MAX;
@@ -942,7 +1005,8 @@ void AvatarManager::setAvatarSortCoefficient(const QString& name, const QScriptV
  *     It is unique among all avatars present in the domain at the time.
  * @property {number} audioLoudness - The instantaneous loudness of the audio input that the avatar is injecting into the 
  *     domain.
- * @property {boolean} isReplicated - <strong>Deprecated.</strong>
+ * @property {boolean} isReplicated - <span class="important">Deprecated: This property is deprecated and will be 
+ *     removed.</span>
  * @property {Vec3} position - The position of the avatar.
  * @property {number} palOrbOffset - The vertical offset from the avatar's position that an overlay orb should be displayed at.
  */
