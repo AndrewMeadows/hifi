@@ -176,8 +176,8 @@ bool SafeLanding::isEntityPhysicsReady(const EntityItemPointer& entity) {
             if (hasAABox && downloadedCollisionTypes.count(modelEntity->getShapeType()) != 0) {
                 auto space = _entityTreeRenderer->getWorkloadSpace();
                 uint8_t region = space ? space->getRegion(entity->getSpaceIndex()) : (uint8_t)workload::Region::INVALID;
-                bool shouldBePhysical = region < workload::Region::R3 && entity->shouldBePhysical();
-                return (!shouldBePhysical || entity->isInPhysicsSimulation() || modelEntity->computeShapeFailedToLoad());
+                bool definitelyNotPhysical = (region > workload::Region::R2 && region != workload::Region::UNKNOWN) || !entity->shouldBePhysical();
+                return (definitelyNotPhysical || entity->isInPhysicsSimulation() || modelEntity->computeShapeFailedToLoad());
             }
         }
     }
