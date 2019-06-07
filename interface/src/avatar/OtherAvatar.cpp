@@ -201,6 +201,7 @@ void OtherAvatar::computeShapeLOD() {
         break;
     case workload::Region::UNKNOWN:
     case workload::Region::INVALID:
+    case workload::Region::R4:
     case workload::Region::R3:
     default:
         newLOD = BodyLOD::Sphere;
@@ -219,7 +220,7 @@ bool OtherAvatar::isInPhysicsSimulation() const {
 }
 
 bool OtherAvatar::shouldBeInPhysicsSimulation() const {
-    return !isDead() && _workloadRegion <= workload::Region::R3;
+    return !isDead() && _workloadRegion < workload::Region::R3;
 }
 
 bool OtherAvatar::needsPhysicsUpdate() const {
