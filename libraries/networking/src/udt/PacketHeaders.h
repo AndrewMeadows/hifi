@@ -164,6 +164,8 @@ public:
             case PacketTypeEnum::Value::NodeKickRequest:
             case PacketTypeEnum::Value::NodeMuteRequest:
                 return true;
+            default:
+                break;
         }
         return false;
     }
@@ -207,6 +209,8 @@ public:
             case PacketTypeEnum::Value::ReplicatedKillAvatar:
             case PacketTypeEnum::Value::ReplicatedBulkAvatarData:
                 return true;
+            default:
+                break;
         }
         return false;
     }
@@ -217,6 +221,8 @@ public:
             case PacketTypeEnum::Value::AssetGet:
             case PacketTypeEnum::Value::AssetUpload:
                 return true;
+            default:
+                break;
         }
         return false;
     }
@@ -227,6 +233,8 @@ public:
             case PacketTypeEnum::Value::AssetGetReply:
             case PacketTypeEnum::Value::AssetUploadReply:
                 return true;
+            default:
+                break;
         }
         return false;
     }
