@@ -151,58 +151,83 @@ public:
         return REPLICATED_PACKET_MAPPING;
     }
 
-    const static QSet<PacketTypeEnum::Value> getNonVerifiedPackets() {
-        const static QSet<PacketTypeEnum::Value> NON_VERIFIED_PACKETS = QSet<PacketTypeEnum::Value>()
-            << PacketTypeEnum::Value::NodeJsonStats
-            << PacketTypeEnum::Value::EntityQuery
-            << PacketTypeEnum::Value::OctreeDataNack
-            << PacketTypeEnum::Value::EntityEditNack
-            << PacketTypeEnum::Value::DomainListRequest
-            << PacketTypeEnum::Value::StopNode
-            << PacketTypeEnum::Value::DomainDisconnectRequest
-            << PacketTypeEnum::Value::UsernameFromIDRequest
-            << PacketTypeEnum::Value::NodeKickRequest
-            << PacketTypeEnum::Value::NodeMuteRequest;
-        return NON_VERIFIED_PACKETS;
+    static bool isNonVerifiedPacketType(PacketTypeEnum::Value type) {
+        switch (type) {
+            case PacketTypeEnum::Value::NodeJsonStats:
+            case PacketTypeEnum::Value::EntityQuery:
+            case PacketTypeEnum::Value::OctreeDataNack:
+            case PacketTypeEnum::Value::EntityEditNack:
+            case PacketTypeEnum::Value::DomainListRequest:
+            case PacketTypeEnum::Value::StopNode:
+            case PacketTypeEnum::Value::DomainDisconnectRequest:
+            case PacketTypeEnum::Value::UsernameFromIDRequest:
+            case PacketTypeEnum::Value::NodeKickRequest:
+            case PacketTypeEnum::Value::NodeMuteRequest:
+                return true;
+        }
+        return false;
     }
 
-    const static QSet<PacketTypeEnum::Value> getNonSourcedPackets() {
-        const static QSet<PacketTypeEnum::Value> NON_SOURCED_PACKETS = QSet<PacketTypeEnum::Value>()
-            << PacketTypeEnum::Value::StunResponse << PacketTypeEnum::Value::CreateAssignment
-            << PacketTypeEnum::Value::RequestAssignment << PacketTypeEnum::Value::DomainServerRequireDTLS
-            << PacketTypeEnum::Value::DomainConnectRequest << PacketTypeEnum::Value::DomainList
-            << PacketTypeEnum::Value::DomainConnectionDenied << PacketTypeEnum::Value::DomainServerPathQuery
-            << PacketTypeEnum::Value::DomainServerPathResponse << PacketTypeEnum::Value::DomainServerAddedNode
-            << PacketTypeEnum::Value::DomainServerConnectionToken << PacketTypeEnum::Value::DomainSettingsRequest
-            << PacketTypeEnum::Value::OctreeDataFileRequest << PacketTypeEnum::Value::OctreeDataFileReply
-            << PacketTypeEnum::Value::OctreeDataPersist << PacketTypeEnum::Value::DomainContentReplacementFromUrl
-            << PacketTypeEnum::Value::DomainSettings << PacketTypeEnum::Value::ICEServerPeerInformation
-            << PacketTypeEnum::Value::ICEServerQuery << PacketTypeEnum::Value::ICEServerHeartbeat
-            << PacketTypeEnum::Value::ICEServerHeartbeatACK << PacketTypeEnum::Value::ICEPing
-            << PacketTypeEnum::Value::ICEPingReply << PacketTypeEnum::Value::ICEServerHeartbeatDenied
-            << PacketTypeEnum::Value::AssignmentClientStatus << PacketTypeEnum::Value::StopNode
-            << PacketTypeEnum::Value::DomainServerRemovedNode << PacketTypeEnum::Value::UsernameFromIDReply
-            << PacketTypeEnum::Value::OctreeFileReplacement << PacketTypeEnum::Value::ReplicatedMicrophoneAudioNoEcho
-            << PacketTypeEnum::Value::ReplicatedMicrophoneAudioWithEcho << PacketTypeEnum::Value::ReplicatedInjectAudio
-            << PacketTypeEnum::Value::ReplicatedSilentAudioFrame << PacketTypeEnum::Value::ReplicatedAvatarIdentity
-            << PacketTypeEnum::Value::ReplicatedKillAvatar << PacketTypeEnum::Value::ReplicatedBulkAvatarData;
-        return NON_SOURCED_PACKETS;
+    static bool isNonSourcedPacketType(PacketTypeEnum::Value type) {
+        switch (type) {
+            case PacketTypeEnum::Value::StunResponse:
+            case PacketTypeEnum::Value::CreateAssignment:
+            case PacketTypeEnum::Value::RequestAssignment:
+            case PacketTypeEnum::Value::DomainServerRequireDTLS:
+            case PacketTypeEnum::Value::DomainConnectRequest:
+            case PacketTypeEnum::Value::DomainList:
+            case PacketTypeEnum::Value::DomainConnectionDenied:
+            case PacketTypeEnum::Value::DomainServerPathQuery:
+            case PacketTypeEnum::Value::DomainServerPathResponse:
+            case PacketTypeEnum::Value::DomainServerAddedNode:
+            case PacketTypeEnum::Value::DomainServerConnectionToken:
+            case PacketTypeEnum::Value::DomainSettingsRequest:
+            case PacketTypeEnum::Value::OctreeDataFileRequest:
+            case PacketTypeEnum::Value::OctreeDataFileReply:
+            case PacketTypeEnum::Value::OctreeDataPersist:
+            case PacketTypeEnum::Value::DomainContentReplacementFromUrl:
+            case PacketTypeEnum::Value::DomainSettings:
+            case PacketTypeEnum::Value::ICEServerPeerInformation:
+            case PacketTypeEnum::Value::ICEServerQuery:
+            case PacketTypeEnum::Value::ICEServerHeartbeat:
+            case PacketTypeEnum::Value::ICEServerHeartbeatACK:
+            case PacketTypeEnum::Value::ICEPing:
+            case PacketTypeEnum::Value::ICEPingReply:
+            case PacketTypeEnum::Value::ICEServerHeartbeatDenied:
+            case PacketTypeEnum::Value::AssignmentClientStatus:
+            case PacketTypeEnum::Value::StopNode:
+            case PacketTypeEnum::Value::DomainServerRemovedNode:
+            case PacketTypeEnum::Value::UsernameFromIDReply:
+            case PacketTypeEnum::Value::OctreeFileReplacement:
+            case PacketTypeEnum::Value::ReplicatedMicrophoneAudioNoEcho:
+            case PacketTypeEnum::Value::ReplicatedMicrophoneAudioWithEcho:
+            case PacketTypeEnum::Value::ReplicatedInjectAudio:
+            case PacketTypeEnum::Value::ReplicatedSilentAudioFrame:
+            case PacketTypeEnum::Value::ReplicatedAvatarIdentity:
+            case PacketTypeEnum::Value::ReplicatedKillAvatar:
+            case PacketTypeEnum::Value::ReplicatedBulkAvatarData:
+                return true;
+        }
+        return false;
     }
 
-    const static QSet<PacketTypeEnum::Value> getDomainSourcedPackets() {
-        const static QSet<PacketTypeEnum::Value> DOMAIN_SOURCED_PACKETS = QSet<PacketTypeEnum::Value>()
-            << PacketTypeEnum::Value::AssetMappingOperation
-            << PacketTypeEnum::Value::AssetGet
-            << PacketTypeEnum::Value::AssetUpload;
-        return DOMAIN_SOURCED_PACKETS;
+    static bool isDomainSourcedPacketType(PacketTypeEnum::Value type) {
+        switch (type) {
+            case PacketTypeEnum::Value::AssetMappingOperation:
+            case PacketTypeEnum::Value::AssetGet:
+                return true;
+        }
+        return false;
     }
 
-    const static QSet<PacketTypeEnum::Value> getDomainIgnoredVerificationPackets() {
-        const static QSet<PacketTypeEnum::Value> DOMAIN_IGNORED_VERIFICATION_PACKETS = QSet<PacketTypeEnum::Value>()
-            << PacketTypeEnum::Value::AssetMappingOperationReply
-            << PacketTypeEnum::Value::AssetGetReply
-            << PacketTypeEnum::Value::AssetUploadReply;
-        return DOMAIN_IGNORED_VERIFICATION_PACKETS;
+    static bool isDomainIgnoredVerificationPacketType(PacketTypeEnum::Value type) {
+        switch (type) {
+            case PacketTypeEnum::Value::AssetMappingOperationReply:
+            case PacketTypeEnum::Value::AssetGetReply:
+            case PacketTypeEnum::Value::AssetUploadReply:
+                return true;
+        }
+        return false;
     }
 };
 

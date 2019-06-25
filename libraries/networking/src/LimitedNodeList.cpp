@@ -245,7 +245,7 @@ bool LimitedNodeList::packetVersionMatch(const udt::Packet& packet) {
         const HifiSockAddr& senderSockAddr = packet.getSenderSockAddr();
         QUuid sourceID;
 
-        if (PacketTypeEnum::getNonSourcedPackets().contains(headerType)) {
+        if (PacketTypeEnum::isNonSourcedPacketType(headerType)) {
             hasBeenOutput = versionDebugSuppressMap.contains(senderSockAddr, headerType);
 
             if (!hasBeenOutput) {
@@ -284,7 +284,7 @@ bool LimitedNodeList::packetSourceAndHashMatchAndTrackBandwidth(const udt::Packe
 
     PacketType headerType = NLPacket::typeInHeader(packet);
 
-    if (PacketTypeEnum::getNonSourcedPackets().contains(headerType)) {
+    if (PacketTypeEnum::isNonSourcedPacketType(headerType)) {
         if (PacketTypeEnum::getReplicatedPacketMapping().key(headerType) != PacketType::Unknown) {
             // this is a replicated packet type - make sure the socket that sent it to us matches
             // one from one of our current upstream nodes
@@ -329,14 +329,14 @@ bool LimitedNodeList::packetSourceAndHashMatchAndTrackBandwidth(const udt::Packe
             !isDomainServer() &&
             sourceLocalID == getDomainLocalID() &&
             packet.getSenderSockAddr() == getDomainSockAddr() &&
-            PacketTypeEnum::getDomainSourcedPackets().contains(headerType)) {
+            PacketTypeEnum::isDomainSourcedPacketType(headerType)) {
             // This is a packet sourced by the domain server
             return true;
         }
 
         if (sourceNode) {
-            bool verifiedPacket = !PacketTypeEnum::getNonVerifiedPackets().contains(headerType);
-            bool verificationEnabled = !(isDomainServer() && PacketTypeEnum::getDomainIgnoredVerificationPackets().contains(headerType))
+            bool verifiedPacket = !PacketTypeEnum::isNonVerifiedPacketType(headerType);
+            bool verificationEnabled = !(isDomainServer() && PacketTypeEnum::isDomainIgnoredVerificationPacketType(headerType))
                 && _useAuthentication;
 
             if (verifiedPacket && verificationEnabled) {
@@ -380,13 +380,13 @@ bool LimitedNodeList::packetSourceAndHashMatchAndTrackBandwidth(const udt::Packe
 }
 
 void LimitedNodeList::fillPacketHeader(const NLPacket& packet, HMACAuth* hmacAuth) {
-    if (!PacketTypeEnum::getNonSourcedPackets().contains(packet.getType())) {
+    if (!PacketTypeEnum::isNonSourcedPacketType(packet.getType())) {
         packet.writeSourceID(getSessionLocalID());
     }
 
     if (_useAuthentication && hmacAuth
-        && !PacketTypeEnum::getNonSourcedPackets().contains(packet.getType())
-        && !PacketTypeEnum::getNonVerifiedPackets().contains(packet.getType())) {
+        && !PacketTypeEnum::isNonSourcedPacketType(packet.getType())
+        && !PacketTypeEnum::isNonVerifiedPacketType(packet.getType())) {
         packet.writeVerificationHash(*hmacAuth);
     }
 }
