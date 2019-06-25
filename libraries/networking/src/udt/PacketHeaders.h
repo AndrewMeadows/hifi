@@ -215,6 +215,7 @@ public:
         switch (type) {
             case PacketTypeEnum::Value::AssetMappingOperation:
             case PacketTypeEnum::Value::AssetGet:
+            case PacketTypeEnum::Value::AssetUpload:
                 return true;
         }
         return false;
