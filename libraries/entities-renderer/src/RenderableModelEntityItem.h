@@ -75,6 +75,7 @@ public:
                         QVariantMap& extraInfo, bool precisionPicking) const override;
 
     virtual void setShapeType(ShapeType type) override;
+    void setModelURL(const QString& url) override;
     virtual void setCompoundShapeURL(const QString& url) override;
 
     virtual bool isReadyToComputeShape() const override;
@@ -118,7 +119,7 @@ private:
     void autoResizeJointArrays();
     void copyAnimationJointDataToModel();
     bool readyToAnimate() const;
-    void fetchCollisionGeometryResource();
+    void maybeUpdateCollisionGeometryResource(ShapeType newShapeType);
 
     GeometryResource::Pointer _collisionGeometryResource;
     std::vector<int> _jointMap;

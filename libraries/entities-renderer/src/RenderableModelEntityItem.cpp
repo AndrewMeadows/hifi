@@ -281,63 +281,108 @@ bool RenderableModelEntityItem::findDetailedParabolaIntersection(const glm::vec3
         face, surfaceNormal, extraInfo, precisionPicking, false);
 }
 
-void RenderableModelEntityItem::fetchCollisionGeometryResource() {
-    _collisionGeometryResource = DependencyManager::get<ModelCache>()->getCollisionGeometryResource(getCollisionShapeURL());
-}
-
 bool RenderableModelEntityItem::unableToLoadCollisionShape() {
-    if (!_collisionGeometryResource) {
-        fetchCollisionGeometryResource();
+    ShapeType shapeType = getShapeType();
+    if (shapeType == SHAPE_TYPE_STATIC_MESH || shapeType == SHAPE_TYPE_SIMPLE_COMPOUND || shapeType == SHAPE_TYPE_SIMPLE_HULL) {
+        // these ShapeTypes use the visual model
+        if (!_collisionGeometryResource) {
+            _collisionGeometryResource = DependencyManager::get<ModelCache>()->getCollisionGeometryResource(QUrl(getModelURL()));
+        }
+        return (_collisionGeometryResource && _collisionGeometryResource->isFailed());
+    } else if (shapeType == SHAPE_TYPE_COMPOUND) {
+        // this ShapeType uses the compoundShapeURL
+        if (!_collisionGeometryResource) {
+            _collisionGeometryResource = DependencyManager::get<ModelCache>()->getCollisionGeometryResource(QUrl(getCompoundShapeURL()));
+        }
+        return (_collisionGeometryResource && _collisionGeometryResource->isFailed());
     }
-    return (_collisionGeometryResource && _collisionGeometryResource->isFailed());
+    return false;
 }
 
-void RenderableModelEntityItem::setShapeType(ShapeType type) {
-    ModelEntityItem::setShapeType(type);
-    auto shapeType = getShapeType();
-    if (shapeType == SHAPE_TYPE_COMPOUND || shapeType == SHAPE_TYPE_SIMPLE_COMPOUND) {
-        if (!_collisionGeometryResource && !getCollisionShapeURL().isEmpty()) {
-            fetchCollisionGeometryResource();
+void RenderableModelEntityItem::maybeUpdateCollisionGeometryResource(ShapeType newShapeType) {
+    // NOTE: the _collisionGeometryResource depends on shapeType AND the relevant "collision geometry asset URL",
+    // (the exact source of which depends on shapeType) however it is possible not all properties have been set
+    // correctly in this context (e.g. we might be in the middle of a multi-property change).
+    // So we try to fetch _collisionGeometryResource only when we think we have all the information we need.
+    if (newShapeType == SHAPE_TYPE_STATIC_MESH || newShapeType == SHAPE_TYPE_SIMPLE_COMPOUND || newShapeType == SHAPE_TYPE_SIMPLE_HULL) {
+        // these ShapeTypes use the visual model
+        QString urlString = getModelURL();
+        if (!urlString.isEmpty()) {
+            if (!_collisionGeometryResource || urlString != _collisionGeometryResource->getURL().toString()) {
+                _collisionGeometryResource = DependencyManager::get<ModelCache>()->getCollisionGeometryResource(urlString);
+            }
         }
-    } else if (_collisionGeometryResource && !getCompoundShapeURL().isEmpty()) {
-        // the compoundURL has been set but the shapeType does not agree
+    } else if (newShapeType == SHAPE_TYPE_SIMPLE_HULL) {
+        // this ShapeType uses compoundShapeURL
+        QString urlString = getCompoundShapeURL();
+        if (!urlString.isEmpty()) {
+            if (!_collisionGeometryResource || urlString != _collisionGeometryResource->getURL().toString()) {
+                _collisionGeometryResource = DependencyManager::get<ModelCache>()->getCollisionGeometryResource(urlString);
+            }
+        }
+    } else {
         _collisionGeometryResource.reset();
     }
 }
 
+void RenderableModelEntityItem::setShapeType(ShapeType type) {
+    ShapeType oldShapeType = getShapeType();
+    ModelEntityItem::setShapeType(type);
+
+    // the final ShapeType might not match the type supplied due to conflicts with other EntityProperties settings
+    // so we check to see if the shapeType actually changed
+    auto newShapeType = getShapeType();
+    if (oldShapeType != newShapeType) {
+        maybeUpdateCollisionGeometryResource(newShapeType);
+    }
+}
+
+void RenderableModelEntityItem::setModelURL(const QString& url) {
+    // NOTE: changing the modelURL  might change the effective ShapeType
+    // so we must latch the old value and compare after the change
+    ShapeType oldShapeType = getShapeType();
+    QString oldModelUrl = getModelURL();
+
+    ModelEntityItem::setModelURL(url);
+
+    ShapeType newShapeType = getShapeType();
+    if (newShapeType != oldShapeType || url != oldModelUrl) {
+        maybeUpdateCollisionGeometryResource(newShapeType);
+    }
+}
+
 void RenderableModelEntityItem::setCompoundShapeURL(const QString& url) {
-    auto currentCompoundShapeURL = getCompoundShapeURL();
+    // NOTE: changing the compoundShapeURL might change the effective ShapeType
+    // so we must latch the old value and compare after the change
+    ShapeType oldShapeType = getShapeType();
+    QString oldCompoundShapeURL = getCompoundShapeURL();
+
     ModelEntityItem::setCompoundShapeURL(url);
-    if (getCompoundShapeURL() != currentCompoundShapeURL || !getModel()) {
-        if (getShapeType() == SHAPE_TYPE_COMPOUND) {
-            fetchCollisionGeometryResource();
-        }
+
+    ShapeType newShapeType = getShapeType();
+    if (newShapeType != oldShapeType || url != oldCompoundShapeURL) {
+        maybeUpdateCollisionGeometryResource(newShapeType);
     }
 }
 
 bool RenderableModelEntityItem::isReadyToComputeShape() const {
     ShapeType type = getShapeType();
-    auto model = getModel();
-    auto shapeType = getShapeType();
-    if (shapeType == SHAPE_TYPE_COMPOUND || shapeType == SHAPE_TYPE_SIMPLE_COMPOUND) {
-        auto shapeURL = getCollisionShapeURL();
-
-        if (!model || shapeURL.isEmpty()) {
+    if (type == SHAPE_TYPE_STATIC_MESH || type == SHAPE_TYPE_SIMPLE_HULL || type == SHAPE_TYPE_SIMPLE_COMPOUND) {
+        // these ShapeTypes use modelURL
+        auto model = getModel();
+        if (!model) {
             return false;
         }
-
         if (model->getURL().isEmpty() || !_dimensionsInitialized) {
             // we need a render geometry with a scale to proceed, so give up.
             return false;
         }
-
         if (model->isLoaded()) {
-            if (!shapeURL.isEmpty() && !_collisionGeometryResource) {
-                const_cast<RenderableModelEntityItem*>(this)->fetchCollisionGeometryResource();
+            if (!_collisionGeometryResource) {
+                const_cast<RenderableModelEntityItem*>(this)->_collisionGeometryResource =
+                    DependencyManager::get<ModelCache>()->getCollisionGeometryResource(QUrl(getModelURL()));
             }
-
             if (_collisionGeometryResource && _collisionGeometryResource->isLoaded()) {
-                // we have both URLs AND both geometries AND they are both fully loaded.
                 if (_needsInitialSimulation) {
                     // the _model's offset will be wrong until _needsInitialSimulation is false
                     DETAILED_PERFORMANCE_TIMER("_model->simulate");
@@ -349,10 +394,15 @@ bool RenderableModelEntityItem::isReadyToComputeShape() const {
 
         // the model is still being downloaded.
         return false;
-    } else if (type >= SHAPE_TYPE_SIMPLE_HULL && type <= SHAPE_TYPE_STATIC_MESH) {
-        return isModelLoaded();
+    } else if (type == SHAPE_TYPE_COMPOUND) {
+        // this ShapeType uses the compoundShapeURL
+        if (!_collisionGeometryResource) {
+            const_cast<RenderableModelEntityItem*>(this)->_collisionGeometryResource =
+                DependencyManager::get<ModelCache>()->getCollisionGeometryResource(QUrl(getCompoundShapeURL()));
+        }
+        return (_collisionGeometryResource && _collisionGeometryResource->isLoaded());
     }
-    return true;
+    return type != SHAPE_TYPE_NONE;
 }
 
 void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
@@ -464,7 +514,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
         }
         shapeInfo.setParams(type, dimensions, getCompoundShapeURL());
         adjustShapeInfoByRegistration(shapeInfo);
-    } else if (type >= SHAPE_TYPE_SIMPLE_HULL && type <= SHAPE_TYPE_STATIC_MESH) {
+    } else if (type == SHAPE_TYPE_STATIC_MESH || type == SHAPE_TYPE_SIMPLE_HULL || type == SHAPE_TYPE_SIMPLE_COMPOUND) {
         updateModelBounds();
         // assert we never fall in here when model not fully loaded
         assert(model && model->isLoaded());
@@ -736,18 +786,28 @@ bool RenderableModelEntityItem::contains(const glm::vec3& point) const {
 }
 
 bool RenderableModelEntityItem::shouldBePhysical() const {
-    auto model = getModel();
-    // If we have a model, make sure it hasn't failed to download.
-    // If it has, we'll report back that we shouldn't be physical so that physics aren't held waiting for us to be ready.
-    ShapeType shapeType = getShapeType();
-    if (model) {
-        if ((shapeType == SHAPE_TYPE_COMPOUND || shapeType == SHAPE_TYPE_SIMPLE_COMPOUND) && model->didCollisionGeometryRequestFail()) {
-            return false;
-        } else if (shapeType != SHAPE_TYPE_NONE && model->didVisualGeometryRequestFail()) {
-            return false;
-        }
+    // return 'true' if this EntityItem would be added to physics simulation
+    // assuming any necessary GeometryResources will eventually download if they haven't already
+    if (isDead() || isLocalEntity() || !QUrl(_modelURL).isValid()) {
+        return false;
     }
-    return !isDead() && shapeType != SHAPE_TYPE_NONE && !isLocalEntity() && QUrl(_modelURL).isValid();
+
+    // if the visible model has failed to load then we don't want to add to physics
+    auto model = getModel();
+    if (model && model->didVisualGeometryRequestFail()) {
+        return false;
+    }
+
+    ShapeType shapeType = getShapeType();
+    if (shapeType == SHAPE_TYPE_STATIC_MESH ||
+            shapeType == SHAPE_TYPE_SIMPLE_HULL ||
+            shapeType == SHAPE_TYPE_SIMPLE_COMPOUND ||
+            shapeType == SHAPE_TYPE_COMPOUND) {
+        // these ShapeTypes rely on _collisionGeometryResource not failing
+        bool collisionGeometryHasFailed = (_collisionGeometryResource && _collisionGeometryResource->isFailed());
+        return !collisionGeometryHasFailed;
+    }
+    return (shapeType != SHAPE_TYPE_NONE);
 }
 
 int RenderableModelEntityItem::getJointParent(int index) const {

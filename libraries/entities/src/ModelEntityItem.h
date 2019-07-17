@@ -75,9 +75,6 @@ public:
     static const QString DEFAULT_COMPOUND_SHAPE_URL;
     QString getCompoundShapeURL() const;
 
-    // Returns the URL used for the collision shape
-    QString getCollisionShapeURL() const;
-
     // model related properties
     virtual void setModelURL(const QString& url);
     virtual void setCompoundShapeURL(const QString& url);
@@ -136,7 +133,6 @@ public:
 private:
     void setAnimationSettings(const QString& value); // only called for old bitstream format
     bool applyNewAnimationProperties(AnimationPropertyGroup newProperties);
-    ShapeType computeTrueShapeType() const;
 
 protected:
     void resizeJointArrays(int newSize);
@@ -174,6 +170,27 @@ protected:
     QString _textures;
 
     ShapeType _shapeType { SHAPE_TYPE_NONE };
+    /*
+    These ShapeTypes are used by ModelEntityItem::_shapeType and determine the strategy used to compute
+    the collision shape from the visual mesh in _modelURL:
+
+        SHAPE_TYPE_SIMPLE_HULL = build one btConvexHullShape around all the mesh data.
+
+        SHAPE_TYPE_SIMPLE_COMPOUND = build btConvexHullShape around each submesh and add to a btCompoundShape.
+            This works well when all submeshes are convex.  When there is only one submes this produces the same
+            result as SHAPE_TYPE_SIMPLE_HULL.
+
+        SHAPE_TYPE_STATIC_MESH = use the exact visible model mesh to build a concave collision shape.
+            This strategy can NOT be used for dynamic entities because the physics simulation library
+            doesn't support it.
+
+    When ModelEntityItem::_shapeType == SHAPE_TYPE_COMPOUND and ModelEntityItem::_compoundShapeURL is valid...
+    the alternative asset is downloaded and a btConvexHullShape is created around each submesh and added
+    to a btCompoundShape.
+
+    Otherwise implicit ShapeTypes are allowed (e.g. BOX, SPHERE, etc_) and these do not require an asset:
+    we only need to know the entity's bounding dimensions.
+    */
 
 private:
     uint64_t _lastAnimated{ 0 };
