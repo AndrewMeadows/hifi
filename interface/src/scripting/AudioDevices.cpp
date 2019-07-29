@@ -443,18 +443,9 @@ void AudioDevices::onContextChanged(const QString& context) {
 
 void AudioDevices::onDeviceSelected(QAudio::Mode mode, const QAudioDeviceInfo& device,
                                     const QAudioDeviceInfo& previousDevice, bool isHMD) {
-    QString deviceName = device.isNull() ? QString() : device.deviceName();
-    auto& setting = getSetting(isHMD, mode);
-    auto wasDefault = setting.get().isNull();
-
-    // only store the selected device to settings if it matches the targetDevice
-    QString targetDeviceName = getTargetDevice(isHMD, mode);
-    if (targetDeviceName == deviceName) {
-        setting.set(deviceName);
-    }
-
-    // log the selected device
     if (!device.isNull()) {
+        // log the selected device
+
         QJsonObject data;
 
         const QString MODE = "audio_mode";
@@ -470,8 +461,13 @@ void AudioDevices::onDeviceSelected(QAudio::Mode mode, const QAudioDeviceInfo& d
         const QString DEVICE = "device";
         const QString PREVIOUS_DEVICE = "previous_device";
         const QString WAS_DEFAULT = "was_default";
+
+        QString deviceName = device.isNull() ? QString() : device.deviceName();
         data[DEVICE] = deviceName;
         data[PREVIOUS_DEVICE] = previousDevice.deviceName();
+
+        auto& setting = getSetting(isHMD, mode);
+        auto wasDefault = setting.get().isNull();
         data[WAS_DEFAULT] = wasDefault;
 
         UserActivityLogger::getInstance().logAction("selected_audio_device", data);
