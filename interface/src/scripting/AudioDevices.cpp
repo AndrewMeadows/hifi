@@ -265,7 +265,6 @@ void AudioDeviceList::onDevicesChanged(const QList<QAudioDeviceInfo>& deviceInfo
     // hunt for new devices as we build a fresh _devices list...
     QList<std::shared_ptr<AudioDevice>> devices;
     int32_t preferredDeviceIndex = -1;
-    int32_t freshDeviceIndex = -1;
     foreach(const QAudioDeviceInfo& deviceInfo, deviceInfos) {
         AudioDevice device(deviceInfo);
 
