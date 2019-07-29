@@ -372,6 +372,9 @@ AudioClient::AudioClient() :
             _solo.resend();
         }
     });
+
+    _inputDevices = getAvailableDevices(QAudio::AudioInput);
+    _outputDevices = getAvailableDevices(QAudio::AudioOutput);
 }
 
 AudioClient::~AudioClient() {
@@ -430,7 +433,6 @@ QAudioDeviceInfo getNamedAudioDeviceForMode(QAudio::Mode mode, const QString& de
             break;
         }
     }
-
     return result;
 }
 
@@ -560,10 +562,10 @@ QAudioDeviceInfo defaultAudioDeviceForMode(QAudio::Mode mode) {
         CoUninitialize();
     }
 
+    QAudioDeviceInfo defaultDeviceInfo = getNamedAudioDeviceForMode(mode, deviceName);
     qCDebug(audioclient) << "defaultAudioDeviceForMode mode: " << (mode == QAudio::AudioOutput ? "Output" : "Input")
-        << " [" << deviceName << "] [" << getNamedAudioDeviceForMode(mode, deviceName).deviceName() << "]";
-
-    return getNamedAudioDeviceForMode(mode, deviceName);
+        << " [" << deviceName << "] [" << defaultDeviceInfo.deviceName() << "]";
+    return defaultDeviceInfo;
 #endif
 
 #if defined (Q_OS_ANDROID)

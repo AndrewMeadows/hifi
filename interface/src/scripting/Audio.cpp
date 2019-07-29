@@ -382,13 +382,13 @@ void Audio::handlePushedToTalk(bool enabled) {
 
 void Audio::setInputDevice(const QAudioDeviceInfo& device, bool isHMD) {
     withWriteLock([&] {
-        _devices.chooseInputDevice(device, isHMD);
+        _devices.chooseDevice(QAudio::AudioInput, isHMD, device);
     });
 }
 
 void Audio::setOutputDevice(const QAudioDeviceInfo& device, bool isHMD) {
     withWriteLock([&] {
-        _devices.chooseOutputDevice(device, isHMD);
+        _devices.chooseDevice(QAudio::AudioOutput, isHMD, device);
     });
 }
 

@@ -23,6 +23,9 @@ namespace scripting {
 
 class AudioDevice {
 public:
+    AudioDevice() : info(), display() {}
+    AudioDevice(const QAudioDeviceInfo& deviceInfo);
+
     QAudioDeviceInfo info;
     QString display;
     bool selectedDesktop { false };
@@ -49,27 +52,28 @@ public:
     // reset device to the last selected device in this context, or the default
     void resetDevice(bool contextIsHMD);
 
+    void setPreferredDevice(const QAudioDeviceInfo device, bool isHMD);
+
 signals:
     void deviceChanged(const QAudioDeviceInfo& device);
     void selectedDevicePlugged(const QAudioDeviceInfo& device, bool isHMD);
 
 protected slots:
     void onDeviceChanged(const QAudioDeviceInfo& device, bool isHMD);
-    void onDevicesChanged(const QList<QAudioDeviceInfo>& devices);
+    void onDevicesChanged(const QList<QAudioDeviceInfo>& devices, bool isHMD);
 
 protected:
     friend class AudioDevices;
+    void initDevices(const QList<QAudioDeviceInfo>& deviceInfos, bool isHMD);
+    void computePreferredDeviceName(bool isHMD, QString& deviceName) const;
+    int32_t findBestDeviceIndex(bool isHMD, QString deviceName) const;
 
     static QHash<int, QByteArray> _roles;
     static Qt::ItemFlags _flags;
     const QAudio::Mode _mode;
-    QAudioDeviceInfo _selectedDesktopDevice;
-    QAudioDeviceInfo _selectedHMDDevice;
-    QString _backupSelectedDesktopDeviceName;
-    QString _backupSelectedHMDDeviceName;
+    QAudioDeviceInfo _desktopDevice;
+    QAudioDeviceInfo _hmdDevice;
     QList<std::shared_ptr<AudioDevice>> _devices;
-    QString _hmdSavedDeviceName;
-    QString _desktopSavedDeviceName;
 };
 
 class AudioInputDevice : public AudioDevice {
@@ -124,8 +128,7 @@ signals:
     void nop();
 
 private slots:
-    void chooseInputDevice(const QAudioDeviceInfo& device, bool isHMD);
-    void chooseOutputDevice(const QAudioDeviceInfo& device, bool isHMD);
+    void chooseDevice(QAudio::Mode mode, bool isHMD, const QAudioDeviceInfo& device);
 
     void onContextChanged(const QString& context);
     void onDeviceSelected(QAudio::Mode mode, const QAudioDeviceInfo& device,
