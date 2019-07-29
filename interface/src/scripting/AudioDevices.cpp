@@ -206,24 +206,6 @@ int levenshteinDistance(const QString& s1, const QString& s2) {
     return cost[n];
 }
 
-/*
-std::shared_ptr<scripting::AudioDevice> getSimilarDevice(const QString& deviceName, const QList<std::shared_ptr<scripting::AudioDevice>>& devices) {
-
-    int minDistance = INT_MAX;
-    int minDistanceIndex = 0;
-
-    for (auto i = 0; i < devices.length(); ++i) {
-        auto distance = levenshteinDistance(deviceName, devices[i]->info.deviceName());
-        if (distance < minDistance) {
-            minDistance = distance;
-            minDistanceIndex = i;
-        }
-    }
-
-    return devices[minDistanceIndex];
-}
-*/
-
 int32_t getSimilarDeviceIndex(const QString& deviceName, const QList<std::shared_ptr<scripting::AudioDevice>>& devices) {
     int minDistance = INT_MAX;
     int minDistanceIndex = 0;
