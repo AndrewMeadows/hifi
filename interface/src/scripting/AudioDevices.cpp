@@ -53,22 +53,15 @@ QHash<int, QByteArray> AudioDeviceList::_roles {
     { InfoRole, "info" }
 };
 
-static QString getTargetDevice(bool hmd, QAudio::Mode mode) {
-    QString deviceName;
-    auto& setting = getSetting(hmd, mode);
-    if (setting.isSet()) {
-        deviceName = setting.get();
-    } else if (hmd) {
-        if (mode == QAudio::AudioInput) {
-            deviceName = qApp->getActiveDisplayPlugin()->getPreferredAudioInDevice();
-        } else { // if (_mode == QAudio::AudioOutput)
-            deviceName = qApp->getActiveDisplayPlugin()->getPreferredAudioOutDevice();
-        }
-    }
-    return deviceName;
-}
-
 Qt::ItemFlags AudioDeviceList::_flags { Qt::ItemIsSelectable | Qt::ItemIsEnabled };
+
+AudioDevice::AudioDevice(const QAudioDeviceInfo& deviceInfo) {
+    info = deviceInfo;
+    display = deviceInfo.deviceName()
+        .replace("High Definition", "HD")
+        .remove("Device")
+        .replace(" )", ")");
+}
 
 AudioDeviceList::AudioDeviceList(QAudio::Mode mode) : _mode(mode) {
     QString modeString = (_mode == QAudio::AudioInput) ? "input" : "output";
@@ -121,12 +114,20 @@ QVariant AudioInputDeviceList::data(const QModelIndex& index, int role) const {
 }
 
 void AudioDeviceList::resetDevice(bool contextIsHMD) {
-    auto client = DependencyManager::get<AudioClient>().data();
-    QString deviceName = getTargetDevice(contextIsHMD, _mode);
-    // FIXME can't use blocking connections here, so we can't determine whether the switch succeeded or not
-    // We need to have the AudioClient emit signals on switch success / failure
-    QMetaObject::invokeMethod(client, "switchAudioDevice", 
-        Q_ARG(QAudio::Mode, _mode), Q_ARG(QString, deviceName));
+    // get current deviceName
+    QString deviceName = contextIsHMD ? _hmdDevice.deviceName() : _desktopDevice.deviceName();
+
+    // for this context: find index to best known device
+    int32_t deviceIndex = findBestDeviceIndex(contextIsHMD, deviceName);
+
+    if (deviceIndex != -1) {
+        deviceName = _devices[deviceIndex]->info.deviceName();
+        auto client = DependencyManager::get<AudioClient>().data();
+        // FIXME can't use blocking connections here, so we can't determine whether the switch succeeded or not
+        // We need to have the AudioClient emit signals on switch success / failure
+        QMetaObject::invokeMethod(client, "switchAudioDevice",
+            Q_ARG(QAudio::Mode, _mode), Q_ARG(QString, deviceName));
+    }
 
 #if 0
     bool switchResult = false;
@@ -206,28 +207,8 @@ int levenshteinDistance(const QString& s1, const QString& s2) {
     return cost[n];
 }
 
-int32_t getSimilarDeviceIndex(const QString& deviceName, const QList<std::shared_ptr<scripting::AudioDevice>>& devices) {
-    int minDistance = INT_MAX;
-    int minDistanceIndex = 0;
-    for (int32_t i = 0; i < devices.length(); ++i) {
-        auto distance = levenshteinDistance(deviceName, devices[i]->info.deviceName());
-        if (distance < minDistance) {
-            minDistance = distance;
-            minDistanceIndex = i;
-        }
-    }
-    return minDistanceIndex;
-}
-
-AudioDevice::AudioDevice(const QAudioDeviceInfo& deviceInfo) {
-    info = deviceInfo;
-    display = deviceInfo.deviceName()
-        .replace("High Definition", "HD")
-        .remove("Device")
-        .replace(" )", ")");
-}
-
-void AudioDeviceList::computePreferredDeviceName(bool isHMD, QString& deviceName) const {
+int32_t AudioDeviceList::findBestDeviceIndex(bool isHMD, QString deviceName) const {
+    // override deviceName if a better one can be found
     auto& setting = getSetting(isHMD, _mode);
     if (setting.isSet()) {
         deviceName = setting.get();
@@ -238,11 +219,18 @@ void AudioDeviceList::computePreferredDeviceName(bool isHMD, QString& deviceName
             deviceName = qApp->getActiveDisplayPlugin()->getPreferredAudioOutDevice();
         }
     }
-}
 
-int32_t AudioDeviceList::findBestDeviceIndex(bool isHMD, QString deviceName) const {
-    computePreferredDeviceName(isHMD, deviceName);
-    return getSimilarDeviceIndex(deviceName, _devices);
+    // search the available devices for the best match
+    int minDistance = INT_MAX;
+    int minDistanceIndex = -1;
+    for (int32_t i = 0; i < _devices.length(); ++i) {
+        auto distance = levenshteinDistance(deviceName, _devices[i]->info.deviceName());
+        if (distance < minDistance) {
+            minDistance = distance;
+            minDistanceIndex = i;
+        }
+    }
+    return minDistanceIndex;
 }
 
 void AudioDeviceList::onDevicesChanged(const QList<QAudioDeviceInfo>& deviceInfos, bool isHMD) {

@@ -65,7 +65,6 @@ protected slots:
 protected:
     friend class AudioDevices;
     void initDevices(const QList<QAudioDeviceInfo>& deviceInfos, bool isHMD);
-    void computePreferredDeviceName(bool isHMD, QString& deviceName) const;
     int32_t findBestDeviceIndex(bool isHMD, QString deviceName) const;
 
     static QHash<int, QByteArray> _roles;
