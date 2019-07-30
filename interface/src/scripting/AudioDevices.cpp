@@ -362,14 +362,21 @@ void AudioDeviceList::initDevices(const QList<QAudioDeviceInfo>& deviceInfos, bo
     // now that _devices is initialized we call onDevicesChanged()
     // which will redo most of this work but will also try to switch to preferred devices
     onDevicesChanged(deviceInfos, isHMD);
-
-    emit dataChanged(createIndex(0, 0), createIndex(rowCount() - 1, 0));
 }
 
 void AudioDeviceList::setPreferredDevice(const QAudioDeviceInfo device, bool isHMD) {
     // save to settings
     auto& setting = getSetting(isHMD, _mode);
     setting.set(device.deviceName());
+}
+
+int32_t AudioDeviceList::findDevice(const QAudioDeviceInfo& targetDevice) const {
+    for (int32_t i = 0; i < (int32_t)_devices.size(); ++i) {
+        if (targetDevice == _devices[i]->info) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 bool AudioInputDeviceList::peakValuesAvailable() {
@@ -428,61 +435,15 @@ void AudioDevices::onContextChanged(const QString& context) {
     _outputs.resetDevice(_contextIsHMD);
 }
 
-void AudioDevices::onDeviceSelected(QAudio::Mode mode, const QAudioDeviceInfo& device,
-                                    const QAudioDeviceInfo& previousDevice, bool isHMD) {
-    if (!device.isNull()) {
-        // log the selected device
-
-        QJsonObject data;
-
-        const QString MODE = "audio_mode";
-        const QString INPUT = "INPUT";
-        const QString OUTPUT = "OUTPUT"; data[MODE] = mode == QAudio::AudioInput ? INPUT : OUTPUT;
-
-        const QString CONTEXT = "display_mode";
-        data[CONTEXT] = _contextIsHMD ? Audio::HMD : Audio::DESKTOP;
-
-        const QString DISPLAY = "display_device";
-        data[DISPLAY] = qApp->getActiveDisplayPlugin()->getName();
-
-        const QString DEVICE = "device";
-        const QString PREVIOUS_DEVICE = "previous_device";
-        const QString WAS_DEFAULT = "was_default";
-
-        QString deviceName = device.isNull() ? QString() : device.deviceName();
-        data[DEVICE] = deviceName;
-        data[PREVIOUS_DEVICE] = previousDevice.deviceName();
-
-        auto& setting = getSetting(isHMD, mode);
-        auto wasDefault = setting.get().isNull();
-        data[WAS_DEFAULT] = wasDefault;
-
-        UserActivityLogger::getInstance().logAction("selected_audio_device", data);
-    }
-}
-
 void AudioDevices::onDeviceChanged(QAudio::Mode mode, const QAudioDeviceInfo& device) {
     if (mode == QAudio::AudioInput) {
-        if (_requestedInputDevice == device) {
-            onDeviceSelected(QAudio::AudioInput, device,
-                             _contextIsHMD ? _inputs._hmdDevice : _inputs._desktopDevice,
-                             _contextIsHMD);
-            _requestedInputDevice = QAudioDeviceInfo();
-        }
         _inputs.onDeviceChanged(device, _contextIsHMD);
     } else { // if (mode == QAudio::AudioOutput)
-        if (_requestedOutputDevice == device) {
-            onDeviceSelected(QAudio::AudioOutput, device,
-                             _contextIsHMD ? _outputs._hmdDevice : _outputs._desktopDevice,
-                             _contextIsHMD);
-            _requestedOutputDevice = QAudioDeviceInfo();
-        }
         _outputs.onDeviceChanged(device, _contextIsHMD);
     }
 }
 
 void AudioDevices::onDevicesChanged(QAudio::Mode mode, const QList<QAudioDeviceInfo>& devices) {
-
     //set devices for both contexts
     if (mode == QAudio::AudioInput) {
         _inputs.onDevicesChanged(devices, _contextIsHMD);
@@ -492,16 +453,62 @@ void AudioDevices::onDevicesChanged(QAudio::Mode mode, const QList<QAudioDeviceI
 }
 
 void AudioDevices::chooseDevice(QAudio::Mode mode, bool isHMD, const QAudioDeviceInfo& device) {
+    // this method only called by scripting interface
+    if (device.isNull()) {
+        return;
+    }
+
+    QAudioDeviceInfo previousDevice;
+    if (mode == QAudio::AudioInput) {
+        previousDevice = isHMD? _inputs._hmdDevice : _inputs._desktopDevice;
+    } else {
+        previousDevice = isHMD? _outputs._hmdDevice : _outputs._desktopDevice;
+    }
+    if (device == previousDevice) {
+        // skip for redundant
+        return;
+    }
+
+    // save to settings
     if (mode == QAudio::AudioInput) {
         _inputs.setPreferredDevice(device, isHMD);
     } else {
         _outputs.setPreferredDevice(device, isHMD);
     }
+
     if (_contextIsHMD == isHMD) {
-        // inside context we switchAudioDevice
-        auto client = DependencyManager::get<AudioClient>().data();
-        QMetaObject::invokeMethod(client, "switchAudioDevice",
-                                  Q_ARG(QAudio::Mode, mode),
-                                  Q_ARG(const QAudioDeviceInfo&, device));
+        // this change involves the current context --> switch if we can find device
+        int32_t deviceIndex = -1;
+        if (mode == QAudio::AudioInput) {
+            deviceIndex = _inputs.findDevice(device);
+        } else {
+            deviceIndex = _outputs.findDevice(device);
+        }
+        if (deviceIndex != -1) {
+            // inside context we switchAudioDevice
+            auto client = DependencyManager::get<AudioClient>().data();
+            QMetaObject::invokeMethod(client, "switchAudioDevice",
+                                    Q_ARG(QAudio::Mode, mode),
+                                    Q_ARG(const QAudioDeviceInfo&, device));
+        }
     }
+
+    // log this activity
+    QJsonObject data;
+    const QString MODE = "audio_mode";
+    data[MODE] = (mode == QAudio::AudioInput) ? "INPUT" : "OUTPUT";
+    const QString CONTEXT = "display_mode";
+    data[CONTEXT] = _contextIsHMD ? Audio::HMD : Audio::DESKTOP;
+    const QString DISPLAY = "display_device";
+    data[DISPLAY] = qApp->getActiveDisplayPlugin()->getName();
+    const QString DEVICE = "device";
+    const QString PREVIOUS_DEVICE = "previous_device";
+    const QString WAS_DEFAULT = "was_default";
+    QString deviceName = device.isNull() ? QString() : device.deviceName();
+    data[DEVICE] = deviceName;
+    data[PREVIOUS_DEVICE] = previousDevice.deviceName();
+    auto& setting = getSetting(isHMD, mode);
+    auto wasDefault = setting.get().isNull();
+    data[WAS_DEFAULT] = wasDefault;
+    UserActivityLogger::getInstance().logAction("selected_audio_device", data);
 }

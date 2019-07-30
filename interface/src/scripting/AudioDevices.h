@@ -54,6 +54,8 @@ public:
 
     void setPreferredDevice(const QAudioDeviceInfo device, bool isHMD);
 
+    int32_t findDevice(const QAudioDeviceInfo& targetDevice) const;
+
 signals:
     void deviceChanged(const QAudioDeviceInfo& device);
     void selectedDevicePlugged(const QAudioDeviceInfo& device, bool isHMD);
@@ -130,8 +132,6 @@ private slots:
     void chooseDevice(QAudio::Mode mode, bool isHMD, const QAudioDeviceInfo& device);
 
     void onContextChanged(const QString& context);
-    void onDeviceSelected(QAudio::Mode mode, const QAudioDeviceInfo& device,
-                          const QAudioDeviceInfo& previousDevice, bool isHMD);
     void onDeviceChanged(QAudio::Mode mode, const QAudioDeviceInfo& device);
     void onDevicesChanged(QAudio::Mode mode, const QList<QAudioDeviceInfo>& devices);
 
