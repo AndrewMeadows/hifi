@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <QSysInfo>
 #include <dxgi1_3.h>
+#include <VersionHelpers.h>
 #pragma comment(lib, "dxgi.lib")
 #include <shellscalingapi.h>
 #pragma comment(lib, "Shcore.lib")
@@ -118,10 +119,12 @@ void WINInstance::enumerateGpusAndDisplays() {
                     // Grab the dpi info for the monitor
                     UINT dpiX{ 0 };
                     UINT dpiY{ 0 };
-                    GetDpiForMonitor(outputDesc.Monitor, MDT_RAW_DPI, &dpiX, &dpiY);
                     UINT dpiXScaled{ 0 };
                     UINT dpiYScaled{ 0 };
-                    GetDpiForMonitor(outputDesc.Monitor, MDT_EFFECTIVE_DPI, &dpiXScaled, &dpiYScaled);
+                    if (IsWindows8OrGreater()) {
+                        GetDpiForMonitor(outputDesc.Monitor, MDT_RAW_DPI, &dpiX, &dpiY);
+                        GetDpiForMonitor(outputDesc.Monitor, MDT_EFFECTIVE_DPI, &dpiXScaled, &dpiYScaled);
+                    }
 
                     // Current display mode
                     DEVMODEW devMode;
